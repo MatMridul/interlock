@@ -1,0 +1,7 @@
+# NOTE: never ignore .kiro/ -- Kiroween requires it in the public repo.
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.env
+graphify-out/
