@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comp B · Plate — The Chimeric Automaton</title>
+<style>
+@font-face{font-family:"IM Fell English";font-style:normal;src:url(fonts/im-fell-english-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"IM Fell English";font-style:italic;src:url(fonts/im-fell-english-latin-400-italic.woff2) format("woff2")}
+@font-face{font-family:"EB Garamond";font-weight:400;font-style:normal;src:url(fonts/eb-garamond-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"EB Garamond";font-weight:400;font-style:italic;src:url(fonts/eb-garamond-latin-400-italic.woff2) format("woff2")}
+@font-face{font-family:"EB Garamond";font-weight:600;font-style:normal;src:url(fonts/eb-garamond-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"EB Garamond";font-weight:400;font-style:normal;unicode-range:U+0370-03FF;src:url(fonts/eb-garamond-greek-400-normal.woff2) format("woff2")}
+:root{
+  --paper:#f2e9d3; --paper2:#e7dcc0; --ink:#1b1712; --soft:#54493a; --faint:#7a6d58;
+  --blue:#1636c9; --brick:#8f2a1c; --brass:#7d5a0b;
+  --ease-out:cubic-bezier(.16,1,.3,1); --ease-io:cubic-bezier(.65,0,.35,1);
+  --disp:"IM Fell English","Iowan Old Style",Georgia,serif; --body:"EB Garamond",Garamond,Georgia,serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box} html,body{height:100%;margin:0}
+body{background:#d8cdb0;color:var(--ink);font:18px/1.35 var(--body);overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2.5px solid var(--blue);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.sheet{position:absolute;inset:14px;background:var(--paper);border:1px solid var(--ink);outline:3px double var(--ink);outline-offset:4px;display:grid;grid-template-columns:minmax(0,1fr) 400px;grid-template-rows:auto minmax(0,1fr) auto;
+  background-image:radial-gradient(ellipse at 50% 40%,transparent 55%,rgba(110,80,30,.14)),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' seed='4'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .27  0 0 0 0 .15  0 0 0 .09 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>")}
+.mast{grid-column:1;padding:14px 28px 8px;display:grid;grid-template-columns:auto 1fr auto;gap:4px 26px;align-items:end;border-bottom:1px solid var(--ink)}
+.plate-no{font:400 15px var(--disp);letter-spacing:.24em;text-transform:uppercase;color:var(--soft)}
+h1{margin:0;font:italic 400 29px/1.05 var(--disp);letter-spacing:.005em}
+.mast .by{grid-column:1/3;max-width:700px;font:italic 15px var(--body);color:var(--soft)}
+.mast .by b{font-style:normal;color:var(--brick);font-weight:600}
+.reg{grid-column:2;grid-row:1/3;align-self:end;border-collapse:collapse;font-variant-numeric:tabular-nums lining-nums}
+.reg caption{caption-side:top;text-align:left;font:italic 13px var(--disp);color:var(--soft);padding-bottom:2px}
+.reg th{font:400 11.5px var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--soft);padding:0 14px 0 0;text-align:left;border-bottom:1px solid var(--ink)}
+.reg td{font:400 40px/1 var(--body);padding:3px 14px 0 0;text-align:left;font-variant-numeric:tabular-nums lining-nums}
+.reg td.b{color:var(--brick)} .reg td.e{color:var(--blue)}
+.reg td.tick{animation:ink .6s var(--ease-out)}
+@keyframes ink{from{opacity:.1;transform:translateY(-5px)}to{opacity:1;transform:none}}
+.reg tr.n td{font:italic 12.5px var(--body);color:var(--soft);padding:0}
+.fig{grid-column:1;position:relative;overflow:hidden;margin:0}
+.fig>svg,.fig>canvas{position:absolute;inset:0;width:100%;height:100%}
+.fig canvas{pointer-events:none}
+.marg{position:absolute;font:italic 15.5px/1.25 var(--body);color:var(--soft);max-width:250px}
+.marg b{font-style:normal;font-family:var(--disp);color:var(--ink)}
+.ledger{position:absolute;left:30px;top:16px;font:italic 14px/1.4 var(--body);color:var(--faint)}
+.ledger div.on{color:var(--blue)}
+.ledger div.on::before{content:"☞ ";margin-left:-18px}
+.ledger{padding-left:18px}
+.stamp-lock{position:absolute;left:400px;top:12px;border:3px double var(--brick);color:var(--brick);font:400 26px var(--disp);letter-spacing:.2em;text-transform:uppercase;padding:2px 18px;transform:rotate(-4deg);display:none;background:rgba(242,233,211,.85)}
+.stamp-lock span{display:block;font:italic 14px var(--body);letter-spacing:0;text-transform:none}
+[data-locked=true] .stamp-lock{display:block}
+.toasts{position:absolute;left:28px;bottom:12px;width:350px;display:flex;flex-direction:column;gap:6px;z-index:5}
+.toast{display:grid;grid-template-columns:auto 1fr auto;gap:0 10px;background:#fbf5e4;border:1px solid var(--ink);padding:6px 10px;font:16px/1.25 var(--body);box-shadow:3px 3px 0 rgba(27,23,18,.25);animation:in .35s var(--ease-out);transform:rotate(-.4deg)}
+@keyframes in{from{transform:translateY(8px) rotate(-.4deg);opacity:0}to{opacity:1}}
+.t-kind{font:400 14px var(--disp);letter-spacing:.12em;text-transform:uppercase}
+.t-x{background:none;border:0;font:italic 14px var(--body);text-decoration:underline;color:var(--soft);padding:0}
+.t-allowed .t-kind{color:var(--blue)} .t-blocked{border-color:var(--brick);border-width:2px} .t-blocked .t-kind{color:var(--brick)}
+.t-needs-human{border-color:var(--brass);border-width:2px}.t-needs-human .t-kind{color:var(--brass)}
+.t-error{border-style:dashed}.t-error .t-kind{color:var(--brick)}
+/* svg parts */
+.globe{fill:var(--paper);stroke:var(--ink);stroke-width:2}
+.globe-sh{fill:url(#hatch);opacity:.55}
+.globe-on{fill:var(--blue);opacity:0;transition:opacity .45s}
+.orb.on .globe-on{opacity:.2}
+.orb.on .globe{stroke:var(--blue);stroke-width:3}
+.rays{stroke:var(--blue);stroke-width:1.5;opacity:0;transition:opacity .45s}
+.orb.on .rays{opacity:1}
+.oname{font:400 13.5px var(--disp);letter-spacing:.16em;text-anchor:middle;fill:var(--ink);text-transform:uppercase}
+.oq{font:italic 13px var(--body);text-anchor:middle;fill:var(--soft)}
+.tube-o{fill:none;stroke:var(--ink);stroke-width:7}
+.tube-i{fill:none;stroke:var(--paper);stroke-width:4.6}
+.tube-h{fill:none;stroke:var(--brass);stroke-width:7;stroke-dasharray:2 5}
+.wash{fill:none;stroke:var(--blue);stroke-width:3.2;opacity:0}
+.elab{font:italic 15px var(--body);text-anchor:middle;fill:var(--ink)}
+.elab.human{fill:var(--brass)}
+.rcv-t{font:400 13px var(--disp);letter-spacing:.16em;fill:var(--brick);text-transform:uppercase}
+.rcv-n{font:italic 14.5px var(--body);fill:var(--soft)}
+.port-t{font:400 13px var(--disp);letter-spacing:.14em;fill:var(--ink);text-anchor:end;text-transform:uppercase}
+.port-n{font:italic 14px var(--body);fill:var(--soft);text-anchor:end}
+/* seal */
+.seal{position:absolute;right:22px;bottom:14px;width:288px;display:grid;grid-template-columns:78px 1fr;gap:12px;padding:10px 14px 10px 10px;border:1px solid var(--ink);outline:1px solid var(--ink);outline-offset:3px;background:#f6eed9;z-index:4}
+.seal svg{width:78px;height:78px}
+.seal h2{margin:0;font:400 17px var(--disp);letter-spacing:.12em;text-transform:uppercase;color:var(--brass)}
+.seal p{margin:1px 0 6px;font:italic 15px/1.2 var(--body);color:var(--soft)}
+.btn-seal{background:var(--brass);color:#fff8e6;border:1px solid var(--ink);padding:3px 14px;font:400 15px var(--disp);letter-spacing:.1em;text-transform:uppercase}
+.seal .res{font:italic 14px var(--body);min-height:18px;color:var(--brass)}
+.seal.turning svg{animation:press .55s var(--ease-io)}
+@keyframes press{50%{transform:scale(.88) rotate(-10deg)}}
+/* register of executed motions */
+.tape{grid-column:1;border-top:1px solid var(--ink);padding:6px 0 0;background:rgba(231,220,192,.5)}
+.tape-h{display:flex;gap:14px;align-items:baseline;padding:0 28px;font:italic 15px var(--body);color:var(--soft)}
+.tape-h h2{margin:0;font:400 16px var(--disp);letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+.chk{margin-left:auto;color:var(--blue)} .chk.bad{color:var(--brick)}
+.tapes{overflow-x:auto;position:relative;height:130px;padding:0 28px}
+.chart{position:relative;height:100%}
+.cell{position:absolute;top:56px;width:110px;border:1px solid var(--ink);background:#f7f0dc;padding:2px 8px 3px}
+.cell.new{animation:ink .6s var(--ease-out)}
+.cell .no{font:italic 12.5px var(--body);color:var(--soft);display:block}
+.cell b{font:400 15px var(--disp);letter-spacing:.1em;display:block;text-transform:uppercase}
+.cell em{font:italic 14px var(--body);color:var(--blue)}
+.cell.human{border:2px solid var(--brass)} .cell.human em{color:var(--brass)}
+.cell-btn{all:unset;display:block;width:100%;cursor:default}
+.cell-btn:focus-visible{outline:2.5px solid var(--blue);outline-offset:3px}
+.tip{display:none;position:absolute;bottom:calc(100% + 6px);left:0;min-width:230px;background:#fbf5e4;border:1px solid var(--ink);padding:5px 9px;font:15px var(--body);z-index:6;pointer-events:none;box-shadow:3px 3px 0 rgba(27,23,18,.2)}
+.cell:hover .tip,.cell:focus-within .tip,.ghost:hover .tip,.ghost:focus-within .tip{display:block}
+.ghost{position:absolute;top:2px;width:110px;padding:1px 6px;border-bottom:1px dashed var(--brick)}
+.ghost b{font:400 14px var(--disp);letter-spacing:.08em;color:var(--brick);text-decoration:line-through;text-decoration-thickness:1.5px;text-transform:uppercase}
+.ghost em{display:block;font:italic 13px var(--body);color:var(--soft)}
+.ghost.new{animation:ink .6s var(--ease-out)}
+.rule{position:absolute;left:0;right:0;top:52px;height:0;border-top:1px solid var(--ink)}
+.pen{position:absolute;top:50px;width:0;height:68px;border-left:2px solid var(--blue)}
+/* correspondence */
+.corr{grid-column:2;grid-row:1/4;border-left:1px solid var(--ink);display:flex;flex-direction:column;min-height:0;position:relative;background:rgba(231,220,192,.35)}
+.corr h2,.corr h3{margin:0}
+.ch{padding:14px 20px 6px}
+.ch h2{font:italic 400 22px var(--disp)}
+.ch p{margin:0;font:italic 15px var(--body);color:var(--soft)}
+.trials{padding:4px 20px 8px;border-bottom:1px solid var(--ink)}
+.trials h3{font:400 13px var(--disp);letter-spacing:.18em;text-transform:uppercase;color:var(--soft);display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.btn-run{background:none;border:1px solid var(--ink);padding:1px 10px;font:400 13px var(--disp);letter-spacing:.1em;text-transform:uppercase}
+.btn-run:hover{background:var(--ink);color:var(--paper)}
+.trow{display:grid;grid-template-columns:30px 1fr;width:100%;text-align:left;background:none;border:0;padding:1px 0;align-items:baseline}
+.trow .n{font:italic 15px var(--body);color:var(--soft)}
+.trow b{font:400 18px var(--body);font-weight:600;border-bottom:1px dotted var(--soft);display:inline-block}
+.trow span{font:italic 15px var(--body);color:var(--soft);margin-left:8px}
+.trow:hover b{color:var(--blue)}
+.leg{margin-top:4px;font:italic 15px var(--body);color:var(--soft)}
+.leg button{background:none;border:0;border-bottom:1px solid var(--ink);margin-left:10px;font:15px var(--body);padding:0}
+.tr{flex:1;min-height:0;overflow-y:auto;padding:10px 20px}
+.ln{margin:0 0 8px;font-size:17.5px}
+.ln.user{font-weight:600}.ln.agent{font-style:italic;color:var(--soft)}
+.ln .w{font:400 13px var(--disp);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-right:6px;font-style:normal}
+.chip{display:inline-block;font:400 13.5px var(--disp);letter-spacing:.12em;text-transform:uppercase;padding:0 8px;border:1px solid var(--ink)}
+.chip.p{border-style:dashed;color:var(--soft)}
+.chip.ok{color:var(--blue);border-color:var(--blue);border-width:2px}
+.chip.no{color:var(--brick);border:3px double var(--brick);transform:rotate(-1.6deg);padding:0 9px}
+.chip-n{font:italic 14px var(--body);color:var(--soft);margin-left:8px}
+.comp{padding:8px 20px 12px;border-top:1px solid var(--ink)}
+.comp input{width:100%;background:none;border:0;border-bottom:1px solid var(--ink);font:italic 16px var(--body);color:var(--soft);padding:2px 0}
+.tg{background:none;border:1px solid var(--ink);padding:0 9px;font:italic 14px var(--body);margin-left:6px}
+.tg[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.tools{position:absolute;right:14px;top:4px;z-index:3;display:flex}
+.drawer{position:absolute;inset:0;background:#f6eed9;border-left:3px double var(--ink);transform:translateX(100%);transition:transform .32s var(--ease-out);z-index:8;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--ink)}
+.dh h2{font:italic 400 22px var(--disp)}
+.db{overflow:auto;padding:8px 18px;font-size:16.5px}
+.db h3{font:400 13px var(--disp);letter-spacing:.18em;text-transform:uppercase;color:var(--soft);margin:12px 0 2px}
+.db ol{margin:0;padding-left:24px}.db dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:0 12px}.db dt{color:var(--soft);font-style:italic}.db dd{margin:0}
+.db p{margin:4px 0;color:var(--soft)}
+dialog{background:#f6eed9;color:var(--ink);border:1px solid var(--ink);outline:1px solid var(--ink);outline-offset:3px;padding:16px 20px;width:380px;font:17px var(--body)}
+dialog::backdrop{background:rgba(27,23,18,.55)}
+dialog h3{margin:0 0 4px;font:italic 400 24px var(--disp);color:var(--brass)}
+dialog input{width:100%;margin:4px 0 10px;border:1px solid var(--ink);background:#fffaf0;padding:4px 8px;font:inherit}
+.da{display:flex;gap:8px;justify-content:flex-end}
+.dnote{font-style:italic;color:var(--soft);font-size:15px;margin:0}
+.btn-q{background:none;border:1px solid var(--ink);padding:1px 10px;font:italic 15px var(--body)}
+.notlive{color:var(--brick)}
+@media (prefers-reduced-motion:reduce){.cell.new,.ghost.new,.toast,.reg td.tick{animation:none}.drawer{transition:none}.orb *{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+<div class="sheet" id="sheet">
+  <header class="mast">
+    <div class="plate-no">Plate IV</div>
+    <h1>The Gate, with an Agent Applying to It</h1>
+    <table class="reg" aria-label="Scoreboard"><caption>Register of the Experiment</caption>
+    <thead><tr><th scope="col">Proposed</th><th scope="col">Allowed</th><th scope="col">Blocked</th><th scope="col">Side effects from blocked</th></tr></thead>
+    <tbody><tr><td id="s-p">0</td><td id="s-a" class="e">0</td><td id="s-b" class="b">0</td><td id="s-s" class="e">0</td></tr>
+    <tr class="n"><td>by the agent</td><td>ran</td><td>did not run</td><td>log entries no ALLOW explains</td></tr></tbody></table>
+    <div class="by">A formal machine of four states and six symbols decides what runs. <b>Canned replay, not live.</b></div>
+  </header>
+
+  <section class="fig" id="scope" aria-label="The apparatus">
+    <svg id="svg" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Apparatus: four glass globes joined by conduits. The lit globe is the current state."></svg>
+    <canvas id="cv" aria-hidden="true"></canvas>
+    <div class="ledger" id="ledger" aria-hidden="true"></div>
+    <div class="marg" style="left:300px;top:78px"><b>Fig. 2.</b> The gate. Nothing passes a globe unless δ(q, σ) is written in the table.</div>
+    <div class="marg" style="right:34px;top:158px;text-align:right;max-width:210px"><b>Fig. 1.</b> The Agent. Its proposals are sparks only; it holds no key.</div>
+    <div class="stamp-lock" role="status">Session locked<span>Five refusals in a row. The gate now refuses everything.</span></div>
+    <div class="toasts" id="toasts"></div>
+    <div class="seal" id="airlock">
+      <svg viewBox="0 0 78 78" aria-hidden="true"><circle cx="39" cy="39" r="35" fill="#e6c76a" stroke="#1b1712" stroke-width="2"/><circle cx="39" cy="39" r="29" fill="none" stroke="#1b1712" stroke-width="1" stroke-dasharray="2 3"/><circle cx="39" cy="32" r="8" fill="none" stroke="#1b1712" stroke-width="2.4"/><path d="M39 40v18M39 50h8M39 58h6" stroke="#1b1712" stroke-width="2.4" fill="none"/></svg>
+      <div><h2>Seal of the Operator</h2><p>The one motion the agent cannot make.</p><button class="btn-seal" id="btn-key" type="button">Apply the seal…</button><div class="res" id="key-res" role="status"></div></div>
+    </div>
+  </section>
+
+  <section class="tape" aria-labelledby="tape-h">
+    <div class="tape-h"><h2 id="tape-h">Register of executed motions</h2><span>blocked proposals are struck through above the rule and are never entered</span><span class="chk" id="chk"></span></div>
+    <div class="tapes" id="tapes" tabindex="0" aria-label="Register, scrollable"><div class="chart" id="chart"></div></div>
+  </section>
+
+  <aside class="corr" aria-labelledby="ch-h">
+    <div class="tools"><button class="tg" id="tg-snd" aria-pressed="false" type="button">Sound off</button><button class="tg" id="tg-hap" aria-pressed="false" type="button" hidden>Haptics off</button><button class="tg" id="tg-proof" type="button" aria-expanded="false" aria-controls="drawer">Appendix: proof</button></div>
+    <div class="ch" style="padding-top:30px"><h2 id="ch-h">Correspondence with the Agent</h2><p>Untrusted text. It cannot reach the seal.</p></div>
+    <div class="trials">
+      <h3>Trials proposed <button class="btn-run" id="auto" type="button">Perform the whole experiment</button></h3>
+      <button class="trow" type="button" data-k="rejected"><span class="n" style="margin:0">I.</span><div><b>Skip MFA</b><span>ask for the transfer unapproved</span></div></button>
+      <button class="trow" type="button" data-k="rejected"><span class="n" style="margin:0">II.</span><div><b>Prompt injection</b><span>override its instructions</span></div></button>
+      <button class="trow" type="button" data-k="rejected"><span class="n" style="margin:0">III.</span><div><b>Fake pre-approval</b><span>claim a human approved</span></div></button>
+      <button class="trow" type="button" data-k="rejected"><span class="n" style="margin:0">IV.</span><div><b>The human-only tool</b><span>reach MFA from the chat</span></div></button>
+      <button class="trow" type="button" data-k="rejected"><span class="n" style="margin:0">V.</span><div><b>Overspend</b><span>9000 against a cap of 5000</span></div></button>
+      <button class="trow" type="button" data-k="rejected"><span class="n" style="margin:0">VI.</span><div><b>Double spend</b><span>execute the transfer twice</span></div></button>
+      <div class="leg">Legitimate: <button type="button" data-k="allowed">Draft 250 to Alice</button><button type="button" data-k="hard">Show a locked session</button></div>
+    </div>
+    <div class="tr" id="tr" role="log" aria-label="Conversation and gate verdicts" tabindex="0"></div>
+    <form class="comp" onsubmit="return false"><label class="sr" for="msg">Message to the agent</label><input id="msg" placeholder="Canned replay: writing is disabled in this comp" disabled></form>
+    <aside class="drawer" id="drawer" role="dialog" aria-labelledby="dr-h" aria-hidden="true" inert>
+      <div class="dh"><h2 id="dr-h">Appendix: the proof</h2><button class="btn-q" id="dr-x" type="button">Close (Esc)</button></div>
+      <div class="db" id="db"></div>
+    </aside>
+  </aside>
+</div>
+<dialog id="dlg" aria-labelledby="dlg-h">
+  <form method="dialog" id="dlg-f">
+    <h3 id="dlg-h">Apply the seal</h3>
+    <p class="dnote">Enter the demo code. The server sets it; it is never shown here and never sent to the agent. This comp has no server and accepts anything.</p>
+    <label for="code" class="dnote">Demo code</label>
+    <input id="code" type="password" autocomplete="off">
+    <div class="da"><button type="button" class="btn-q" id="dlg-c">Cancel</button><button type="submit" class="btn-seal">Approve as human</button></div>
+  </form>
+</dialog>
+<script>
+/*CORE*/
+</script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id), NS = "http://www.w3.org/2000/svg";
+  const VIEW = { w: 1000, h: 500 }, R = 40, BLUE = "#1636c9", INK = "#1b1712", BRICK = "#8f2a1c";
+  const pos = { START: { x: 120, y: 236 }, AUTHED: { x: 372, y: 236 }, DRAFTED: { x: 630, y: 236 }, APPROVED: { x: 882, y: 236 } };
+  const PORT = { x: 944, y: 70 }, SINK = { x: 128, y: 424 };
+  const edges = CORE.edgePaths(pos, R, { anti: 22, long: 108, loopH: 86, gap: 4 });
+  const svg = $("svg"), mk = (n, a, p = svg) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+  svg.insertAdjacentHTML("beforeend", `<defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(40)"><line x1="0" y1="0" x2="0" y2="5" stroke="#1b1712" stroke-width=".9"/></pattern><clipPath id="lowerRight"><rect x="-4" y="-4" width="50" height="50" transform="rotate(-35)" /></clipPath></defs>`);
+  const edgeEl = {}, wash = {};
+  for (const e of edges) {
+    const human = e.symbols.every((s) => s === "MFA"), g = mk("g");
+    mk("path", { d: e.d, class: "tube-o" }, g); edgeEl[e.id] = mk("path", { d: e.d, class: "tube-i" }, g);
+    if (human) mk("path", { d: e.d, class: "tube-h" }, g);
+    wash[e.id] = mk("path", { d: e.d, class: "wash" }, g);
+    mk("text", { x: e.label.x, y: e.label.y, class: "elab" + (human ? " human" : "") }, g).textContent = e.symbols.join(" · ").toLowerCase() === "mfa" ? "MFA (the seal)" : e.symbols.join(" / ");
+  }
+  mk("path", { d: `M${pos.START.x - R - 54} ${pos.START.y}H${pos.START.x - R - 8}`, stroke: INK, "stroke-width": 2, fill: "none" });
+  mk("path", { d: `M${pos.START.x - R - 16} ${pos.START.y - 6}L${pos.START.x - R - 8} ${pos.START.y}L${pos.START.x - R - 16} ${pos.START.y + 6}`, stroke: INK, "stroke-width": 2, fill: "none" });
+  mk("text", { x: pos.START.x - R - 54, y: pos.START.y - 10, class: "oq", "text-anchor": "start" }).textContent = "q₀";
+  const orbs = {};
+  CORE.MACHINE.states.forEach((s, i) => {
+    const g = mk("g", { class: "orb", transform: `translate(${pos[s].x} ${pos[s].y})` });
+    for (let k = 0; k < 20; k++) { const a = k / 20 * 6.2832; mk("line", { class: "rays", x1: Math.cos(a) * (R + 7), y1: Math.sin(a) * (R + 7), x2: Math.cos(a) * (R + (k % 2 ? 16 : 24)), y2: Math.sin(a) * (R + (k % 2 ? 16 : 24)) }, g); }
+    mk("circle", { r: R, class: "globe" }, g); mk("circle", { r: R, class: "globe-on" }, g);
+    mk("path", { d: `M${R * .72} ${-R * .69}A${R} ${R} 0 0 1 ${-R * .69} ${R * .72}A${R * 1.1} ${R * 1.1} 0 0 0 ${R * .72} ${-R * .69}Z`, class: "globe-sh" }, g);
+    mk("path", { d: `M${-R * .62} ${-R * .3}A${R * .72} ${R * .72} 0 0 1 ${-R * .1} ${-R * .68}`, fill: "none", stroke: INK, "stroke-width": 1.2 }, g);
+    mk("circle", { r: R - 7, fill: "none", stroke: INK, "stroke-width": .8, "stroke-dasharray": "1 3" }, g);
+    mk("text", { y: R + 24, class: "oname" }, g).textContent = s; mk("text", { y: R + 40, class: "oq" }, g).textContent = "q" + i;
+    orbs[s] = g;
+  });
+  // receiver (the sink): a bell jar on a base
+  const rc = mk("g", { transform: `translate(${SINK.x} ${SINK.y})` });
+  mk("path", { d: "M-34 22V-14A34 34 0 0 1 34 -14V22", fill: "none", stroke: INK, "stroke-width": 2 }, rc); mk("path", { d: "M-44 22H44M-40 28H40", stroke: INK, "stroke-width": 2 }, rc);
+  mk("circle", { r: 4, cy: 8, fill: INK }, rc); for (let k = 0; k < 6; k++) mk("line", { x1: -30 + k * 12, y1: 22, x2: -26 + k * 12, y2: 12, stroke: INK, "stroke-width": .8 }, rc);
+  mk("text", { x: SINK.x + 54, y: SINK.y - 12, class: "rcv-t" }).textContent = "Receiver of refused motions";
+  mk("text", { x: SINK.x + 54, y: SINK.y + 6, class: "rcv-n" }).textContent = "rejected moves go nowhere;";
+  mk("text", { x: SINK.x + 54, y: SINK.y + 22, class: "rcv-n" }).textContent = "the state never changes";
+  // the agent's pile
+  const pl = mk("g", { transform: `translate(${PORT.x} ${PORT.y})` });
+  for (let k = 0; k < 5; k++) mk("ellipse", { cx: 0, cy: k * 7 - 14, rx: 17, ry: 5, fill: k % 2 ? "#f2e9d3" : "#e0d3b0", stroke: INK, "stroke-width": 1.4 }, pl);
+  mk("path", { d: "M-17 -14V14M17 -14V14", stroke: INK, "stroke-width": 1.4 }, pl);
+  mk("text", { x: PORT.x - 28, y: PORT.y - 6, class: "port-t" }).textContent = "The Agent";
+  mk("text", { x: PORT.x - 28, y: PORT.y + 12, class: "port-n" }).textContent = "proposes, never decides";
+
+  const ledger = $("ledger"), rows = [];
+  for (const from of CORE.MACHINE.states) for (const [s, to] of Object.entries(CORE.MACHINE.trans[from])) { const d = document.createElement("div"); d.textContent = `δ(${from.toLowerCase()}, ${s.toLowerCase()}) = ${to.toLowerCase()}`; d.dataset.k = from + "/" + s; ledger.appendChild(d); rows.push(d); }
+  const geom = { orb: (n) => pos[n], r: R, port: PORT, sink: SINK, gate: (n) => { const o = pos[n], dx = PORT.x - o.x, dy = PORT.y - o.y, l = Math.hypot(dx, dy); return { x: o.x + dx / l * (R + 22), y: o.y + dy / l * (R + 22) }; }, edge: (a, b) => edgeEl[a + ">" + b] || null };
+  let fx = CORE.fit($("cv"), VIEW); const refit = () => { fx = CORE.fit($("cv"), VIEW); render(last.s, last.k); }; addEventListener("resize", refit);
+
+  /* ---- canvas: engraved ink (no glow, no blur) ---- */
+  function spark(c, pts, col, amp, seed, w) {
+    if (pts.length < 2) return; let s = seed * 7919 + 13; const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+    const j = pts.map((q, i) => { if (!i || i === pts.length - 1) return q; const p = pts[i - 1], n = pts[i + 1], dx = n.x - p.x, dy = n.y - p.y, l = Math.hypot(dx, dy) || 1, o = (rnd() - .5) * 2 * amp * Math.sin(i / (pts.length - 1) * Math.PI); return { x: q.x - dy / l * o, y: q.y + dx / l * o }; });
+    c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(j[0].x, j[0].y); j.slice(1).forEach((q) => c.lineTo(q.x, q.y)); c.stroke();
+    c.lineWidth = 1; for (let i = 2; i < j.length - 1; i += 3) { const q = j[i], a = rnd() * 6.28; c.beginPath(); c.moveTo(q.x + Math.cos(a) * 3, q.y + Math.sin(a) * 3); c.lineTo(q.x + Math.cos(a) * 9, q.y + Math.sin(a) * 9); c.stroke(); }
+  }
+  function cartouche(c, x, y, label, col, al, k) {
+    c.save(); c.globalAlpha = al; c.translate(x, y); c.scale(k, k); c.font = '400 15px "IM Fell English",Georgia,serif'; const w = c.measureText(label.toUpperCase()).width + 30 + label.length * 1.5, h = 26;
+    c.fillStyle = "#fbf5e4"; c.strokeStyle = col; c.lineWidth = 2; c.beginPath(); c.roundRect(-w / 2, -h / 2, w, h, 13); c.fill(); c.stroke(); c.lineWidth = .8; c.beginPath(); c.roundRect(-w / 2 + 3, -h / 2 + 3, w - 6, h - 6, 10); c.stroke();
+    c.fillStyle = INK; c.textAlign = "center"; c.textBaseline = "middle"; c.letterSpacing = "1.5px"; c.fillText(label.toUpperCase(), 0, 1); c.restore();
+  }
+  function draw(snap) {
+    const c = fx.ctx; fx.begin(); const p = CORE.pose(snap, geom); if (!p) return; const tick = Math.floor(snap.t / 83);
+    c.save();
+    if (p.phase === "spawn") { c.fillStyle = BLUE; for (let i = 0; i < 14; i++) { const a = i * 2.4, d = (26 + (i * 7) % 28) * p.converge; c.globalAlpha = p.alpha; c.beginPath(); c.arc(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, 1.8, 0, 7); c.fill(); } c.globalAlpha = 1; cartouche(c, p.x, p.y, p.symbol, INK, p.alpha, p.scale); }
+    else if (p.phase === "flight") { spark(c, p.trail, BLUE, 5, tick, 2.2); cartouche(c, p.x, p.y, p.symbol, INK, 1, 1); }
+    else if (p.phase === "verdict") { c.strokeStyle = BLUE; c.lineWidth = 1.5; c.setLineDash([3, 4]); c.globalAlpha = .4 + .6 * p.ring; c.beginPath(); c.arc(p.orb.x, p.orb.y, R + 12, 0, 7); c.stroke(); c.setLineDash([]); c.globalAlpha = 1; cartouche(c, p.x, p.y, p.symbol, INK, 1, p.scale); }
+    else if (p.phase === "conduit") { spark(c, p.arc, BLUE, 7, tick, 3.4); cartouche(c, p.x, p.y, p.symbol, BLUE, 1, 1); }
+    else if (p.phase === "ignite") {
+      const o = p.igniteAt, e = CORE.ease.out(p.p); c.strokeStyle = BLUE;
+      for (let k = 0; k < 2; k++) { const u = CORE.clamp(p.p * 1.3 - k * .22); c.globalAlpha = (1 - u) * .9; c.lineWidth = 1.4; c.beginPath(); c.arc(o.x, o.y, R + 8 + 52 * CORE.ease.out(u), 0, 7); c.stroke(); }
+      c.globalAlpha = 1 - p.p; c.lineWidth = 1.3; for (let i = 0; i < 24; i++) { const a = i / 24 * 6.2832, r0 = R + 6, r1 = R + 10 + (i % 2 ? 14 : 30) * e; c.beginPath(); c.moveTo(o.x + Math.cos(a) * r0, o.y + Math.sin(a) * r0); c.lineTo(o.x + Math.cos(a) * r1, o.y + Math.sin(a) * r1); c.stroke(); }
+      c.globalAlpha = 1 - p.p; spark(c, p.arc, BLUE, 3, 3, 2.4);
+    } else if (!p.accept) {
+      if (p.barrier) { c.save(); c.translate(p.barrierDx, 0); c.globalAlpha = Math.max(0, p.barrier); c.strokeStyle = INK; c.lineWidth = 6; const f = Math.atan2(PORT.y - p.orb.y, PORT.x - p.orb.x); for (let i = -1; i <= 1; i++) { c.beginPath(); c.arc(p.orb.x, p.orb.y, R + 20, f + i * .6 - .22, f + i * .6 + .22); c.stroke(); } c.lineWidth = 1; for (let i = -6; i <= 6; i++) { const a = f + i * .085, r0 = R + 26, r1 = R + 32; c.beginPath(); c.moveTo(p.orb.x + Math.cos(a) * r0, p.orb.y + Math.sin(a) * r0); c.lineTo(p.orb.x + Math.cos(a) * r1, p.orb.y + Math.sin(a) * r1); c.stroke(); } c.restore(); }
+      if (p.phase === "impact") { c.strokeStyle = INK; c.lineWidth = 1.6; c.globalAlpha = 1 - p.p; for (let i = 0; i < 10; i++) { const a = i / 10 * 6.283, r0 = 8 + 5 * p.p, r1 = r0 + 20 * CORE.ease.out(p.p); c.beginPath(); c.moveTo(p.gate.x + Math.cos(a) * r0, p.gate.y + Math.sin(a) * r0); c.lineTo(p.gate.x + Math.cos(a) * r1, p.gate.y + Math.sin(a) * r1); c.stroke(); } c.globalAlpha = 1; }
+      if (p.alpha > 0) cartouche(c, p.x, p.y, p.symbol, BRICK, 1, p.scale);
+      c.fillStyle = INK; for (const s of p.shards) { c.globalAlpha = Math.max(0, s.alpha); c.beginPath(); c.arc(s.x, s.y, s.s * .8, 0, 7); c.fill(); }
+      if (p.sinkPulse > 0) { c.globalAlpha = .8 * (1 - p.sinkPulse); c.strokeStyle = INK; c.lineWidth = 1.2; c.beginPath(); c.ellipse(SINK.x, SINK.y + 22, 30 + 40 * CORE.ease.out(p.sinkPulse), 8 + 10 * p.sinkPulse, 0, 0, 7); c.stroke(); }
+    }
+    c.restore();
+  }
+
+  let last = { s: CORE.snapshot("idle", 0), k: "idle" }, keys = {};
+  const PITCH = 124;
+  function buildTape(s) {
+    const ch = $("chart"), n = Math.max(s.tape.length, ...s.ghosts.map((g) => g.idx + 1), 1) + 1 + s.ghosts.length; ch.style.width = 10 + n * PITCH + 40 + "px"; ch.innerHTML = '<div class="rule"></div>';
+    const slots = {};
+    s.ghosts.forEach((g) => { const k = (slots[g.idx] = (slots[g.idx] ?? -1) + 1), el = document.createElement("div"); el.className = "ghost"; el.style.left = 10 + g.idx * PITCH + k * PITCH + "px"; el.style.top = 2 + k * 0 + "px";
+      el.innerHTML = `<button class="cell-btn" type="button" aria-label="Blocked ${g.symbol} in ${g.from}. ${g.reason}. Never entered in the register."><b>${g.symbol}</b><em>refused in ${g.from.toLowerCase()}</em><span class="tip">${g.reason}<br>decided in ${CORE.fmtMs(g.latency)}</span></button>`; ch.appendChild(el); });
+    s.tape.forEach((c, i) => { const el = document.createElement("div"); el.className = "cell" + (c.kind === "human" ? " human" : ""); el.style.left = 10 + i * PITCH + "px";
+      el.innerHTML = `<button class="cell-btn" type="button" aria-label="Entry ${i + 1}: ${c.symbol}, led to ${c.to}. ${c.latency === undefined ? "Human approval, no latency measured" : "Decided in " + CORE.fmtMs(c.latency)}"><span class="no">№ ${i + 1}</span><b>${c.symbol}</b><em>→ ${c.to.toLowerCase()}</em><span class="tip">${c.from} → ${c.to}<br>${c.latency === undefined ? "human approval" : "decided in " + CORE.fmtMs(c.latency) + " (measured by the server)"}</span></button>`;
+      ch.appendChild(el); if (keys.tapeLen !== undefined && i >= keys.tapeLen) el.classList.add("new"); });
+    const pn = document.createElement("div"); pn.className = "pen"; pn.style.left = 10 + s.tape.length * PITCH - 6 + "px"; ch.appendChild(pn); $("tapes").scrollLeft = 1e5;
+  }
+  function chatRow(m) {
+    const d = document.createElement("div"); d.className = "ln " + m.k;
+    if (m.k === "user") d.innerHTML = `<span class="w">You</span>`, d.append(m.text);
+    else if (m.k === "agent") d.innerHTML = `<span class="w">Agent</span>`, d.append(m.text);
+    else if (m.k === "prop") d.innerHTML = `<span class="chip p">proposes ${m.sym}</span>`;
+    else d.innerHTML = m.ok ? `<span class="chip ok">Allowed ${m.sym} → ${m.to}</span>${m.latency ? `<span class="chip-n">${CORE.fmtMs(m.latency)}</span>` : ""}` : `<span class="chip no">Refused ${m.sym}</span><span class="chip-n">${m.reason}; state unchanged</span>`;
+    return d;
+  }
+  function bump(id, v) { const e = $(id); if (e.textContent !== String(v)) { e.textContent = v; if (!CORE.reduced()) { e.classList.remove("tick"); void e.offsetWidth; e.classList.add("tick"); } } }
+  function replay(t) { let q = "START"; for (const c of t) { const n = CORE.MACHINE.trans[q] && CORE.MACHINE.trans[q][c.symbol]; if (!n) return false; q = n; } return true; }
+  function render(s, k) {
+    last = { s, k };
+    bump("s-p", s.c.proposed); bump("s-a", s.c.allowed); bump("s-b", s.c.blocked); bump("s-s", s.c.side);
+    $("scope").dataset.locked = s.lim.locked ? "true" : "false";
+    for (const n in orbs) { const on = n === s.state; orbs[n].classList.toggle("on", on); on ? orbs[n].setAttribute("aria-current", "true") : orbs[n].removeAttribute("aria-current"); }
+    for (const id in wash) wash[id].style.opacity = s.glowEdge === id && s.glowAge >= 0 ? Math.max(0, 1 - s.glowAge / CORE.AFTERGLOW) * .75 : 0;
+    const mv = s.move && s.settled ? s.move : null; rows.forEach((r) => r.classList.toggle("on", !!mv && mv.accept && r.dataset.k === mv.from + "/" + mv.symbol));
+    const tk = s.tape.length + "/" + s.ghosts.length + "/" + k.length; if (keys.tape !== tk) { buildTape(s); keys.tapeLen = s.tape.length; keys.tape = tk; }
+    const ck = s.chat.length + ":" + k; if (keys.chat !== ck) { const tr = $("tr"); tr.innerHTML = ""; s.chat.forEach((m) => tr.appendChild(chatRow(m))); tr.scrollTop = 1e5; keys.chat = ck; }
+    const ok = replay(s.tape); $("chk").textContent = s.tape.length ? `The executed word ${ok ? "is" : "is NOT"} in L(M), replayed from the server log.` : ""; $("chk").classList.toggle("bad", !ok);
+    if (s.flash) $("scope").animate([{ boxShadow: `inset 0 0 0 3px ${s.flash === "ok" ? BLUE : BRICK}` }, { boxShadow: "inset 0 0 0 0 transparent" }], 400);
+    drawer(s); draw(s);
+  }
+  function drawer(s) {
+    const b = s.ghosts[s.ghosts.length - 1];
+    $("db").innerHTML = `<h3>Executed log (the source of truth)</h3><ol>${s.tape.map((c) => `<li>${c.symbol} <i>→ ${c.to.toLowerCase()}${c.kind === "human" ? ", by the human" : ""}</i></li>`).join("") || "<li>nothing executed yet</li>"}</ol><p>This is what actually ran, in order. It is not the model's own account.</p>
+    <h3>Counters</h3><dl><dt>transfers</dt><dd>${s.lim.transfers} of ${s.lim.maxT}</dd><dt>refusals in a row</dt><dd>${s.lim.rejects} of ${s.lim.maxR}</dd><dt>spend cap</dt><dd>5000</dd>${s.lim.locked ? "<dt>session</dt><dd style='color:var(--brick)'>locked</dd>" : ""}</dl>
+    <h3>Last verdict</h3><dl>${b ? `<dt>verdict</dt><dd>REJECT</dd><dt>state</dt><dd>${b.from}</dd><dt>symbol</dt><dd>${b.symbol}</dd><dt>reason</dt><dd>${b.reason}</dd><dt>decision latency</dt><dd>${CORE.fmtMs(b.latency)}</dd><dt>engine</dt><dd>executor-table</dd>` : "<dt>none yet</dt><dd></dd>"}</dl>
+    <h3>Invariants, abridged</h3><ol><li>An undefined move is refused and the state does not change.</li><li>The model reaches real tools only through the gate.</li><li>Only the human endpoint can produce MFA.</li><li>A checker failure never lets a tool run.</li></ol>
+    <h3>Not guaranteed</h3><p>The truth of the model's own sentences, and argument correctness beyond the stated limits.</p><p style="color:var(--brick)">Canned data in this comp. Nothing here is live.</p>`;
+  }
+
+  const P = CORE.Player(render, () => geom); CORE.Notify.init($("toasts"), $("live"));
+  document.querySelectorAll("[data-k]").forEach((b) => b.addEventListener("click", () => { const k = b.dataset.k; k === "hard" ? P.show("hard") : P.play(k); }));
+  addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); }); $("auto").onclick = () => P.both();
+  const tgS = $("tg-snd"), tgH = $("tg-hap");
+  tgS.onclick = () => { const on = tgS.getAttribute("aria-pressed") !== "true"; CORE.Snd.enable(on); tgS.setAttribute("aria-pressed", on); tgS.textContent = on ? "Sound on" : "Sound off"; CORE.Snd.play("allowed"); };
+  if (CORE.Hap.supported) { tgH.hidden = false; tgH.onclick = () => { const on = tgH.getAttribute("aria-pressed") !== "true"; CORE.Hap.on = on; tgH.setAttribute("aria-pressed", on); tgH.textContent = on ? "Haptics on" : "Haptics off"; CORE.Hap.play("allowed"); }; }
+  const dr = $("drawer"); let opener;
+  const openDrawer = () => { opener = document.activeElement; dr.classList.add("open"); dr.removeAttribute("inert"); dr.setAttribute("aria-hidden", "false"); $("tg-proof").setAttribute("aria-expanded", "true"); $("dr-x").focus(); };
+  const closeDrawer = () => { if (!dr.classList.contains("open")) return; dr.classList.remove("open"); dr.setAttribute("inert", ""); dr.setAttribute("aria-hidden", "true"); $("tg-proof").setAttribute("aria-expanded", "false"); opener && opener.focus && opener.focus(); };
+  $("tg-proof").onclick = () => (dr.classList.contains("open") ? closeDrawer() : openDrawer()); $("dr-x").onclick = closeDrawer;
+  const dlg = $("dlg"); $("btn-key").onclick = () => { dlg.showModal(); CORE.Notify.emit("needs-human", { text: "Approval needed: a human must apply the seal. The agent cannot." }); }; $("dlg-c").onclick = () => dlg.close();
+  $("dlg-f").onsubmit = (e) => { e.preventDefault(); $("code").value = ""; dlg.close(); $("airlock").classList.add("turning"); $("key-res").textContent = "Comp only: no server was called."; CORE.Notify.emit("approved", { text: "Human approval recorded (canned). State would move DRAFTED → APPROVED." }); setTimeout(() => $("airlock").classList.remove("turning"), 700); };
+  document.addEventListener("visibilitychange", () => document.documentElement.toggleAttribute("data-hidden", document.hidden));
+  const q = new URLSearchParams(location.search);
+  document.fonts.ready.then(() => { P.show(q.get("view") === "hard" ? "hard" : "idle"); if (q.get("drawer")) openDrawer(); if (q.get("play")) P.play(q.get("play")); });
+  new ResizeObserver(() => refit()).observe($("scope"));
+})();
+</script>
+</body>
+</html>
+
+
+

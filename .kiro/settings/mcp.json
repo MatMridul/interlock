@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "jflap": {
+      "command": "python",
+      "args": ["C:/Users/mridu/jflap-cli/jflap_mcp.py"],
+      "env": {},
+      "disabled": false,
+      "autoApprove": [
+        "jflap_inspect",
+        "jflap_simulate",
+        "jflap_simulate_batch",
+        "jflap_trace",
+        "jflap_export_table",
+        "jflap_equivalence_check"
+      ]
+    }
+  }
+}

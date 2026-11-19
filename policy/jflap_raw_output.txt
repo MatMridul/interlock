@@ -1,0 +1,284 @@
+
+>>> python C:\Users\mridu\jflap-cli\jflap_cli.py inspect policy\finance.jff
+
+=======================================================
+ JFLAP Model Inspection: finance.jff
+=======================================================
+Category : AUTOMATON
+Type     : FA
+Deterministic : YES
+Complete      : YES
+Alphabet      : A, C, D, E, M, T
+Unreachable   : None (all reachable)
+Dead States   : q4
+Initial State : q0
+Final States  : q1, q3, q2, q0
+
+States:
+State | Name     | Coordinates | Flags         
+------+----------+-------------+---------------
+q0    | START    | (120, 150)  | INITIAL, FINAL
+q1    | AUTHED   | (270, 150)  | FINAL         
+q2    | DRAFTED  | (420, 150)  | FINAL         
+q3    | APPROVED | (570, 150)  | FINAL         
+q4    | SINK     | (720, 150)  | -             
+
+Transitions:
+From |    | To | Transition Rule
+-----+----+----+----------------
+q1   | -> | q4 | read: 'E'      
+q4   | -> | q4 | read: 'A'      
+q4   | -> | q4 | read: 'C'      
+q3   | -> | q1 | read: 'T'      
+q4   | -> | q4 | read: 'D'      
+q1   | -> | q4 | read: 'A'      
+q2   | -> | q2 | read: 'E'      
+q4   | -> | q4 | read: 'E'      
+q1   | -> | q4 | read: 'C'      
+q2   | -> | q1 | read: 'C'      
+q1   | -> | q4 | read: 'M'      
+q2   | -> | q4 | read: 'D'      
+q4   | -> | q4 | read: 'M'      
+q2   | -> | q4 | read: 'A'      
+q1   | -> | q2 | read: 'D'      
+q1   | -> | q4 | read: 'T'      
+q3   | -> | q4 | read: 'D'      
+q3   | -> | q1 | read: 'C'      
+q4   | -> | q4 | read: 'T'      
+q3   | -> | q4 | read: 'A'      
+q2   | -> | q3 | read: 'M'      
+q3   | -> | q4 | read: 'M'      
+q2   | -> | q4 | read: 'T'      
+q3   | -> | q2 | read: 'E'      
+q0   | -> | q4 | read: 'T'      
+q0   | -> | q4 | read: 'M'      
+q0   | -> | q4 | read: 'C'      
+q0   | -> | q1 | read: 'A'      
+q0   | -> | q4 | read: 'E'      
+q0   | -> | q4 | read: 'D'      
+
+exit=0
+
+>>> python C:\Users\mridu\jflap-cli\jflap_cli.py inspect policy\finance_flags.jff
+
+=======================================================
+ JFLAP Model Inspection: finance_flags.jff
+=======================================================
+Category : AUTOMATON
+Type     : FA
+Deterministic : YES
+Complete      : YES
+Alphabet      : A, C, D, E, M, T
+Unreachable   : None (all reachable)
+Dead States   : q4
+Initial State : q0
+Final States  : q1, q3, q2, q0
+
+States:
+State | Name   | Coordinates | Flags         
+------+--------+-------------+---------------
+q0    | a0d0m0 | (100, 300)  | INITIAL, FINAL
+q1    | a1d0m0 | (240, 300)  | FINAL         
+q2    | a1d1m0 | (380, 300)  | FINAL         
+q3    | a1d1m1 | (520, 300)  | FINAL         
+q4    | REJECT | (660, 300)  | -             
+
+Transitions:
+From |    | To | Transition Rule
+-----+----+----+----------------
+q1   | -> | q4 | read: 'E'      
+q4   | -> | q4 | read: 'A'      
+q4   | -> | q4 | read: 'C'      
+q3   | -> | q1 | read: 'T'      
+q4   | -> | q4 | read: 'D'      
+q1   | -> | q4 | read: 'A'      
+q2   | -> | q2 | read: 'E'      
+q4   | -> | q4 | read: 'E'      
+q1   | -> | q4 | read: 'C'      
+q2   | -> | q1 | read: 'C'      
+q1   | -> | q4 | read: 'M'      
+q2   | -> | q4 | read: 'D'      
+q4   | -> | q4 | read: 'M'      
+q2   | -> | q4 | read: 'A'      
+q1   | -> | q2 | read: 'D'      
+q1   | -> | q4 | read: 'T'      
+q3   | -> | q4 | read: 'D'      
+q3   | -> | q1 | read: 'C'      
+q4   | -> | q4 | read: 'T'      
+q3   | -> | q4 | read: 'A'      
+q2   | -> | q3 | read: 'M'      
+q3   | -> | q4 | read: 'M'      
+q2   | -> | q4 | read: 'T'      
+q3   | -> | q2 | read: 'E'      
+q0   | -> | q4 | read: 'T'      
+q0   | -> | q4 | read: 'M'      
+q0   | -> | q4 | read: 'C'      
+q0   | -> | q1 | read: 'A'      
+q0   | -> | q4 | read: 'E'      
+q0   | -> | q4 | read: 'D'      
+
+exit=0
+
+>>> python C:\Users\mridu\jflap-cli\jflap_cli.py fsa minimize policy\finance.jff C:\Mridul\Programs\Kiroween\policy\finance_min.jff
+Minimized DFA from 5 to 5 states (30 transitions). Saved to: C:\Mridul\Programs\Kiroween\policy\finance_min.jff
+
+exit=0
+
+>>> python C:\Users\mridu\jflap-cli\jflap_cli.py inspect C:\Mridul\Programs\Kiroween\policy\finance_min.jff
+
+=======================================================
+ JFLAP Model Inspection: finance_min.jff
+=======================================================
+Category : AUTOMATON
+Type     : FA
+Deterministic : YES
+Complete      : YES
+Alphabet      : A, C, D, E, M, T
+Unreachable   : None (all reachable)
+Dead States   : q0
+Initial State : q4
+Final States  : q4, q3, q1, q2
+
+States:
+State | Name | Coordinates | Flags         
+------+------+-------------+---------------
+q0    | q0   | (31, 573)   | -             
+q1    | q1   | (462, 491)  | FINAL         
+q2    | q2   | (520, 377)  | FINAL         
+q3    | q3   | (262, 412)  | FINAL         
+q4    | q4   | (178, 398)  | INITIAL, FINAL
+
+Transitions:
+From |    | To | Transition Rule
+-----+----+----+----------------
+q3   | -> | q0 | read: 'A'      
+q0   | -> | q0 | read: 'A'      
+q1   | -> | q0 | read: 'A'      
+q3   | -> | q1 | read: 'C'      
+q0   | -> | q0 | read: 'C'      
+q1   | -> | q0 | read: 'C'      
+q0   | -> | q0 | read: 'D'      
+q1   | -> | q0 | read: 'E'      
+q0   | -> | q0 | read: 'E'      
+q2   | -> | q2 | read: 'E'      
+q3   | -> | q0 | read: 'D'      
+q3   | -> | q0 | read: 'M'      
+q1   | -> | q0 | read: 'M'      
+q0   | -> | q0 | read: 'M'      
+q1   | -> | q0 | read: 'T'      
+q0   | -> | q0 | read: 'T'      
+q3   | -> | q1 | read: 'T'      
+q2   | -> | q3 | read: 'M'      
+q4   | -> | q0 | read: 'T'      
+q2   | -> | q1 | read: 'C'      
+q2   | -> | q0 | read: 'A'      
+q2   | -> | q0 | read: 'D'      
+q1   | -> | q2 | read: 'D'      
+q3   | -> | q2 | read: 'E'      
+q4   | -> | q0 | read: 'C'      
+q4   | -> | q1 | read: 'A'      
+q4   | -> | q0 | read: 'E'      
+q4   | -> | q0 | read: 'D'      
+q4   | -> | q0 | read: 'M'      
+q2   | -> | q0 | read: 'T'      
+
+exit=0
+
+>>> python C:\Users\mridu\jflap-cli\jflap_cli.py equivalence-check policy\finance.jff C:\Mridul\Programs\Kiroween\policy\finance_min.jff
+Result: The two automata ARE EQUIVALENT (accept the exact same language).
+
+exit=0
+
+>>> python C:\Users\mridu\jflap-cli\jflap_cli.py fsa equals policy\finance.jff C:\Mridul\Programs\Kiroween\policy\finance_min.jff
+Result: The two automata ARE EQUIVALENT (accept the exact same language).
+
+exit=0
+
+>>> python C:\Users\mridu\jflap-cli\jflap_cli.py equivalence-check policy\finance.jff policy\finance_flags.jff
+Result: The two automata ARE EQUIVALENT (accept the exact same language).
+
+exit=0
+
+>>> python C:\Users\mridu\jflap-cli\jflap_cli.py fsa equals policy\finance.jff policy\finance_flags.jff
+Result: The two automata ARE EQUIVALENT (accept the exact same language).
+
+exit=0
+
+>>> python C:\Users\mridu\jflap-cli\jflap_cli.py simulate-batch policy\finance.jff --inputs-file policy\traces_4_7.txt
+
+Batch Simulation Results: finance.jff
+Total Inputs: 21 | Accepted: 9 | Rejected: 12
+
+Input String | Result  
+-------------+---------
+'A'          | ACCEPTED
+'AD'         | ACCEPTED
+'ADM'        | ACCEPTED
+'ADMT'       | ACCEPTED
+'ADEMT'      | ACCEPTED
+'ADMEMT'     | ACCEPTED
+'ADMC'       | ACCEPTED
+'ADMTDMT'    | ACCEPTED
+'ADEEMEEMT'  | ACCEPTED
+'D'          | REJECTED
+'M'          | REJECTED
+'AT'         | REJECTED
+'AA'         | REJECTED
+'AC'         | REJECTED
+'ADT'        | REJECTED
+'ADD'        | REJECTED
+'ADMM'       | REJECTED
+'ADMET'      | REJECTED
+'ADMTT'      | REJECTED
+'ADMTM'      | REJECTED
+'ADMTE'      | REJECTED
+
+exit=0
+
+>>> python C:\Users\mridu\jflap-cli\jflap_cli.py export-table policy\finance.jff
+
+Transition Table: finance.jff
+States    : START, AUTHED, DRAFTED, APPROVED, SINK
+Alphabet  : A, C, D, E, M, T
+Start     : START
+Accepting : START, AUTHED, DRAFTED, APPROVED
+
+From     |    | To       | Symbol
+---------+----+----------+-------
+AUTHED   | -> | SINK     | 'E'   
+SINK     | -> | SINK     | 'A'   
+SINK     | -> | SINK     | 'C'   
+APPROVED | -> | AUTHED   | 'T'   
+SINK     | -> | SINK     | 'D'   
+AUTHED   | -> | SINK     | 'A'   
+DRAFTED  | -> | DRAFTED  | 'E'   
+SINK     | -> | SINK     | 'E'   
+AUTHED   | -> | SINK     | 'C'   
+DRAFTED  | -> | AUTHED   | 'C'   
+AUTHED   | -> | SINK     | 'M'   
+DRAFTED  | -> | SINK     | 'D'   
+SINK     | -> | SINK     | 'M'   
+DRAFTED  | -> | SINK     | 'A'   
+AUTHED   | -> | DRAFTED  | 'D'   
+AUTHED   | -> | SINK     | 'T'   
+APPROVED | -> | SINK     | 'D'   
+APPROVED | -> | AUTHED   | 'C'   
+SINK     | -> | SINK     | 'T'   
+APPROVED | -> | SINK     | 'A'   
+DRAFTED  | -> | APPROVED | 'M'   
+APPROVED | -> | SINK     | 'M'   
+DRAFTED  | -> | SINK     | 'T'   
+APPROVED | -> | DRAFTED  | 'E'   
+START    | -> | SINK     | 'T'   
+START    | -> | SINK     | 'M'   
+START    | -> | SINK     | 'C'   
+START    | -> | AUTHED   | 'A'   
+START    | -> | SINK     | 'E'   
+START    | -> | SINK     | 'D'   
+
+exit=0
+>>> python C:\Users\mridu\jflap-cli\jflap_cli.py equivalence-check policy\finance.jff C:\Users\mridu\.kiro\crew\scratch\2756eaf1\mut.jff
+Result: The two automata ARE NOT EQUIVALENT.
+Shortest distinguishing string: 'ADMT'
+  Model A (finance.jff): ACCEPTED
+  Model B (mut.jff): REJECTED
