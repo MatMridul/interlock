@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comp C · Panel — The Chimeric Automaton</title>
+<style>
+@font-face{font-family:"B612";font-weight:400;src:url(fonts/b612-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"B612";font-weight:700;src:url(fonts/b612-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"B612 Mono";font-weight:400;src:url(fonts/b612-mono-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"B612 Mono";font-weight:700;src:url(fonts/b612-mono-latin-700-normal.woff2) format("woff2")}
+:root{
+  --panel:#c4c7b3; --panel2:#aeb29c; --recess:#2a2e22; --ink:#17190f; --soft:#3e4231;
+  --lcd:#b5c25f; --lcdink:#1a2108; --paper:#f3efe0;
+  --gon:#4dff78; --goff:#1c3a22; --roff:#4a1a16; --ron:#ff4a3a; --amber:#ffb000; --amberd:#5c4208;
+  --ease-out:cubic-bezier(.16,1,.3,1); --ease-io:cubic-bezier(.65,0,.35,1);
+  --sans:"B612","Arial Narrow",sans-serif; --mono:"B612 Mono",Consolas,monospace; color-scheme:light;
+}
+*{box-sizing:border-box} html,body{height:100%;margin:0}
+body{background:#7d806e;color:var(--ink);font:14px/1.35 var(--sans);overflow:hidden}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid #0a3dff;outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.rack{position:absolute;inset:10px;border-radius:6px;background:
+  repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 1px,transparent 1px 3px),
+  linear-gradient(#cacdb9,#bfc2ad);box-shadow:inset 0 0 0 2px #e4e6d6,inset 0 0 0 4px #8d9080,0 4px 0 #4d5043;
+  display:grid;grid-template-columns:minmax(0,1fr) 410px;grid-template-rows:54px 118px minmax(0,1fr) 176px}
+.screw{position:absolute;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#eee,#8a8d7c 60%,#55584a);box-shadow:0 1px 0 #fff6 inset}
+.screw::after{content:"";position:absolute;left:2px;right:2px;top:6px;height:2px;background:#46493b;transform:rotate(35deg)}
+.name{grid-column:1/3;display:flex;align-items:center;gap:22px;padding:0 40px;border-bottom:2px solid var(--ink)}
+.name h1{margin:0;font:700 19px var(--sans);letter-spacing:.22em;text-transform:uppercase}
+.name .m{font:400 12px var(--mono);letter-spacing:.06em;color:var(--soft)}
+.sp{flex:1}
+.sw{display:flex;align-items:center;gap:7px;background:none;border:0;padding:2px;font:700 11px var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.sw i{display:inline-block;width:34px;height:18px;border-radius:9px;background:var(--recess);position:relative;box-shadow:inset 0 2px 3px #000a}
+.sw i::after{content:"";position:absolute;left:2px;top:2px;width:14px;height:14px;border-radius:50%;background:linear-gradient(#e9eadb,#9a9c8c);transition:transform .14s var(--ease-out)}
+.sw[aria-pressed=true] i::after{transform:translateX(16px);background:linear-gradient(#fff2c0,var(--amber))}
+.sw[aria-pressed=true] i{background:#4b3a0a}
+.proof-b{background:var(--ink);color:var(--panel);border:0;padding:5px 12px;font:700 11px var(--sans);letter-spacing:.16em;text-transform:uppercase;border-radius:2px}
+/* counters */
+.ctr{grid-column:1;display:flex;gap:0;align-items:stretch;padding:8px 40px;border-bottom:2px solid var(--ink);margin:0}
+.c1{padding:0 22px 0 0;margin-right:22px;border-right:1px solid #8a8d7c}
+.c1 dt{font:700 10.5px var(--sans);letter-spacing:.16em;text-transform:uppercase;margin-bottom:3px}
+.c1 dd{margin:0;display:flex;align-items:center;gap:8px}
+.odo{display:flex;background:var(--recess);padding:4px 5px;border-radius:3px;box-shadow:inset 0 2px 4px #000c,0 1px 0 #fff8}
+.dg{width:30px;height:46px;overflow:hidden;background:linear-gradient(#0e100b,#2b2f22 50%,#0e100b);margin:0 1px;border-radius:2px;position:relative}
+.dg ol{list-style:none;margin:0;padding:0;transition:transform .55s var(--ease-io)}
+.dg li{height:46px;text-align:center;font:700 36px/46px var(--mono);color:#f4efd2}
+.c1.red .dg li{color:#ff9a8f}
+.c1 small{display:block;font:400 11px var(--sans);color:var(--soft);margin-top:3px;max-width:160px;line-height:1.2}
+.lamp{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#bfffcd,var(--gon) 45%,#0d6a24);box-shadow:0 0 10px var(--gon),inset 0 -2px 3px #0006;border:1px solid #0a2a12;flex:none}
+.lamp.off{background:radial-gradient(circle at 35% 30%,#4a6a50,var(--goff));box-shadow:inset 0 -2px 3px #0006}
+.lamp.bad{background:radial-gradient(circle at 35% 30%,#ffd0ca,var(--ron) 45%,#7a1209);box-shadow:0 0 10px var(--ron)}
+.lim{margin-left:auto;align-self:end;font:400 12px var(--mono);color:var(--soft);text-align:right}
+.lim b{color:var(--ink)}
+/* patch field */
+.field{grid-column:1;position:relative;overflow:hidden;background:
+  radial-gradient(circle at 12px 12px,#8e917f 2px,transparent 3px) 0 0/36px 36px,#b8bba7;border-bottom:2px solid var(--ink)}
+.field>svg,.field>canvas{position:absolute;inset:0;width:100%;height:100%}
+.field>canvas{pointer-events:none}
+.eng{position:absolute;font:700 10.5px var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--soft)}
+.ledger{position:absolute;left:40px;top:34px;font:400 11px/1.55 var(--mono);color:var(--soft)}
+.ledger div.on{color:var(--ink);background:var(--lcd);padding:0 4px;margin-left:-4px}
+.locked{position:absolute;left:36%;top:26px;background:repeating-linear-gradient(45deg,var(--amber) 0 14px,var(--ink) 14px 28px);padding:5px;display:none}
+.locked div{background:var(--paper);padding:5px 16px;font:700 15px var(--sans);letter-spacing:.2em;text-transform:uppercase}
+.locked span{display:block;font:400 11.5px var(--sans);letter-spacing:0;text-transform:none}
+[data-locked=true] .locked{display:block}
+.toasts{position:absolute;left:36px;bottom:12px;width:350px;display:flex;flex-direction:column;gap:6px;z-index:5}
+.toast{display:grid;grid-template-columns:auto 1fr auto;gap:0 10px;background:var(--lcd);color:var(--lcdink);border:2px solid var(--ink);padding:5px 9px;font:400 12.5px/1.3 var(--mono);box-shadow:0 3px 0 #0005;animation:in .25s var(--ease-out)}
+@keyframes in{from{transform:translateY(10px);opacity:0}to{opacity:1}}
+.t-kind{font:700 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;background:var(--ink);color:var(--lcd);padding:0 6px;align-self:start}
+.t-blocked .t-kind{background:#8a1a10;color:#fff} .t-needs-human .t-kind{background:var(--amber);color:var(--ink)}
+.t-x{background:none;border:0;font:400 11px var(--mono);text-decoration:underline;padding:0;color:var(--lcdink)}
+.t-blocked{border-color:#8a1a10}
+/* svg parts */
+.dome-off{fill:url(#domeOff);stroke:var(--ink);stroke-width:3}
+.dome-on{fill:url(#domeOn);opacity:0;transition:opacity .35s var(--ease-out)}
+.orb.on .dome-on{opacity:1}
+.orb.on .halo{opacity:1}
+.halo{fill:var(--gon);opacity:0;filter:blur(14px);transition:opacity .35s}
+.bezel{fill:none;stroke:#e8ead8;stroke-width:3}
+.oname{font:700 13px var(--sans);letter-spacing:.14em;text-anchor:middle;fill:var(--ink);text-transform:uppercase}
+.oq{font:400 11px var(--mono);text-anchor:middle;fill:var(--soft)}
+.line{fill:none;stroke:var(--ink);stroke-width:3.2}
+.line.human{stroke:#5c3d00;stroke-dasharray:9 5}
+.elab{font:700 11.5px var(--mono);text-anchor:middle;fill:var(--ink);letter-spacing:.04em}
+.elab.human{fill:#5c3d00}
+.tl{fill:var(--goff);stroke:var(--ink);stroke-width:2}
+.slot{fill:#0c0e08}
+.slot-l{font:700 11px var(--sans);letter-spacing:.16em;fill:#8a1a10;text-transform:uppercase}
+.slot-n{font:400 11.5px var(--mono);fill:var(--soft)}
+.jack-t{font:700 11px var(--sans);letter-spacing:.16em;fill:var(--ink);text-anchor:end;text-transform:uppercase}
+.jack-n{font:400 11px var(--mono);fill:var(--soft);text-anchor:end}
+/* guarded key */
+.guard{position:absolute;right:16px;bottom:10px;width:276px;padding:6px;background:repeating-linear-gradient(45deg,var(--amber) 0 12px,var(--ink) 12px 24px);z-index:4}
+.guard-in{background:var(--panel);padding:8px 10px;display:grid;grid-template-columns:78px 1fr;gap:8px}
+.keybox{position:relative;width:78px;height:78px;perspective:300px}
+.keysw{position:absolute;inset:8px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff3c8,var(--amber) 55%,#7b5200);border:3px solid var(--ink);display:grid;place-items:center;box-shadow:0 3px 0 #0006}
+.keysw svg{width:40px;height:40px;transition:transform .5s var(--ease-io)}
+.guard.turning .keysw svg{transform:rotate(90deg)}
+.cover{position:absolute;inset:0;background:rgba(255,74,58,.55);border:3px solid #8a1a10;border-radius:6px;transform-origin:50% 0;transition:transform .45s var(--ease-out);display:grid;place-items:center;font:700 10px var(--sans);letter-spacing:.12em;color:#fff;text-shadow:0 1px 0 #7a1209}
+.guard.open .cover{transform:rotateX(-100deg)}
+.guard h2{margin:0;font:700 13px var(--sans);letter-spacing:.16em;text-transform:uppercase}
+.guard p{margin:1px 0 5px;font:400 11.5px/1.25 var(--sans);color:var(--soft)}
+.btn{background:var(--ink);color:var(--panel);border:0;padding:5px 11px;font:700 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;border-radius:2px;box-shadow:0 3px 0 #000}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #000}
+.btn.am{background:var(--amber);color:var(--ink)} .btn:disabled{opacity:.45}
+.guard .res{font:400 11px var(--mono);min-height:15px;margin-top:3px}
+/* tape (printed strip) */
+.tape{grid-column:1;padding:6px 40px 0;position:relative}
+.tape-h{display:flex;gap:14px;align-items:baseline;font:400 11.5px var(--mono);color:var(--soft)}
+.tape-h h2{margin:0;font:700 11px var(--sans);letter-spacing:.18em;text-transform:uppercase;color:var(--ink)}
+.chk{margin-left:auto;font-weight:700;color:var(--ink)} .chk.bad{color:#8a1a10}
+.slotbar{position:absolute;left:14px;top:62px;width:30px;height:46px;background:#0c0e08;border-radius:3px;box-shadow:inset 0 0 0 2px #444}
+.tapes{overflow-x:auto;position:relative;height:132px;margin-top:6px;background:var(--paper);border-top:2px dashed #b0ac98;border-bottom:2px dashed #b0ac98;box-shadow:0 3px 0 #0003}
+.chart{position:relative;height:100%}
+.cell{position:absolute;top:66px;width:104px;font:400 12px/1.25 var(--mono);padding:3px 8px;border-left:1px solid #b0ac98}
+.cell.new{animation:print .45s steps(6,end)}
+@keyframes print{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0)}}
+.cell b{display:block;font:700 15px var(--mono);letter-spacing:.02em}
+.cell em{font-style:normal;color:#0a4a17}
+.cell.human b::before{content:"■ "; color:#a66f00}
+.cell-btn{all:unset;display:block;width:100%;cursor:default}
+.cell-btn:focus-visible{outline:3px solid #0a3dff;outline-offset:2px}
+.tip{display:none;position:absolute;bottom:calc(100% + 4px);left:0;min-width:220px;background:var(--lcd);color:var(--lcdink);border:2px solid var(--ink);padding:4px 8px;font:400 12px var(--mono);z-index:6;pointer-events:none}
+.cell:hover .tip,.cell:focus-within .tip,.ghost:hover .tip,.ghost:focus-within .tip{display:block}
+.ghost{position:absolute;top:2px;width:104px;font:400 11.5px var(--mono);padding:1px 6px;transform:rotate(-3deg)}
+.ghost b{display:inline-block;border:2px solid #b3210f;color:#b3210f;padding:0 5px;font:700 13px var(--sans);letter-spacing:.12em;text-decoration:line-through}
+.ghost em{display:block;font-style:normal;color:#8a1a10}
+.ghost.new{animation:print .45s steps(6,end)}
+.head{position:absolute;top:62px;width:0;height:56px;border-left:3px solid #0a3dff}
+/* console */
+.cons{flex:1;padding:10px 16px 14px;display:flex;flex-direction:column;min-height:0}
+.cons h2{margin:0;font:700 12px var(--sans);letter-spacing:.18em;text-transform:uppercase}
+.right{grid-column:2;grid-row:2/5;border-left:2px solid var(--ink);display:flex;flex-direction:column;min-height:0}.bank{border-bottom:2px solid var(--ink);flex:none}
+.bank-in{padding:6px 16px}
+.bank-h{display:flex;justify-content:space-between;align-items:center}
+.vrow{display:grid;grid-template-columns:30px 1fr;gap:8px;width:100%;text-align:left;background:none;border:0;padding:0;align-items:center}
+.tgl{width:28px;height:19px;position:relative}
+.tgl::before{content:"";position:absolute;left:5px;top:8px;width:18px;height:6px;background:var(--recess);border-radius:3px}
+.tgl i{position:absolute;left:11px;top:-1px;width:7px;height:16px;border-radius:3px;background:linear-gradient(90deg,#f6f7ea,#8c8e7c);transform-origin:50% 100%;box-shadow:1px 1px 0 #0005}
+.vrow.flip .tgl i{animation:flip .5s var(--ease-out)}
+@keyframes flip{0%{transform:rotate(0)}30%{transform:rotate(-38deg)}100%{transform:rotate(0)}}
+.vrow b{font:700 11.5px var(--sans);letter-spacing:.06em;text-transform:uppercase}
+.vrow span{font:400 11px var(--sans);color:var(--soft);margin-left:6px}
+.vrow:hover b{text-decoration:underline}
+.leg{font:400 11px var(--sans);margin-top:3px}
+.leg button{background:none;border:0;border-bottom:1px solid var(--ink);margin-left:8px;padding:0;font:700 11px var(--sans)}
+.lcd{flex:1;min-height:0;margin-top:8px;background:var(--lcd);color:var(--lcdink);border-radius:4px;box-shadow:inset 0 3px 8px #0007,0 1px 0 #fff9;border:3px solid #3a3e2c;display:flex;flex-direction:column;overflow:hidden}
+.lcd-h{display:flex;justify-content:space-between;padding:4px 10px;border-bottom:1px solid #5d6a2a;font:700 10.5px var(--sans);letter-spacing:.16em;text-transform:uppercase}
+.tr{flex:1;min-height:0;overflow-y:auto;padding:8px 10px;font:400 12.5px/1.4 var(--mono)}
+.ln{margin:0 0 6px}.ln.agent{opacity:.9}
+.ln .w{font-weight:700}
+.chip{display:inline-block;padding:0 6px;font-weight:700;letter-spacing:.02em}
+.chip.p{border:1px dashed var(--lcdink)}
+.chip.ok{background:var(--lcdink);color:var(--lcd)}
+.chip.no{background:#8a1a10;color:#fff;text-decoration:line-through;text-decoration-thickness:1px}
+.chip-n{margin-left:6px;font-size:11.5px}
+.comp{margin-top:8px;display:flex}
+.comp input{flex:1;background:var(--recess);color:#c6c9b0;border:0;padding:6px 8px;font:400 12px var(--mono);border-radius:3px}
+.drawer{position:absolute;right:0;top:0;bottom:0;width:420px;background:var(--panel);border-left:3px solid var(--ink);transform:translateX(100%);transition:transform .3s var(--ease-out);z-index:9;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--ink)}
+.dh h2{margin:0;font:700 14px var(--sans);letter-spacing:.18em;text-transform:uppercase}
+.db{overflow:auto;padding:8px 16px;font:400 12.5px var(--mono)}
+.db h3{font:700 11px var(--sans);letter-spacing:.16em;text-transform:uppercase;margin:12px 0 3px}
+.db ol{margin:0;padding-left:22px}.db dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:0 12px}.db dd{margin:0}.db p{margin:4px 0;color:var(--soft)}
+dialog{background:var(--panel);color:var(--ink);border:3px solid var(--ink);padding:16px 18px;width:370px;font:14px var(--sans)}
+dialog::backdrop{background:rgba(23,25,15,.6)}
+dialog h3{margin:0 0 4px;font:700 14px var(--sans);letter-spacing:.16em;text-transform:uppercase}
+dialog input{width:100%;margin:4px 0 10px;background:var(--lcd);border:2px solid var(--ink);padding:5px 8px;font:400 14px var(--mono)}
+.da{display:flex;gap:8px;justify-content:flex-end}.dnote{font-size:12.5px;color:var(--soft);margin:0}
+.notlive{color:#8a1a10;font-weight:700}
+@media (prefers-reduced-motion:reduce){.cell.new,.ghost.new,.toast,.vrow.flip .tgl i{animation:none}.dg ol,.cover,.drawer,.keysw svg{transition:none}}
+</style>
+</head>
+<body>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+<div class="rack" id="rack">
+  <i class="screw" style="left:10px;top:10px"></i><i class="screw" style="right:10px;top:10px"></i><i class="screw" style="left:10px;bottom:10px"></i><i class="screw" style="right:10px;bottom:10px"></i>
+  <header class="name"><h1>Chimeric Automaton</h1><span class="m">GATE UNIT CA-4 · 4 STATES · 6 SYMBOLS · <span class="notlive">CANNED REPLAY, NOT LIVE</span></span><span class="sp"></span>
+    <button class="sw" id="tg-snd" type="button" aria-pressed="false"><i></i><span id="snd-l">Sound off</span></button>
+    <button class="sw" id="tg-hap" type="button" aria-pressed="false" hidden><i></i><span id="hap-l">Haptics off</span></button>
+    <button class="proof-b" id="tg-proof" type="button" aria-expanded="false" aria-controls="drawer">Proof</button></header>
+
+  <dl class="ctr" aria-label="Scoreboard">
+    <div class="c1"><dt>Proposed</dt><dd><span class="odo" id="s-p" role="img"></span></dd><small>by the agent</small></div>
+    <div class="c1"><dt>Allowed</dt><dd><span class="odo" id="s-a" role="img"></span></dd><small>ran</small></div>
+    <div class="c1 red"><dt>Blocked</dt><dd><span class="odo" id="s-b" role="img"></span></dd><small>did not run</small></div>
+    <div class="c1" style="border:0"><dt>Side effects from blocked</dt><dd><span class="odo" id="s-s" role="img"></span><i class="lamp" id="lamp-s"></i><span style="font:700 11px var(--sans);letter-spacing:.1em" id="lamp-t">LOG CLEAN</span></dd><small style="max-width:300px">log entries no ALLOW explains</small></div>
+    <div class="lim" id="lim"></div>
+  </dl>
+
+  <section class="field" id="scope" aria-label="Patch field: the state machine">
+    <svg id="svg" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Signal flow of the four states. The lit lamp is the current state."></svg>
+    <canvas id="cv" aria-hidden="true"></canvas>
+    <div class="eng" style="left:40px;top:14px">δ table · rows from the policy</div>
+    <div class="ledger" id="ledger" aria-hidden="true"></div>
+    <div class="locked" role="status"><div>Session locked<span>5 refusals in a row. The gate refuses everything.</span></div></div>
+    <div class="toasts" id="toasts"></div>
+    <div class="guard" id="airlock"><div class="guard-in">
+      <div class="keybox"><div class="keysw"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="13" r="6" fill="none" stroke="#17190f" stroke-width="3"/><path d="M20 19v17M20 29h7M20 36h5" stroke="#17190f" stroke-width="3" fill="none"/></svg></div><div class="cover" aria-hidden="true">HUMAN ONLY</div></div>
+      <div><h2>Human key</h2><p>Approval (MFA). The agent has no tool, endpoint or switch for this.</p>
+        <button class="btn" id="btn-lift" type="button" aria-expanded="false">Lift cover</button> <button class="btn am" id="btn-key" type="button" disabled>Turn key…</button><div class="res" id="key-res" role="status"></div></div>
+    </div></div>
+  </section>
+
+  <section class="tape" aria-labelledby="tape-h">
+    <div class="tape-h"><h2 id="tape-h">Trace tape</h2><span>executed word w; refused proposals are stamped void above and never printed</span><span class="chk" id="chk"></span></div>
+    <div class="tapes" id="tapes" tabindex="0" aria-label="Trace tape, scrollable"><div class="chart" id="chart"></div></div>
+  </section>
+
+  <div class="right">  <section class="bank" aria-labelledby="bk-h"><div class="bank-in">
+    <div class="bank-h"><h2 id="bk-h" style="margin:0;font:700 12px var(--sans);letter-spacing:.18em;text-transform:uppercase">Attack vectors</h2><button class="btn" id="auto" type="button">Run sequence</button></div>
+    <button class="vrow" type="button" data-k="rejected"><span class="tgl"><i></i></span><div><b>Skip MFA</b><span>transfer without approval</span></div></button>
+    <button class="vrow" type="button" data-k="rejected"><span class="tgl"><i></i></span><div><b>Prompt injection</b><span>override its instructions</span></div></button>
+    <button class="vrow" type="button" data-k="rejected"><span class="tgl"><i></i></span><div><b>Fake pre-approval</b><span>claim a human approved</span></div></button>
+    <button class="vrow" type="button" data-k="rejected"><span class="tgl"><i></i></span><div><b>Human-only tool</b><span>reach MFA from chat</span></div></button>
+    <button class="vrow" type="button" data-k="rejected"><span class="tgl"><i></i></span><div><b>Overspend</b><span>9000 against a 5000 cap</span></div></button>
+    <button class="vrow" type="button" data-k="rejected"><span class="tgl"><i></i></span><div><b>Double spend</b><span>execute twice</span></div></button>
+    <div class="leg">Legit: <button type="button" data-k="allowed">Draft 250 to Alice</button><button type="button" data-k="hard">Locked session</button></div>
+  </div></section>
+
+  <aside class="cons" aria-labelledby="ch-h">
+    <div class="lcd"><div class="lcd-h"><h2 id="ch-h" style="font-size:10.5px">Agent console · untrusted</h2><span>buffer: <b id="buf">—</b></span></div>
+      <div class="tr" id="tr" role="log" aria-label="Conversation and gate verdicts" tabindex="0"></div></div>
+    <form class="comp" onsubmit="return false"><label class="sr" for="msg">Message to the agent</label><input id="msg" placeholder="canned replay: input disabled" disabled></form>
+  </aside></div>
+  <aside class="drawer" id="drawer" role="dialog" aria-labelledby="dr-h" aria-hidden="true" inert>
+    <div class="dh"><h2 id="dr-h">Proof</h2><button class="btn" id="dr-x" type="button">Close (Esc)</button></div><div class="db" id="db"></div></aside>
+</div>
+<dialog id="dlg" aria-labelledby="dlg-h"><form method="dialog" id="dlg-f"><h3 id="dlg-h">Turn the key</h3>
+  <p class="dnote">Enter the demo code. The server sets it; it is never shown here and never sent to the agent. This comp has no server and accepts anything.</p>
+  <label for="code" class="dnote">Demo code</label><input id="code" type="password" autocomplete="off">
+  <div class="da"><button type="button" class="btn" id="dlg-c">Cancel</button><button type="submit" class="btn am">Approve as human</button></div></form></dialog>
+<script>
+/*CORE*/
+</script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id), NS = "http://www.w3.org/2000/svg";
+  const VIEW = { w: 1000, h: 500 }, R = 36, INK = "#17190f", GON = "#4dff78", RON = "#ff4a3a";
+  const pos = { START: { x: 126, y: 230 }, AUTHED: { x: 374, y: 230 }, DRAFTED: { x: 630, y: 230 }, APPROVED: { x: 880, y: 230 } };
+  const PORT = { x: 944, y: 66 }, SINK = { x: 150, y: 424 };
+  const edges = CORE.edgePaths(pos, R, { anti: 22, long: 104, loopH: 80, gap: 6 });
+  const svg = $("svg"), mk = (n, a, p = svg) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+  svg.insertAdjacentHTML("beforeend", `<defs><radialGradient id="domeOff" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#3f6347"/><stop offset="1" stop-color="#10211a"/></radialGradient><radialGradient id="domeOn" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#e8ffee"/><stop offset=".35" stop-color="#4dff78"/><stop offset="1" stop-color="#0d6a24"/></radialGradient><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#17190f"/></marker><marker id="ahh" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#7a5206"/></marker></defs>`);
+  const edgeEl = {}, tlamp = {};
+  for (const e of edges) {
+    const human = e.symbols.every((s) => s === "MFA"), g = mk("g");
+    edgeEl[e.id] = mk("path", { d: e.d, class: "line" + (human ? " human" : ""), "marker-end": human ? "url(#ahh)" : "url(#ah)" }, g);
+    const t = edgeEl[e.id], L = t.getTotalLength ? 0 : 0; void L;
+    tlamp[e.id] = { x: e.label.x, y: e.label.y };
+    mk("text", { x: e.label.x, y: e.label.y + (e.loop ? -4 : 0), class: "elab" + (human ? " human" : "") }, g).textContent = e.symbols.join(" / ");
+  }
+  const lamps = {};
+  for (const e of edges) { const p = edgeEl[e.id].getPointAtLength(edgeEl[e.id].getTotalLength() * (e.loop ? .5 : .24)); lamps[e.id] = mk("circle", { cx: p.x, cy: p.y, r: 6, class: "tl" }); }
+  mk("path", { d: `M${pos.START.x - R - 54} ${pos.START.y}H${pos.START.x - R - 8}`, class: "line", "marker-end": "url(#ah)" });
+  mk("text", { x: pos.START.x - R - 54, y: pos.START.y - 10, class: "oq", "text-anchor": "start" }).textContent = "q₀";
+  const orbs = {};
+  CORE.MACHINE.states.forEach((s, i) => {
+    const g = mk("g", { class: "orb", transform: `translate(${pos[s].x} ${pos[s].y})` });
+    mk("circle", { r: R + 6, class: "halo" }, g); mk("circle", { r: R + 6, fill: "#7d806e", stroke: INK, "stroke-width": 2 }, g);
+    mk("circle", { r: R, class: "dome-off" }, g); mk("circle", { r: R, class: "dome-on" }, g); mk("circle", { r: R + 3, class: "bezel" }, g);
+    mk("ellipse", { cx: -10, cy: -14, rx: 11, ry: 6, fill: "#fff", opacity: .35 }, g);
+    mk("text", { y: R + 26, class: "oname" }, g).textContent = s; mk("text", { y: R + 42, class: "oq" }, g).textContent = "q" + i;
+    orbs[s] = g;
+  });
+  mk("rect", { x: SINK.x - 70, y: SINK.y - 9, width: 140, height: 18, rx: 4, class: "slot" });
+  mk("circle", { cx: SINK.x + 90, cy: SINK.y, r: 7, fill: "#4a1a16", stroke: INK, "stroke-width": 2, id: "sinkLamp" });
+  mk("text", { x: SINK.x - 70, y: SINK.y - 18, class: "slot-l" }).textContent = "Refused · no effect";
+  mk("text", { x: SINK.x + 108, y: SINK.y - 2, class: "slot-n" }).textContent = "rejected moves go nowhere;";
+  mk("text", { x: SINK.x + 108, y: SINK.y + 13, class: "slot-n" }).textContent = "the state never changes";
+  mk("circle", { cx: PORT.x, cy: PORT.y, r: 15, fill: "#0c0e08", stroke: "#e8ead8", "stroke-width": 3 }); mk("circle", { cx: PORT.x, cy: PORT.y, r: 6, fill: "#555" });
+  mk("text", { x: PORT.x - 26, y: PORT.y - 3, class: "jack-t" }).textContent = "Agent out";
+  mk("text", { x: PORT.x - 26, y: PORT.y + 13, class: "jack-n" }).textContent = "proposes, never decides";
+
+  const ledger = $("ledger"), rows = [];
+  for (const from of CORE.MACHINE.states) for (const [s, to] of Object.entries(CORE.MACHINE.trans[from])) { const d = document.createElement("div"); d.textContent = `δ(${from},${s})=${to}`; d.dataset.k = from + "/" + s; ledger.appendChild(d); rows.push(d); }
+  const geom = { orb: (n) => pos[n], r: R, port: PORT, sink: SINK, gate: (n) => { const o = pos[n], dx = PORT.x - o.x, dy = PORT.y - o.y, l = Math.hypot(dx, dy); return { x: o.x + dx / l * (R + 22), y: o.y + dy / l * (R + 22) }; }, edge: (a, b) => edgeEl[a + ">" + b] || null };
+  let fx = CORE.fit($("cv"), VIEW); const refit = () => { fx = CORE.fit($("cv"), VIEW); render(last.s, last.k); }; addEventListener("resize", refit);
+
+  /* odometers */
+  const odo = {};
+  for (const id of ["s-p", "s-a", "s-b", "s-s"]) { const el = $(id); odo[id] = []; for (let i = 0; i < 3; i++) { const d = document.createElement("span"); d.className = "dg"; d.innerHTML = "<ol>" + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<li>${n}</li>`).join("") + "</ol>"; el.appendChild(d); odo[id].push(d.firstChild); } }
+  function setOdo(id, v) { const s = String(v).padStart(3, "0"), el = $(id); if (el.dataset.v === s) return; el.dataset.v = s; el.setAttribute("aria-label", id + " " + v); el.setAttribute("aria-label", String(v)); odo[id].forEach((ol, i) => { ol.style.transform = `translateY(${-46 * +s[i]}px)`; }); }
+
+  /* canvas: signal packets, hazard bar, sparks (flat, hardware-like) */
+  function tag(c, x, y, label, bg, fg, al, k) {
+    c.save(); c.globalAlpha = al; c.translate(x, y); c.scale(k, k); c.font = '700 14px "B612 Mono",Consolas,monospace'; const w = c.measureText(label).width + 20, h = 24;
+    c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(-w / 2 + 2, -h / 2 + 3, w, h); c.fillStyle = bg; c.strokeStyle = INK; c.lineWidth = 2; c.fillRect(-w / 2, -h / 2, w, h); c.strokeRect(-w / 2, -h / 2, w, h);
+    c.fillStyle = fg; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(label, 0, 1); c.restore();
+  }
+  function packets(c, pts, col, t) { c.save(); c.strokeStyle = col; c.lineWidth = 4; c.setLineDash([7, 9]); c.lineDashOffset = -t / 20; c.beginPath(); c.moveTo(pts[0].x, pts[0].y); pts.slice(1).forEach((q) => c.lineTo(q.x, q.y)); c.stroke(); c.restore(); }
+  function lit(c, pts, w, col) { c.save(); c.strokeStyle = col; c.lineWidth = w; c.shadowColor = col; c.shadowBlur = 12; c.beginPath(); c.moveTo(pts[0].x, pts[0].y); pts.slice(1).forEach((q) => c.lineTo(q.x, q.y)); c.stroke(); c.restore(); }
+  function hazard(c, o, dx, a) {
+    const f = Math.atan2(PORT.y - o.y, PORT.x - o.x), cx = o.x + Math.cos(f) * (R + 24) + dx, cy = o.y + Math.sin(f) * (R + 24);
+    c.save(); c.globalAlpha = Math.max(0, a); c.translate(cx, cy); c.rotate(f + Math.PI / 2); const w = 86, h = 14;
+    c.fillStyle = INK; c.fillRect(-w / 2 - 3, -h / 2 - 3, w + 6, h + 6); c.save(); c.beginPath(); c.rect(-w / 2, -h / 2, w, h); c.clip(); c.fillStyle = "#ffb000"; c.fillRect(-w / 2, -h / 2, w, h); c.fillStyle = INK; for (let x = -w; x < w; x += 16) { c.beginPath(); c.moveTo(x, h / 2); c.lineTo(x + 8, h / 2); c.lineTo(x + 8 + h, -h / 2); c.lineTo(x + h, -h / 2); c.fill(); } c.restore(); c.restore();
+  }
+  function draw(snap) {
+    const c = fx.ctx; fx.begin(); const p = CORE.pose(snap, geom); if (!p) return; const T = snap.t;
+    const sl = $("sinkLamp");
+    c.save();
+    if (p.phase === "spawn") { c.fillStyle = "#e8ead8"; for (let i = 0; i < 8; i++) { const a = i / 8 * 6.28, d = 24 * p.converge; c.globalAlpha = p.alpha; c.fillRect(p.x + Math.cos(a) * d - 2, p.y + Math.sin(a) * d - 2, 4, 4); } c.globalAlpha = 1; tag(c, p.x, p.y, p.symbol, "#b5c25f", "#1a2108", p.alpha, p.scale); }
+    else if (p.phase === "flight") { packets(c, p.trail, "#17190f", T); tag(c, p.x, p.y, p.symbol, "#b5c25f", "#1a2108", 1, 1); }
+    else if (p.phase === "verdict") { c.strokeStyle = INK; c.lineWidth = 3; c.setLineDash([4, 4]); c.beginPath(); c.arc(p.orb.x, p.orb.y, R + 14, 0, 7); c.stroke(); c.setLineDash([]); tag(c, p.x, p.y, p.symbol, "#b5c25f", "#1a2108", 1, p.scale); }
+    else if (p.phase === "conduit") { lit(c, p.arc, 5, GON); tag(c, p.x, p.y, p.symbol, GON, "#06260f", 1, 1); }
+    else if (p.phase === "ignite") { const o = p.igniteAt, e = CORE.ease.out(p.p); c.strokeStyle = GON; c.lineWidth = 3; c.globalAlpha = 1 - p.p; c.beginPath(); c.arc(o.x, o.y, R + 8 + 40 * e, 0, 7); c.stroke(); lit(c, p.arc, 4, GON); }
+    else if (!p.accept) {
+      if (p.barrier) hazard(c, p.orb, p.barrierDx, p.barrier);
+      if (p.alpha > 0) tag(c, p.x, p.y, p.symbol, RON, "#fff", 1, p.scale);
+      for (const s of p.shards) { c.save(); c.translate(s.x, s.y); c.rotate(s.a); c.globalAlpha = Math.max(0, s.alpha); c.fillStyle = RON; c.fillRect(-s.s * 1.6, -s.s * 1.6, s.s * 3.2, s.s * 3.2); c.restore(); }
+    }
+    c.restore();
+    if (sl) sl.setAttribute("fill", p.sinkPulse > 0 ? RON : "#4a1a16");
+  }
+
+  let last = { s: CORE.snapshot("idle", 0), k: "idle" }, keys = {}; const PITCH = 112;
+  function buildTape(s) {
+    const ch = $("chart"), n = Math.max(s.tape.length, ...s.ghosts.map((g) => g.idx + 1), 1) + 1 + s.ghosts.length; ch.style.width = 52 + n * PITCH + 40 + "px"; ch.innerHTML = ""; const slots = {};
+    s.ghosts.forEach((g) => { const k = (slots[g.idx] = (slots[g.idx] ?? -1) + 1), el = document.createElement("div"); el.className = "ghost"; el.style.left = 40 + g.idx * PITCH + k * PITCH + "px";
+      el.innerHTML = `<button class="cell-btn" type="button" aria-label="Refused ${g.symbol} in ${g.from}. ${g.reason}. Never printed on the tape."><b>VOID ${g.symbol}</b><em>in ${g.from}</em><span class="tip">${g.reason}<br>decided in ${CORE.fmtMs(g.latency)}</span></button>`; ch.appendChild(el); });
+    s.tape.forEach((c, i) => { const el = document.createElement("div"); el.className = "cell" + (c.kind === "human" ? " human" : ""); el.style.left = 40 + i * PITCH + "px";
+      el.innerHTML = `<button class="cell-btn" type="button" aria-label="Printed ${i + 1}: ${c.symbol}, led to ${c.to}. ${c.latency === undefined ? "Human approval, no latency measured" : "Decided in " + CORE.fmtMs(c.latency)}"><b>${c.symbol}</b><em>→ ${c.to}</em><span class="tip">${c.from} → ${c.to}<br>${c.latency === undefined ? "human approval" : "decided in " + CORE.fmtMs(c.latency) + " (measured by the server)"}</span></button>`;
+      ch.appendChild(el); if (keys.tapeLen !== undefined && i >= keys.tapeLen) el.classList.add("new"); });
+    const h = document.createElement("div"); h.className = "head"; h.style.left = 40 + s.tape.length * PITCH - 2 + "px"; ch.appendChild(h); $("tapes").scrollLeft = 1e5;
+  }
+  function chatRow(m) {
+    const d = document.createElement("div"); d.className = "ln " + m.k;
+    if (m.k === "user") d.innerHTML = `<span class="w">YOU&gt;</span> `, d.append(m.text);
+    else if (m.k === "agent") d.innerHTML = `<span class="w">AGENT&gt;</span> `, d.append(m.text);
+    else if (m.k === "prop") d.innerHTML = `<span class="chip p">PROPOSES ${m.sym}</span>`;
+    else d.innerHTML = m.ok ? `<span class="chip ok">ALLOWED ${m.sym} → ${m.to}</span>${m.latency ? `<span class="chip-n">${CORE.fmtMs(m.latency)}</span>` : ""}` : `<span class="chip no">BLOCKED ${m.sym}</span><span class="chip-n">${m.reason}; state unchanged</span>`;
+    return d;
+  }
+  function replay(t) { let q = "START"; for (const c of t) { const n = CORE.MACHINE.trans[q] && CORE.MACHINE.trans[q][c.symbol]; if (!n) return false; q = n; } return true; }
+  function render(s, k) {
+    last = { s, k };
+    setOdo("s-p", s.c.proposed); setOdo("s-a", s.c.allowed); setOdo("s-b", s.c.blocked); setOdo("s-s", s.c.side);
+    $("lamp-s").classList.toggle("bad", s.c.side > 0); $("lamp-t").textContent = s.c.side > 0 ? "SIDE EFFECT" : "LOG CLEAN";
+    $("lim").innerHTML = `TRANSFERS <b>${s.lim.transfers}/${s.lim.maxT}</b> · REFUSALS IN A ROW <b>${s.lim.rejects}/${s.lim.maxR}</b>`;
+    $("scope").dataset.locked = s.lim.locked ? "true" : "false";
+    $("buf").textContent = s.move && s.t >= 0 && !s.done ? s.move.symbol : "—";
+    for (const n in orbs) { const on = n === s.state; orbs[n].classList.toggle("on", on); on ? orbs[n].setAttribute("aria-current", "true") : orbs[n].removeAttribute("aria-current"); }
+    for (const id in lamps) { const a = s.glowEdge === id && s.glowAge >= 0 ? Math.max(0, 1 - s.glowAge / CORE.AFTERGLOW) : 0; lamps[id].setAttribute("fill", a > 0.02 ? `rgb(${Math.round(28 + 49 * a)},${Math.round(58 + 197 * a)},${Math.round(34 + 86 * a)})` : "#1c3a22"); lamps[id].style.filter = a > 0.1 ? `drop-shadow(0 0 ${6 * a}px #4dff78)` : "none"; }
+    const mv = s.move && s.settled ? s.move : null; rows.forEach((r) => r.classList.toggle("on", !!mv && mv.accept && r.dataset.k === mv.from + "/" + mv.symbol));
+    const tk = s.tape.length + "/" + s.ghosts.length + "/" + k.length; if (keys.tape !== tk) { buildTape(s); keys.tapeLen = s.tape.length; keys.tape = tk; }
+    const ck = s.chat.length + ":" + k; if (keys.chat !== ck) { const tr = $("tr"); tr.innerHTML = ""; s.chat.forEach((m) => tr.appendChild(chatRow(m))); tr.scrollTop = 1e5; keys.chat = ck; }
+    const ok = replay(s.tape); $("chk").textContent = s.tape.length ? `EXECUTED TRACE ${ok ? "IS" : "IS NOT"} IN L(M)` : ""; $("chk").classList.toggle("bad", !ok);
+    drawer(s); draw(s);
+  }
+  function drawer(s) {
+    const b = s.ghosts[s.ghosts.length - 1];
+    $("db").innerHTML = `<h3>Executed log (source of truth)</h3><ol>${s.tape.map((c) => `<li>${c.symbol} → ${c.to}${c.kind === "human" ? " (human)" : ""}</li>`).join("") || "<li>nothing executed yet</li>"}</ol><p>This is what actually ran, in order. It is not the model's own account.</p>
+    <h3>Counters</h3><dl><dt>transfers</dt><dd>${s.lim.transfers} of ${s.lim.maxT}</dd><dt>refusals in a row</dt><dd>${s.lim.rejects} of ${s.lim.maxR}</dd><dt>spend cap</dt><dd>5000</dd>${s.lim.locked ? "<dt>session</dt><dd><b>LOCKED</b></dd>" : ""}</dl>
+    <h3>Last verdict</h3><dl>${b ? `<dt>verdict</dt><dd>REJECT</dd><dt>state</dt><dd>${b.from}</dd><dt>symbol</dt><dd>${b.symbol}</dd><dt>reason</dt><dd>${b.reason}</dd><dt>decision latency</dt><dd>${CORE.fmtMs(b.latency)}</dd><dt>engine</dt><dd>executor-table</dd>` : "<dt>none yet</dt><dd></dd>"}</dl>
+    <h3>Invariants, abridged</h3><ol><li>An undefined move is refused; the state does not change.</li><li>The model reaches real tools only through the gate.</li><li>Only the human endpoint can produce MFA.</li><li>A checker failure never lets a tool run.</li></ol>
+    <h3>Not guaranteed</h3><p>The truth of the model's own sentences, and argument correctness beyond the stated limits.</p><p><b>Canned data in this comp. Nothing here is live.</b></p>`;
+  }
+  const P = CORE.Player(render, () => geom); CORE.Notify.init($("toasts"), $("live"));
+  document.querySelectorAll("[data-k]").forEach((b) => b.addEventListener("click", () => { const k = b.dataset.k; b.classList.add("flip"); setTimeout(() => b.classList.remove("flip"), 520); k === "hard" ? P.show("hard") : P.play(k); }));
+  addEventListener("keydown", (e) => { if (e.key === "Escape") closeDrawer(); }); $("auto").onclick = () => P.both();
+  const tgS = $("tg-snd"), tgH = $("tg-hap");
+  tgS.onclick = () => { const on = tgS.getAttribute("aria-pressed") !== "true"; CORE.Snd.enable(on); tgS.setAttribute("aria-pressed", on); $("snd-l").textContent = on ? "Sound on" : "Sound off"; CORE.Snd.play("allowed"); };
+  if (CORE.Hap.supported) { tgH.hidden = false; tgH.onclick = () => { const on = tgH.getAttribute("aria-pressed") !== "true"; CORE.Hap.on = on; tgH.setAttribute("aria-pressed", on); $("hap-l").textContent = on ? "Haptics on" : "Haptics off"; CORE.Hap.play("allowed"); }; }
+  const dr = $("drawer"); let opener;
+  const openDrawer = () => { opener = document.activeElement; dr.classList.add("open"); dr.removeAttribute("inert"); dr.setAttribute("aria-hidden", "false"); $("tg-proof").setAttribute("aria-expanded", "true"); $("dr-x").focus(); };
+  const closeDrawer = () => { if (!dr.classList.contains("open")) return; dr.classList.remove("open"); dr.setAttribute("inert", ""); dr.setAttribute("aria-hidden", "true"); $("tg-proof").setAttribute("aria-expanded", "false"); opener && opener.focus && opener.focus(); };
+  $("tg-proof").onclick = () => (dr.classList.contains("open") ? closeDrawer() : openDrawer()); $("dr-x").onclick = closeDrawer;
+  const g = $("airlock"); $("btn-lift").onclick = () => { const o = g.classList.toggle("open"); $("btn-lift").setAttribute("aria-expanded", o); $("btn-lift").textContent = o ? "Close cover" : "Lift cover"; $("btn-key").disabled = !o; if (o) CORE.Notify.emit("needs-human", { text: "Approval needed: a human must turn the key. The agent cannot." }); };
+  const dlg = $("dlg"); $("btn-key").onclick = () => dlg.showModal(); $("dlg-c").onclick = () => dlg.close();
+  $("dlg-f").onsubmit = (e) => { e.preventDefault(); $("code").value = ""; dlg.close(); g.classList.add("turning"); $("key-res").textContent = "Comp only: no server called."; CORE.Notify.emit("approved", { text: "Human approval recorded (canned). State would move DRAFTED → APPROVED." }); setTimeout(() => g.classList.remove("turning"), 900); };
+  document.addEventListener("visibilitychange", () => document.documentElement.toggleAttribute("data-hidden", document.hidden));
+  const q = new URLSearchParams(location.search);
+  document.fonts.ready.then(() => { P.show(q.get("view") === "hard" ? "hard" : "idle"); if (q.get("drawer")) openDrawer(); if (q.get("play")) P.play(q.get("play")); });
+  new ResizeObserver(() => refit()).observe($("scope"));
+})();
+</script>
+</body>
+</html>
+
+
+
+

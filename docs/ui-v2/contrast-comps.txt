@@ -1,0 +1,38 @@
+== A Instrument
+PASS 15.75:1 (need 4.5)  ink #d9e8de
+PASS  7.68:1 (need 4.5)  muted #8ea699 on void
+PASS  7.37:1 (need 4.5)  muted on panel
+PASS  5.33:1 (need 3)  faint #6f8a7c on void (notation only)
+PASS 16.01:1 (need 4.5)  phosphor #7dffb2
+PASS  7.16:1 (need 4.5)  red #ff6b5e
+PASS  6.81:1 (need 4.5)  red on blocked toast bg #1e0a0a
+PASS 10.77:1 (need 4.5)  amber #ffb347
+PASS 11.23:1 (need 4.5)  void on amber button
+PASS 16.01:1 (need 4.5)  void on phosphor toggle
+PASS  2.07:1 (need 1.5)  line2 #2f4a3f vs void (UI border)
+== B Plate
+PASS 14.75:1 (need 4.5)  ink #1b1712 on paper #f2e9d3
+PASS  7.27:1 (need 4.5)  soft #54493a on paper
+PASS  4.18:1 (need 3)  faint #7a6d58 on paper (ledger notation)
+PASS  7.22:1 (need 4.5)  blue ink #1636c9 on paper
+PASS  6.90:1 (need 4.5)  brick #8f2a1c on paper
+PASS  5.20:1 (need 4.5)  brass #7d5a0b on paper
+PASS 16.37:1 (need 4.5)  ink on slip #fbf5e4
+PASS  8.02:1 (need 4.5)  blue on slip #fbf5e4
+PASS  7.21:1 (need 4.5)  brick on #f6eed9
+PASS  5.94:1 (need 4.5)  cream on brass button
+PASS  6.44:1 (need 4.5)  soft on #e7dcc0 (register ground)
+== C Panel
+PASS 10.29:1 (need 4.5)  ink #17190f on panel #c4c7b3
+PASS  6.00:1 (need 4.5)  soft #3e4231 on panel
+PASS  8.57:1 (need 4.5)  lcd ink #1a2108 on lcd #b5c25f
+PASS  8.57:1 (need 4.5)  lcd on ink (inverse chip)
+PASS  9.39:1 (need 4.5)  white on blocked chip #8a1a10
+PASS  5.44:1 (need 4.5)  #8a1a10 on panel (notlive)
+PASS  5.80:1 (need 4.5)  #b3210f on paper #f3efe0 (VOID stamp)
+PASS 15.42:1 (need 4.5)  ink on paper #f3efe0
+PASS 16.51:1 (need 4.5)  cream odometer #f4efd2 on #0e100b
+PASS  9.69:1 (need 4.5)  ink on amber button
+PASS 10.29:1 (need 4.5)  panel on ink button
+PASS  5.73:1 (need 4.5)  #5c3d00 on panel (human conduit label)
+all pass
