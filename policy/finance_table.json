@@ -1,0 +1,16 @@
+{
+  "name": "finance_transfer_approval",
+  "spec": "SPEC_GATE_v2.md section 4.3",
+  "states": ["START", "AUTHED", "DRAFTED", "APPROVED", "SINK"],
+  "symbols": ["AUTH", "DRAFT", "EDIT", "MFA", "TRANSFER", "CANCEL"],
+  "letters": {"AUTH": "A", "DRAFT": "D", "EDIT": "E", "MFA": "M", "TRANSFER": "T", "CANCEL": "C"},
+  "initial": "START",
+  "accepting": ["START", "AUTHED", "DRAFTED", "APPROVED"],
+  "transitions": {
+    "START":    {"AUTH": "AUTHED", "DRAFT": "SINK",    "EDIT": "SINK",    "MFA": "SINK",     "TRANSFER": "SINK",   "CANCEL": "SINK"},
+    "AUTHED":   {"AUTH": "SINK",   "DRAFT": "DRAFTED", "EDIT": "SINK",    "MFA": "SINK",     "TRANSFER": "SINK",   "CANCEL": "SINK"},
+    "DRAFTED":  {"AUTH": "SINK",   "DRAFT": "SINK",    "EDIT": "DRAFTED", "MFA": "APPROVED", "TRANSFER": "SINK",   "CANCEL": "AUTHED"},
+    "APPROVED": {"AUTH": "SINK",   "DRAFT": "SINK",    "EDIT": "DRAFTED", "MFA": "SINK",     "TRANSFER": "AUTHED", "CANCEL": "AUTHED"},
+    "SINK":     {"AUTH": "SINK",   "DRAFT": "SINK",    "EDIT": "SINK",    "MFA": "SINK",     "TRANSFER": "SINK",   "CANCEL": "SINK"}
+  }
+}
