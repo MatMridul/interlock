@@ -1,5 +1,7 @@
 # SPEC GATE: The Chimeric Automaton (v1, supersedes the claims in CHIMERIC_AUTOMATON_SPEC.md where they differ)
 
+> SUPERSEDED by [SPEC_GATE_v2.md](SPEC_GATE_v2.md). Kept for history; where they differ, v2 is the spec.
+
 Status: PROPOSED. Becomes "GATE PASSED" only when the author approves it. After that, no spec revisions unless implementation forces one.
 Window: build Oct 30 - Dec 4, 2026 (deadline Fri Dec 4, 2:00 PM PT = Sat Dec 5, 3:30 AM IST).
 

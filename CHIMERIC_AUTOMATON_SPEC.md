@@ -1,4 +1,6 @@
 # THE CHIMERIC AUTOMATON
+
+> Original pitch, kept for history. Several claims here (latency figures, "zero hallucination", file formats, JFLAP on the hot path) were corrected; see [SPEC_GATE_v2.md](SPEC_GATE_v2.md), which is the spec.
 ## Formally Bounded Stochastic Agents via JFLAP 7.1 & Kiro MCP
 **Hackathon Track:** Frankenstein (Stitching Fundamentally Incompatible Technologies)  
 **Target Category:** Best Frankenstein ($5,000) + Overall 1st Place ($30,000)  
