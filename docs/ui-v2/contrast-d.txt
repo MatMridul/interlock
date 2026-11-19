@@ -1,0 +1,31 @@
+PASS 12.66:1 (need 4.5)  silk #d4d8dc on panel #141618
+PASS  7.09:1 (need 4.5)  silk2 #9ba3aa on panel
+PASS 13.19:1 (need 4.5)  silk on stage #101112 (state names, conduit labels)
+PASS  7.39:1 (need 4.5)  silk2 on stage (ledger, captions)
+PASS  7.72:1 (need 4.5)  silk2 on terminal #090b0a
+PASS 12.85:1 (need 4.5)  console ink #c9d3cc on terminal
+PASS 15.18:1 (need 4.5)  phosphor #5dff8c on terminal (ALLOWED lines)
+PASS  6.40:1 (need 4.5)  red #ff5a4a on terminal (BLOCKED lines)
+PASS  5.89:1 (need 4.5)  red on panel (canned replay, not live)
+PASS  7.81:1 (need 4.5)  silk2 on tape #070908
+PASS 15.36:1 (need 4.5)  phosphor on tape (L(M) check, readout)
+PASS  6.48:1 (need 4.5)  red on tape
+PASS 10.73:1 (need 4.5)  VOID symbol #ffb5ac on stamp #2a0d0b
+PASS  5.87:1 (need 4.5)  VOID word red on stamp #2a0d0b
+PASS 14.51:1 (need 4.5)  tape cell text #e6e9ec on #15191c
+PASS  6.92:1 (need 4.5)  tape cell sub #9ba3aa on #15191c
+PASS 12.00:1 (need 4.5)  odometer cream #ece9dc on drum mid #26292d (worst)
+PASS  7.30:1 (need 4.5)  blocked digits #ff9d92 on drum mid
+PASS 16.75:1 (need 4.5)  white on BLOCKED plate #3a0f0c
+PASS  6.81:1 (need 4.5)  black on red toast kind chip
+PASS 14.66:1 (need 4.5)  black on silk toast chip
+PASS 13.96:1 (need 4.5)  ledger lit row #031a0b on phosphor
+PASS  7.32:1 (need 4.5)  silk on keypad key top #3a4046
+PASS 10.33:1 (need 3)  amber key #ffb000 on key plate #0f1113 (graphic)
+PASS  9.75:1 (need 4.5)  amber text #ffd27a on #3a2a05 (packet)
+PASS 10.59:1 (need 4.5)  silk on smoked cover (approx #3b3f45)
+PASS  7.09:1 (need 4.5)  silk2 on key plate #141618 (11px status)
+PASS 13.95:1 (need 3)  phosphor lamp #5dff8c vs panel (graphic)
+PASS  5.99:1 (need 3)  silk ring #8a9299 on stage (graphic)
+PASS  3.06:1 (need 0)  disabled keypad (opacity .42 silk on #23272b): intentional, exempt
+all pass
