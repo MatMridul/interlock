@@ -5,7 +5,7 @@ export const VIEW = { w: 1000, h: 560 };
 export const ORB_R = 50;
 export const AGENT_PORT: Pt = { x: 956, y: 84 };
 export const SINK: Pt = { x: 92, y: 488 };
-export const AIRLOCK: Pt = { x: 808, y: 492 };
+export const AIRLOCK: Pt = { x: 798, y: 470 };
 
 export interface Pt {
   x: number;
