@@ -8,6 +8,8 @@ export interface Beat {
   verdict: "ACCEPT" | "REJECT";
   from: string; // machine state when the proposal landed
   to: string; // equals `from` for REJECT: a rejected move never changes the state
+  reason?: string; // the server's reason, only for REJECT
+  latency?: number; // ms, only when the server measured it
   onSpawn: () => void; // token appears (chat proposal chip, Proposed + 1)
   onImpact: () => void; // verdict becomes visible (chat verdict chip, last verdict, live announcement)
   onSettle: () => void; // outcome lands (ACCEPT: state moves, tape cell; REJECT: ghost cell, Blocked + 1)
@@ -87,6 +89,9 @@ export class Director {
 
 type Dispatch = (a: Action) => void;
 
+/** Tells the shell (toasts, sound, haptics) when a beat reaches one of its three moments. */
+export type BeatObserver = (e: { hook: "spawn" | "impact" | "settle"; beat: Beat }) => void;
+
 const isObj = (d: unknown): d is Record<string, unknown> => typeof d === "object" && d !== null;
 const str = (v: unknown) => (typeof v === "string" ? v : undefined);
 
@@ -107,7 +112,7 @@ export class BeatBuilder {
   private nextId = 1;
   private last: { beat: Beat; settled: boolean; state?: Action } | null = null;
 
-  constructor(private director: Director, private dispatch: Dispatch, initial: string) {
+  constructor(private director: Director, private dispatch: Dispatch, initial: string, private observe: BeatObserver = () => {}) {
     this.cur = initial;
   }
 
@@ -143,12 +148,14 @@ export class BeatBuilder {
         const record: Action = { type: "beat_record", symbol, verdict: accept ? "ACCEPT" : "REJECT", from, to, source: str(data.source), reason: str(data.reason), latency: typeof data.latency_ms === "number" ? data.latency_ms : undefined, kind: "agent" };
         const beat: Beat = {
           id: this.nextId++, kind: "agent", symbol, verdict: accept ? "ACCEPT" : "REJECT", from, to,
-          onSpawn: () => { if (p) this.dispatch(p.action); this.dispatch({ type: "beat_spawn" }); },
-          onImpact: () => this.dispatch(action),
+          reason: str(data.reason), latency: typeof data.latency_ms === "number" ? data.latency_ms : undefined,
+          onSpawn: () => { if (p) this.dispatch(p.action); this.dispatch({ type: "beat_spawn" }); this.observe({ hook: "spawn", beat }); },
+          onImpact: () => { this.dispatch(action); this.observe({ hook: "impact", beat }); },
           onSettle: () => {
             const l = this.last;
             if (l && l.beat.id === beat.id) { l.settled = true; if (l.state) this.dispatch(l.state); }
             this.dispatch(record);
+            this.observe({ hook: "settle", beat });
           },
         };
         this.cur = to;
@@ -181,12 +188,13 @@ export class BeatBuilder {
     const to = accept ? state ?? this.cur : this.cur;
     const result: Action = { type: "mfa_result", verdict, state, reason };
     const beat: Beat = {
-      id: this.nextId++, kind: "human", symbol: "MFA", verdict, from, to,
-      onSpawn: () => {},
-      onImpact: () => {},
+      id: this.nextId++, kind: "human", symbol: "MFA", verdict, from, to, reason,
+      onSpawn: () => this.observe({ hook: "spawn", beat }),
+      onImpact: () => this.observe({ hook: "impact", beat }),
       onSettle: () => {
         this.dispatch(result);
         this.dispatch({ type: "beat_record", symbol: "MFA", verdict, from, to, reason, kind: "human" });
+        this.observe({ hook: "settle", beat });
       },
     };
     this.cur = to;
