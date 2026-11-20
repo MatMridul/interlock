@@ -271,7 +271,7 @@ export function App() {
       return;
     }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (t && (t.closest("input,textarea,dialog,select") || t.isContentEditable)) return;
+    if (t && (t.closest?.("input,textarea,dialog,select") || t.isContentEditable)) return;
     const v = VECTORS.find((x) => x.key === e.key);
     if (v && !busy) void sendMessage(v.message);
   };
@@ -325,7 +325,7 @@ export function App() {
                   <div><button type="button" onClick={() => void start()}>{fault.kind === "lost" ? "New session" : "Retry"}</button></div>
                 </div>
               )}
-              {!narrow && keyEl({ left: m.ox + 770 * m.s, top: m.oy + 438 * m.s, transform: `scale(${m.s})` })}
+              {!narrow && keyEl({ left: m.ox + 770 * m.s, bottom: 6, transformOrigin: "bottom left", transform: `scale(${m.s})` })}
             </>
           )}
         </Stage>
