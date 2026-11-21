@@ -43,14 +43,14 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
 | A1 | Merge `ui-instrument` into `main` through a PR (small commits kept, regular merge) | Me opens PR, You merge | P0 | todo | UI is on GitHub `main`; `ui/dist` builds from a clean clone |
-| A2 | Remove machine-specific paths: vendor `jflap-cli` into `third_party/jflap-cli` (check JFLAP redistribution terms first), make `.kiro/settings/mcp.json`, the save hook and `scripts/*` use relative paths | Me | P0 | todo | A fresh clone on another machine runs `gen_executor_table.py --check` and the replay test with only documented installs |
-| A3 | Add cross-platform run instructions (Windows, macOS, Linux) and a one-command setup | Me | P0 | todo | README quick start works from a clean clone |
-| A4 | GitHub Actions CI: fast Python tests, UI tests and build, `gen_executor_table.py --check`, secret scan, dependency audit | Me | P0 | todo | Green check on `main` |
-| A5 | Re-run the two slow suites (mutation, replay vs JFLAP) in CI or locally and record the real counts | Me | P0 | todo | One verified test count, written once, referenced everywhere |
-| A6 | Fix stale and inconsistent docs: test counts (334 / 336 / 320 / 258), Next.js mentions, old `UI_REPORT.md`, old `docs/screens` | Me | P0 | todo | Counts generated from CI output; no contradictions in README, reports or write-up |
-| A7 | Tidy repo root: move `*_REPORT.md` to `docs/reports/` with an index; keep v1 specs marked superseded | Me | P1 | todo | Root has README, LICENSE, source folders and config only |
-| A8 | Third-party disclosures: JFLAP 7.1 (Duke), `jflap-cli`, Strands Agents SDK, Bedrock model, fonts (OFL); read each license text and record it in `THIRD_PARTY.md` | Me | P0 | todo | Every dependency has a read license entry, no "check" markers left |
-| A9 | Confirm the first commit date and what pre-existing work is disclosed (New Projects Only rule) | Me | P0 | todo | README states: built in window; pre-existing = JFLAP 7.1 and `jflap-cli` (first commit 2026-11-13) |
+| A2 | Remove machine-specific paths: vendor `jflap-cli` into `third_party/jflap-cli` (check JFLAP redistribution terms first), make `.kiro/settings/mcp.json`, the save hook and `scripts/*` use relative paths | Me | P0 | done (branch hardening-ci, unmerged) | A fresh clone on another machine runs `gen_executor_table.py --check` and the replay test with only documented installs |
+| A3 | Add cross-platform run instructions (Windows, macOS, Linux) and a one-command setup | Me | P0 | done (branch hardening-ci, unmerged) | README quick start works from a clean clone |
+| A4 | GitHub Actions CI: fast Python tests, UI tests and build, `gen_executor_table.py --check`, secret scan, dependency audit | Me | P0 | doing (workflow written, real CI run not seen) | Green check on `main` |
+| A5 | Re-run the two slow suites (mutation, replay vs JFLAP) in CI or locally and record the real counts | Me | P0 | done (branch hardening-ci, unmerged) | One verified test count, written once, referenced everywhere |
+| A6 | Fix stale and inconsistent docs: test counts (334 / 336 / 320 / 258), Next.js mentions, old `UI_REPORT.md`, old `docs/screens` | Me | P0 | done (branch hardening-ci, unmerged) | Counts generated from CI output; no contradictions in README, reports or write-up |
+| A7 | Tidy repo root: move `*_REPORT.md` to `docs/reports/` with an index; keep v1 specs marked superseded | Me | P1 | done (branch hardening-ci, unmerged) | Root has README, LICENSE, source folders and config only |
+| A8 | Third-party disclosures: JFLAP 7.1 (Duke), `jflap-cli`, Strands Agents SDK, Bedrock model, fonts (OFL); read each license text and record it in `THIRD_PARTY.md` | Me | P0 | done (branch hardening-ci, unmerged) | Every dependency has a read license entry, no "check" markers left |
+| A9 | Confirm the first commit date and what pre-existing work is disclosed (New Projects Only rule) | Me | P0 | done (branch hardening-ci, unmerged) | README states: built in window; pre-existing = JFLAP 7.1 and `jflap-cli` (first commit 2026-11-13) |
 | A10 | Verify the Kiro save-hook trigger name (`PostFileSave` or `FileSave`) by running it in Kiro | Both | P1 | todo | Hook fires on save in Kiro; spec corrected |
 
 ### B. UI and UX basics (P0 to P1)
@@ -97,7 +97,7 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 | E1 | Choose the host (AgentCore Runtime or one container) after a short spike; list monthly cost before creating anything | Me proposes, **You approve** | P0 | todo | Written cost estimate and your yes |
 | E2 | Deploy so it stays up and free through 2027-01-29 | Me | P0 | todo | Public URL passes the demo script |
 | E3 | Spend and abuse controls: default to "you are the agent" and stub; real-model chat behind a daily cap; AWS budget alarm | Me | P0 | todo | Cap proven by test; alarm exists |
-| E4 | Rate limits and a lockout on `/mfa` attempts; session limits | Me | P0 | todo | Brute force is blocked by test |
+| E4 | Rate limits and a lockout on `/mfa` attempts; session limits | Me | P0 | done (branch hardening-ci, unmerged) | Brute force is blocked by test |
 | E5 | Uptime check and a rollback plan | Me | P1 | todo | Documented |
 | E6 | Claude access (Anthropic use-case form in the Bedrock console) for one real Claude run | **You** | P2 | todo | Haiku answers from the CLI |
 
@@ -105,7 +105,7 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| F1 | Replace the demo MFA code with an env-only secret in the deployed app; document the demo credentials in the Devpost field (judges only) | Me | P0 | todo | No code in the repo or video |
+| F1 | Replace the demo MFA code with an env-only secret in the deployed app; document the demo credentials in the Devpost field (judges only) | Me | P0 | done (branch hardening-ci, unmerged) | No code in the repo or video |
 | F2 | Security headers and a content security policy; dependency and secret scanning in CI | Me | P1 | todo | CI scan clean |
 | F3 | Error handling: no stack traces to users; SSE reconnect behavior | Me | P1 | todo | Tested |
 | F4 | Final full test pass with the real counts | Me | P0 | todo | Recorded in `docs/reports/` |
