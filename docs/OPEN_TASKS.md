@@ -45,7 +45,7 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 | A1 | Merge `ui-instrument` into `main` through a PR (small commits kept, regular merge) | Me opens PR, You merge | P0 | todo | UI is on GitHub `main`; `ui/dist` builds from a clean clone |
 | A2 | Remove machine-specific paths: vendor `jflap-cli` into `third_party/jflap-cli` (check JFLAP redistribution terms first), make `.kiro/settings/mcp.json`, the save hook and `scripts/*` use relative paths | Me | P0 | done (branch hardening-ci, unmerged) | A fresh clone on another machine runs `gen_executor_table.py --check` and the replay test with only documented installs |
 | A3 | Add cross-platform run instructions (Windows, macOS, Linux) and a one-command setup | Me | P0 | done (branch hardening-ci, unmerged) | README quick start works from a clean clone |
-| A4 | GitHub Actions CI: fast Python tests, UI tests and build, `gen_executor_table.py --check`, secret scan, dependency audit | Me | P0 | doing (workflow written, real CI run not seen) | Green check on `main` |
+| A4 | GitHub Actions CI: fast Python tests, UI tests and build, `gen_executor_table.py --check`, secret scan, dependency audit | Me | P0 | done (PR #3: 5 jobs green, slow suites run on push to main only) | Green check on `main` |
 | A5 | Re-run the two slow suites (mutation, replay vs JFLAP) in CI or locally and record the real counts | Me | P0 | done (branch hardening-ci, unmerged) | One verified test count, written once, referenced everywhere |
 | A6 | Fix stale and inconsistent docs: test counts (334 / 336 / 320 / 258), Next.js mentions, old `UI_REPORT.md`, old `docs/screens` | Me | P0 | done (branch hardening-ci, unmerged) | Counts generated from CI output; no contradictions in README, reports or write-up |
 | A7 | Tidy repo root: move `*_REPORT.md` to `docs/reports/` with an index; keep v1 specs marked superseded | Me | P1 | done (branch hardening-ci, unmerged) | Root has README, LICENSE, source folders and config only |
@@ -57,11 +57,11 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| B1 | Resizable and collapsible panels: drag handles on tape, console and proof drawer, keyboard resizable, sizes remembered, reset-layout button | Me | P0 | todo | Panels drag and keyboard-resize; layout survives reload |
-| B2 | First-run tour (about 30 seconds): machine, human key, tape, attack vectors; replayable from a help button | Me | P0 | todo | A new visitor understands the point without help |
-| B3 | Fix the known layout flaws: toast over the delta table, key panel over the return conduit, empty tape and console space | Me | P0 | todo | Screenshots at 1440, 1920, 1280 show no overlaps |
-| B4 | Real motion review: capture animations against a deliberately slowed stub so token flight, barrier and shatter are actually visible; fix timing | Me | P0 | todo | 8-frame strips show distinct frames |
-| B5 | Command palette (Ctrl+K), full keyboard map, help overlay | Me | P1 | todo | Every action reachable by keyboard |
+| B1 | Resizable and collapsible panels: drag handles on tape, console and proof drawer, keyboard resizable, sizes remembered, reset-layout button | Me | P0 | done (branch ux-basics, PR #4; tape not collapsible, panel can shrink the stage too small) | Panels drag and keyboard-resize; layout survives reload |
+| B2 | First-run tour (about 30 seconds): machine, human key, tape, attack vectors; replayable from a help button | Me | P0 | done (branch ux-basics, PR #4) | A new visitor understands the point without help |
+| B3 | Fix the known layout flaws: toast over the delta table, key panel over the return conduit, empty tape and console space | Me | P0 | done (branch ux-basics, PR #4) | Screenshots at 1440, 1920, 1280 show no overlaps |
+| B4 | Real motion review: capture animations against a deliberately slowed stub so token flight, barrier and shatter are actually visible; fix timing | Me | P0 | done (branch ux-basics, PR #4; found headless Chrome defaults to reduced motion) | 8-frame strips show distinct frames |
+| B5 | Command palette (Ctrl+K), full keyboard map, help overlay | Me | P1 | done (branch ux-basics, PR #4) | Every action reachable by keyboard |
 | B6 | Phone layout that works (390 wide): stage, tape, console stack; full-screen drawer | Me | P1 | todo | Usable on a real phone, checked by you once |
 | B7 | Accessibility pass: screen reader walkthrough, focus order, aria-live review, reduced-motion check in a browser | Me, You test once | P1 | todo | Written checklist with results |
 | B8 | Sound and haptics tuning (cues exist, unheard) | Both | P2 | todo | You listened once and approved or listed changes |
