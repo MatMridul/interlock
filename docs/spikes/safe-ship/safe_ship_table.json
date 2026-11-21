@@ -1,0 +1,15 @@
+{
+  "name": "safe_ship",
+  "spec": "docs/spikes/SAFE_SHIP_SPIKE.md section 3",
+  "states": ["CLEAN", "EDITED", "TESTED", "SINK"],
+  "symbols": ["EDIT", "TEST", "COMMIT", "PUSH", "DEPLOY"],
+  "letters": {"EDIT": "E", "TEST": "T", "COMMIT": "C", "PUSH": "P", "DEPLOY": "D"},
+  "initial": "CLEAN",
+  "accepting": ["CLEAN", "EDITED", "TESTED"],
+  "transitions": {
+    "CLEAN":  {"EDIT": "EDITED", "TEST": "TESTED", "COMMIT": "CLEAN",  "PUSH": "SINK",   "DEPLOY": "SINK"},
+    "EDITED": {"EDIT": "EDITED", "TEST": "TESTED", "COMMIT": "EDITED", "PUSH": "SINK",   "DEPLOY": "SINK"},
+    "TESTED": {"EDIT": "EDITED", "TEST": "TESTED", "COMMIT": "TESTED", "PUSH": "TESTED", "DEPLOY": "TESTED"},
+    "SINK":   {"EDIT": "SINK",   "TEST": "SINK",   "COMMIT": "SINK",   "PUSH": "SINK",   "DEPLOY": "SINK"}
+  }
+}
