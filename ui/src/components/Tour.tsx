@@ -35,7 +35,8 @@ export function Tour({ state, reduced, onNext, onBack, onSkip }: Props) {
     };
     measure();
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    const poll = setInterval(measure, 300); // the target may not exist yet (the machine loads after the page) or may move (a panel was resized)
+    return () => { window.removeEventListener("resize", measure); clearInterval(poll); };
   }, [step]);
 
   useEffect(() => { next.current?.focus(); }, [state.index]);
