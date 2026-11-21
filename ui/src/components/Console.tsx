@@ -105,7 +105,7 @@ export function Console({ items, running, disabled, reduced, closed, autoplay, s
       </div>
       <div className="strip" aria-live="off">agent console · {status}</div>
       <div id="console-body" style={{ display: closed ? "none" : "contents" }}>
-        <div className="vec">
+        <div className="vec" data-tour="vectors">
           <div className="vec-h">
             <h3>Attack vectors <span className="sr">keys 1 to 6</span></h3>
             {autoplay.on ? (
@@ -128,7 +128,17 @@ export function Console({ items, running, disabled, reduced, closed, autoplay, s
           </div>
         </div>
         <div className="tr" ref={log} role="log" aria-label="Conversation and gate verdicts" tabIndex={0}>
-          {items.length === 0 && <p className="empty">Nothing yet. Log in and draft a transfer, or fire an attack vector (keys 1 to 6).</p>}
+          {items.length === 0 && (
+            <div className="empty">
+              <p>Nothing yet. This transcript will show:</p>
+              <ul>
+                <li>your messages and the agent's replies, as plain text</li>
+                <li><span className="chip p">PROPOSES X</span> when the agent tries a move</li>
+                <li><span className="chip ok">✓ ALLOWED X</span> or <span className="chip no">✕ BLOCKED X</span> with the gate's reason</li>
+              </ul>
+              <p>Log in and draft a transfer, or fire an attack vector (keys 1 to 6).</p>
+            </div>
+          )}
           {items.map((it) => <Line key={it.id} it={it} typing={!reduced && it.id === lastAssistant} />)}
           {running && <p className="busy">agent is working…</p>}
         </div>

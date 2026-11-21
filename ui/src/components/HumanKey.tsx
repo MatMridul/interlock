@@ -64,14 +64,14 @@ export function HumanKey({ disabled, turning, attention, shake, result, onSubmit
   };
 
   return (
-    <div className={`key${turning ? " turning" : ""}${lifted ? " lifted" : ""}${attention ? " attn" : ""}${shake ? " shake" : ""}${docked ? " docked" : ""}`} style={style} data-testid="human-key">
+    <div className={`key${turning ? " turning" : ""}${lifted ? " lifted" : ""}${attention ? " attn" : ""}${shake ? " shake" : ""}${docked ? " docked" : ""}`} style={style} data-testid="human-key" data-tour="key">
       <svg viewBox="0 0 46 46" aria-hidden="true">
         <rect x="2" y="2" width="42" height="42" className="k" />
         <g className="kh"><circle cx="23" cy="18" r="6" className="k" /><path d="M23 24v14M23 32h6M23 38h4" className="k" /></g>
         <g className="cover"><rect x="2" y="2" width="42" height="42" className="k" fill="rgba(255,179,71,.14)" /><path d="M2 2L44 44M44 2L2 44" className="k" strokeDasharray="3 3" /></g>
       </svg>
       <h2>Human key</h2>
-      <p>HUMAN ONLY. Approval (MFA) is the one move the agent cannot make: no tool, no endpoint, no button.</p>
+      <p>HUMAN ONLY. The agent has no tool, endpoint or button for approval (MFA).</p>
       {!lifted ? (
         <button type="button" className="btn-key" disabled={disabled} aria-expanded="false" onClick={() => setLifted(true)}>Lift cover</button>
       ) : (
