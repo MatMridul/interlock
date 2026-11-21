@@ -5,16 +5,19 @@ import { Console, VECTORS } from "./components/Console";
 import { HumanKey, type CodeResult } from "./components/HumanKey";
 import { ProofDrawer } from "./components/ProofDrawer";
 import { Scoreboard } from "./components/Scoreboard";
-import { HUMAN_SYMBOLS, Stage } from "./components/Stage";
+import { Separator } from "./components/Separator";
+import { Stage, HUMAN_SYMBOLS } from "./components/Stage";
 import { Toasts } from "./components/Toasts";
 import { TraceTape } from "./components/TraceTape";
 import { AUTOPLAY_STEPS, runAutoplay } from "./lib/autoplay";
 import { Haptics, Sound, prefersReducedMotion, type CueName } from "./lib/cues";
 import { BeatBuilder, Director, type Beat } from "./lib/director";
 import type { Fx } from "./lib/fx";
+import { useLayout } from "./lib/layout";
 import { initialNotify, notifyReducer } from "./lib/notify";
 import { replayLog, scoreboard } from "./lib/score";
 import { initialUi, reducer } from "./state";
+import { KEY_ZONE } from "./lib/geometry";
 import type { Policy } from "./types";
 
 export function describe(e: unknown): { text: string; kind: "lost" | "busy" | "invalid" | "server" | "down" } {
@@ -59,6 +62,8 @@ export function App() {
   const [keyRequested, setKeyRequested] = useState(false);
   const reduced = useMedia("(prefers-reduced-motion: reduce)");
   const narrow = useMedia("(max-width: 900px)");
+  const lay = useLayout();
+  const [dragging, setDragging] = useState(false);
 
   const fxRef = useRef<Fx | null>(null);
   const sound = useRef(new Sound());
@@ -298,7 +303,8 @@ export function App() {
   );
 
   return (
-    <div className="app" data-console={consoleClosed ? "closed" : "open"} data-testid="app">
+    <div className="app" data-console={consoleClosed ? "closed" : "open"} data-dragging={dragging || undefined} data-testid="app"
+      style={{ "--console-w": `${consoleClosed ? 46 : lay.layout.console}px`, "--tape-h": `${lay.layout.tape}px`, "--drawer-w": `${lay.layout.drawer}px` } as React.CSSProperties}>
       <header className="top">
         <div className="mark">Inter<i>lock</i><small>The Chimeric Automaton</small></div>
         <div className="sub">M = (Q, Σ, δ, q₀, F) · the agent proposes, the gate decides</div>
@@ -307,17 +313,21 @@ export function App() {
         {Haptics.supported() && (
           <button type="button" className="tg" aria-pressed={hapticsOn} onClick={toggleHaptics} title="Vibration works only on supporting Android browsers (Chrome, Firefox). iOS Safari and most desktops ignore it.">{hapticsOn ? "Haptics on" : "Haptics off"}</button>
         )}
+        <button type="button" className="tg" onClick={lay.resetAll} disabled={lay.isDefault && !consoleClosed} title="Put the tape, console and drawer back to their default sizes">Reset layout</button>
         <button type="button" className="tg" aria-expanded={drawer} aria-controls="drawer" onClick={() => setDrawer((v) => !v)}>Proof</button>
       </header>
 
       <Scoreboard score={score} counters={ui.counters} logLoaded={ui.counters !== null} />
+
+      <div className="rail" aria-label="Notifications">
+        <Toasts state={nt} onDismiss={(id) => notify({ type: "dismiss", id })} />
+      </div>
 
       {policy ? (
         <Stage policy={policy} current={ui.machineState} locked={locked} fxRef={fxRef} lastTaken={lastAccepted ? { from: lastAccepted.from, symbol: lastAccepted.symbol } : null}
           wordLength={score.allowed + score.human} lastDecision={lastWithLatency?.latency !== undefined ? `${lastWithLatency.latency} ms` : "n/a"} dim={!!fault}>
           {(m) => (
             <>
-              <Toasts state={nt} onDismiss={(id) => notify({ type: "dismiss", id })} />
               {locked && <div className="locked" role="status"><div>Session locked</div><span>{ui.counters?.max_consecutive_rejects} rejected proposals in a row. The gate refuses everything. Reset to continue.</span></div>}
               {fault && (
                 <div className="fault" role="alert">
@@ -325,7 +335,7 @@ export function App() {
                   <div><button type="button" onClick={() => void start()}>{fault.kind === "lost" ? "New session" : "Retry"}</button></div>
                 </div>
               )}
-              {!narrow && keyEl({ left: m.ox + 770 * m.s, bottom: 6, transformOrigin: "bottom left", transform: `scale(${m.s})` })}
+              {!narrow && keyEl({ left: m.ox + KEY_ZONE.x * m.s, top: m.oy + KEY_ZONE.y * m.s, transformOrigin: "top left", transform: `scale(${m.s})` })}
             </>
           )}
         </Stage>
@@ -343,7 +353,19 @@ export function App() {
         onToggle={() => setConsoleClosed((v) => !v)} onSend={(t) => void sendMessage(t)}
         onAutoplay={() => void startAutoplay()} onStopAutoplay={stopAutoplay} onReset={() => void start()} />
 
-      <ProofDrawer open={drawer} onClose={() => setDrawer(false)} log={ui.log} counters={ui.counters} verdict={ui.lastVerdict} />
+      <ProofDrawer open={drawer} onClose={() => setDrawer(false)} log={ui.log} counters={ui.counters} verdict={ui.lastVerdict}
+        resizer={!narrow && (
+          <Separator orientation="vertical" growsToward="left" label="Resize the proof drawer" className="sep-drawer" controls="drawer" value={lay.layout.drawer}
+            {...lay.bounds("drawer")} onChange={(v) => lay.set("drawer", v)} onReset={() => lay.reset("drawer")} onDragging={setDragging} />
+        )} />
+      {!narrow && (
+        <Separator orientation="horizontal" growsToward="up" label="Resize the trace tape" className="sep-tape" value={lay.layout.tape}
+          {...lay.bounds("tape")} onChange={(v) => lay.set("tape", v)} onReset={() => lay.reset("tape")} onDragging={setDragging} />
+      )}
+      {!narrow && !consoleClosed && (
+        <Separator orientation="vertical" growsToward="left" label="Resize the agent console" className="sep-console" value={lay.layout.console}
+          {...lay.bounds("console")} onChange={(v) => lay.set("console", v)} onReset={() => lay.reset("console")} onDragging={setDragging} />
+      )}
       {cold && <ColdOpen onDone={() => setCold(false)} />}
     </div>
   );
