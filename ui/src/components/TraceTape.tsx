@@ -53,7 +53,7 @@ export function TraceTape({ beats, policy, replay, logCount }: Props) {
   const slot: Record<number, number> = {};
 
   return (
-    <section className="tape" aria-labelledby="tape-h">
+    <section className="tape" data-tour="tape" aria-labelledby="tape-h">
       <div className="tape-h">
         <h2 id="tape-h">Trace tape</h2>
         <span>executed word w · BLOCKED proposals hang above as VOID and are never written</span>

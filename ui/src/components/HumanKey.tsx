@@ -64,7 +64,7 @@ export function HumanKey({ disabled, turning, attention, shake, result, onSubmit
   };
 
   return (
-    <div className={`key${turning ? " turning" : ""}${lifted ? " lifted" : ""}${attention ? " attn" : ""}${shake ? " shake" : ""}${docked ? " docked" : ""}`} style={style} data-testid="human-key">
+    <div className={`key${turning ? " turning" : ""}${lifted ? " lifted" : ""}${attention ? " attn" : ""}${shake ? " shake" : ""}${docked ? " docked" : ""}`} style={style} data-testid="human-key" data-tour="key">
       <svg viewBox="0 0 46 46" aria-hidden="true">
         <rect x="2" y="2" width="42" height="42" className="k" />
         <g className="kh"><circle cx="23" cy="18" r="6" className="k" /><path d="M23 24v14M23 32h6M23 38h4" className="k" /></g>

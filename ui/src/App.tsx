@@ -14,6 +14,12 @@ import { Haptics, Sound, prefersReducedMotion, type CueName } from "./lib/cues";
 import { BeatBuilder, Director, type Beat } from "./lib/director";
 import type { Fx } from "./lib/fx";
 import { useLayout } from "./lib/layout";
+import { ACTIONS, shortcutFor } from "./lib/keymap";
+import { markTourSeen, shouldAutoStart, tourClosed, tourReducer, type TourAction, type TourState } from "./lib/tour";
+import { safeStorage } from "./lib/layout";
+import { HelpOverlay } from "./components/HelpOverlay";
+import { Palette } from "./components/Palette";
+import { Tour } from "./components/Tour";
 import { initialNotify, notifyReducer } from "./lib/notify";
 import { replayLog, scoreboard } from "./lib/score";
 import { initialUi, reducer } from "./state";
@@ -266,26 +272,14 @@ export function App() {
     toast("info", res.completed ? "Autoplay finished." : `Autoplay stopped at step ${Math.min(res.stoppedAt + 1, res.total)} of ${res.total}.`, "Autoplay");
   }, [start, toast, sendMessage, cue]);
 
-  // ---- keyboard: 1 to 6 fire the attack vectors, Esc stops autoplay or closes the drawer ----
+  // ---- keyboard: see lib/keymap.ts. Esc stops autoplay or closes the drawer; single keys stay silent while typing ----
   const busy = ui.running || !sid || auto.on || !!fault;
+  const [tour, tourDispatch] = useReducer((s: TourState, a: TourAction) => tourReducer(s, a), tourClosed);
+  const [palette, setPalette] = useState(false);
+  const [help, setHelp] = useState(false);
+  const modal = tour.open || palette || help;
+  const closeTour = useCallback((a: TourAction) => { tourDispatch(a); markTourSeen(safeStorage()); }, []);
   const keyHandler = useRef<(e: KeyboardEvent) => void>(() => {});
-  keyHandler.current = (e) => {
-    const t = e.target as HTMLElement | null;
-    if (e.key === "Escape") {
-      if (auto.on) stopAutoplay(); else if (drawer) setDrawer(false);
-      return;
-    }
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (t && (t.closest?.("input,textarea,dialog,select") || t.isContentEditable)) return;
-    const v = VECTORS.find((x) => x.key === e.key);
-    if (v && !busy) void sendMessage(v.message);
-  };
-  useEffect(() => {
-    const f = (e: KeyboardEvent) => keyHandler.current(e);
-    window.addEventListener("keydown", f);
-    return () => window.removeEventListener("keydown", f);
-  }, []);
-
   const score = useMemo(() => scoreboard(ui.beats, ui.proposed, ui.log), [ui.beats, ui.proposed, ui.log]);
   const replay = useMemo(() => (policy ? replayLog(policy, ui.log.map((l) => l.symbol)) : null), [policy, ui.log]);
   const lastAccepted = [...ui.beats].reverse().find((b) => b.verdict === "ACCEPT") ?? null;
@@ -295,6 +289,47 @@ export function App() {
 
   const toggleSound = () => { const on = sound.current.enable(!sound.current.on); setSoundOn(on); if (on) sound.current.play("allowed"); };
   const toggleHaptics = () => { haptics.current.on = !haptics.current.on; setHapticsOn(haptics.current.on); haptics.current.play("allowed"); };
+
+  const runAction = (id: string) => {
+    if (id.startsWith("vec-")) { const v = VECTORS.find((x) => `vec-${x.key}` === id); if (v && !busy) void sendMessage(v.message); return; }
+    switch (id) {
+      case "autoplay": if (auto.on) stopAutoplay(); else if (!ui.running && !fault && sid) void startAutoplay(); break;
+      case "reset-session": if (!ui.running) void start(); break;
+      case "toggle-console": setConsoleClosed((v) => !v); break;
+      case "toggle-drawer": setDrawer((v) => !v); break;
+      case "toggle-sound": toggleSound(); break;
+      case "toggle-haptics": if (Haptics.supported()) toggleHaptics(); break;
+      case "reset-layout": lay.resetAll(); setConsoleClosed(false); break;
+      case "tour": tourDispatch({ type: "start" }); break;
+      case "help": setHelp(true); break;
+      case "palette": setPalette(true); break;
+    }
+  };
+  keyHandler.current = (e) => {
+    if (e.key === "Escape") {
+      if (modal) return; // the dialog closes itself
+      if (auto.on) stopAutoplay(); else if (drawer) setDrawer(false);
+      return;
+    }
+    if (modal) return;
+    const id = shortcutFor(e);
+    if (!id) return;
+    if (id === "palette" || id === "help") e.preventDefault();
+    runAction(id);
+  };
+  useEffect(() => {
+    const f = (e: KeyboardEvent) => keyHandler.current(e);
+    window.addEventListener("keydown", f);
+    return () => window.removeEventListener("keydown", f);
+  }, []);
+  // the tour opens by itself once per browser, after the cold open has gone
+  useEffect(() => {
+    if (!cold && shouldAutoStart(safeStorage())) { tourDispatch({ type: "start" }); markTourSeen(safeStorage()); }
+  }, [cold]);
+  const paletteItems = ACTIONS.filter((a) => a.id !== "toggle-haptics" || Haptics.supported()).map((a) => ({
+    ...a,
+    disabled: (a.id.startsWith("vec-") && busy) || (a.id === "autoplay" && !auto.on && (ui.running || !!fault || !sid)) || (a.id === "reset-session" && ui.running),
+  }));
 
   const keyEl = (style?: React.CSSProperties, docked?: boolean) => (
     <HumanKey disabled={!sid || ui.running || locked} turning={keyTurning} attention={keyAttn} shake={keyShake} result={keyResult}
@@ -314,7 +349,10 @@ export function App() {
           <button type="button" className="tg" aria-pressed={hapticsOn} onClick={toggleHaptics} title="Vibration works only on supporting Android browsers (Chrome, Firefox). iOS Safari and most desktops ignore it.">{hapticsOn ? "Haptics on" : "Haptics off"}</button>
         )}
         <button type="button" className="tg" onClick={lay.resetAll} disabled={lay.isDefault && !consoleClosed} title="Put the tape, console and drawer back to their default sizes">Reset layout</button>
-        <button type="button" className="tg" aria-expanded={drawer} aria-controls="drawer" onClick={() => setDrawer((v) => !v)}>Proof</button>
+        <button type="button" className="tg" data-tour="palette" aria-keyshortcuts="Control+K" onClick={() => setPalette(true)} title="Every action in one list (Ctrl+K or /)">Commands</button>
+        <button type="button" className="tg" aria-keyshortcuts="?" onClick={() => setHelp(true)} title="Every keyboard shortcut (?)">Keys</button>
+        <button type="button" className="tg" onClick={() => tourDispatch({ type: "start" })} title="Replay the 30-second tour (T)">Help</button>
+        <button type="button" className="tg" data-tour="proof" aria-expanded={drawer} aria-controls="drawer" onClick={() => setDrawer((v) => !v)}>Proof</button>
       </header>
 
       <Scoreboard score={score} counters={ui.counters} logLoaded={ui.counters !== null} />
@@ -367,6 +405,9 @@ export function App() {
           {...lay.bounds("console")} onChange={(v) => lay.set("console", v)} onReset={() => lay.reset("console")} onDragging={setDragging} />
       )}
       {cold && <ColdOpen onDone={() => setCold(false)} />}
+      {palette && <Palette items={paletteItems} onRun={runAction} onClose={() => setPalette(false)} />}
+      {help && <HelpOverlay onClose={() => setHelp(false)} />}
+      {tour.open && <Tour state={tour} reduced={reduced} onNext={() => closeTour({ type: "next" })} onBack={() => tourDispatch({ type: "back" })} onSkip={() => closeTour({ type: "skip" })} />}
     </div>
   );
 }

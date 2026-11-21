@@ -83,7 +83,7 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
   const nSym = policy.symbols.length;
 
   return (
-    <section className="stage" ref={wrap} data-locked={locked || undefined} data-dim={dim || undefined} aria-label="The state machine">
+    <section className="stage" data-tour="machine" ref={wrap} data-locked={locked || undefined} data-dim={dim || undefined} aria-label="The state machine">
       <div className="stage-scroll" ref={scroller}>
         <div className="stage-inner">
           <svg className="stage-svg" viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} preserveAspectRatio="xMidYMid meet" role="img"
