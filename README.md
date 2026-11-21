@@ -108,15 +108,9 @@ Set `JFLAP_CLI` to use a different `jflap_cli.py` than the vendored one.
 - Demo only: in-memory sessions, no auth on session endpoints, a shared demo MFA code.
 - Browser checks covered only the stub-model flow.
 
-## Third-party
+## Third-party and provenance
 
-| Item | Use | License |
-| :-- | :-- | :-- |
-| JFLAP 7.1 (Duke University) | build-time model checking | check; text to be added by owner |
-| jflap-cli / JFLAP MCP server | wraps JFLAP; first commit 2026-11-13, pre-existing | check (owner's own project) |
-| Strands Agents SDK 1.65.0 | runtime agent | check (believed Apache-2.0, unverified) |
-| Amazon Bedrock, Amazon Nova 2 Lite | runtime model (Claude Haiku 4.5 was targeted but blocked) | AWS terms |
-| FastAPI, React, React Flow, Vite, Hypothesis, others | see `requirements.txt`, `ui/package.json` | check |
+Every dependency, bundled asset (JFLAP 7.1, `jflap-cli`, fonts), model and service, with the license text or metadata it was read from, is in [THIRD_PARTY.md](THIRD_PARTY.md). It also records which parts pre-date this repository (JFLAP 7.1; `jflap-cli`, first commit 2026-11-13) and what was built after this repository's first commit (2026-11-15).
 
 ## Roadmap
 
