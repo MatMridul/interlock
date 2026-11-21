@@ -9,7 +9,7 @@ from bank.executor_table import SYMBOLS
 from bank.gate import Gate
 from conftest import ROOT
 
-JFLAP_CLI = os.environ.get("JFLAP_CLI", r"C:\Users\mridu\jflap-cli\jflap_cli.py")
+JFLAP_CLI = os.environ.get("JFLAP_CLI", os.path.join(ROOT, "third_party", "jflap-cli", "jflap_cli.py"))
 JFF = os.path.join(ROOT, "policy", "finance.jff")
 LETTER = {"AUTH": "A", "DRAFT": "D", "EDIT": "E", "MFA": "M", "TRANSFER": "T", "CANCEL": "C"}
 BY_LETTER = {v: k for k, v in LETTER.items()}
