@@ -19,7 +19,7 @@ def test_detects_each_rule_without_real_secrets(tmp_path):
     fake_arn = "arn:aws:iam::" + "1" * 12 + ":role/x"
     assert rules_for(tmp_path, fake_key) == {"aws-access-key-id"}
     assert rules_for(tmp_path, fake_arn) == {"aws-arn-account-id"}
-    assert rules_for(tmp_path, "-----BEGIN RSA PRIVATE KEY-----") == {"private-key"}
+    assert rules_for(tmp_path, "-----BEGIN RSA " + "PRIVATE KEY-----") == {"private-key"}
     assert rules_for(tmp_path, 'api_key = "abcdefghijklmnop"') == {"generic-secret"}
     assert rules_for(tmp_path, "DEMO_MFA_CODE=123456") == {"demo-mfa-literal"}
 
