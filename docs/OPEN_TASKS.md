@@ -82,7 +82,7 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| D1 | **Safe Ship policy:** a Kiro `PreToolUse` hook runs the gate on the coding agent's own tool calls (no push or deploy until tests ran after the last edit). First a one-day spike to confirm the hook input format. **Fallback:** AWS change-approval policy (snapshot, plan, approve, deploy) | Me | P0 | todo | Hook blocks a real Kiro tool call in a recorded run, or the fallback ships instead |
+| D1 | **Safe Ship policy:** a Kiro `PreToolUse` hook runs the gate on the coding agent's own tool calls (no push or deploy until tests ran after the last edit). **Spike done 2026-11-21: GO** (live on Kiro CLI 3.5.0, branch `safe-ship-spike`, report `docs/spikes/SAFE_SHIP_SPIKE.md`). Remaining: production integration (about 1.5 to 2 days), IDE and Crew live test (D6). **Fallback:** AWS change-approval policy | Me | P0 | doing | Hook blocks a real Kiro tool call in a recorded run, wired into the policy picker (C7) |
 | D2 | Custom agent in `.kiro/agents/` (a verifier agent that runs the policy checks) used during the build | Me | P0 | todo | File committed and used in at least one logged task |
 | D3 | A Kiro power or documented MCP integration for the JFLAP checks | Me | P1 | todo | Installable from the repo; documented |
 | D4 | Specs: keep `.kiro/specs/gate` in sync; add one spec per new feature (race mode, Safe Ship) and work them through tasks | Me | P0 | todo | Every shipped feature maps to a spec task ticked off |
