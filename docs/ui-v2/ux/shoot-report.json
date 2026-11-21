@@ -1,0 +1,173 @@
+{
+ "errors": [],
+ "shots": [
+  "1440-idle.png",
+  "1440-resized.png",
+  "1440-resized-after-reload.png",
+  "1440-tour-1-machine.png",
+  "1440-tour-3-tape.png",
+  "1440-tour-4-key.png",
+  "1440-palette.png",
+  "1440-help.png",
+  "1440-rejected-rail.png",
+  "1920-idle.png",
+  "1920-resized.png",
+  "1920-resized-after-reload.png",
+  "1920-tour-1-machine.png",
+  "1920-tour-3-tape.png",
+  "1920-tour-4-key.png",
+  "1920-palette.png",
+  "1920-help.png",
+  "1920-rejected-rail.png",
+  "1280-idle.png",
+  "1280-resized.png",
+  "1280-resized-after-reload.png",
+  "1280-tour-1-machine.png",
+  "1280-tour-3-tape.png",
+  "1280-tour-4-key.png",
+  "1280-palette.png",
+  "1280-help.png",
+  "1280-rejected-rail.png",
+  "390-idle.png",
+  "1440-key-approved.png"
+ ],
+ "strips": {
+  "strip-reduced-rejected": {
+   "frames": 4,
+   "distinct": 4,
+   "hashes": [
+    "af61be133fbb",
+    "3be9d0d60ea8",
+    "058ebe7ed118",
+    "9b3f03f31d02"
+   ]
+  },
+  "strip-allowed": {
+   "frames": 8,
+   "distinct": 8,
+   "hashes": [
+    "2c26be432074",
+    "3143a0dc9e74",
+    "d6a0431faa89",
+    "75c322efc699",
+    "ae4737eb3167",
+    "97d8e7c8dec9",
+    "cc7a03756062",
+    "bbc503ce2afb"
+   ]
+  },
+  "strip-rejected": {
+   "frames": 8,
+   "distinct": 8,
+   "hashes": [
+    "c77e8132b358",
+    "a6ea5ac633ec",
+    "2e644a4feb94",
+    "2006259c6c08",
+    "d90dc4fff5d0",
+    "857780bc3cb3",
+    "cf5d1886062c",
+    "9e6e70d26426"
+   ]
+  }
+ },
+ "overlaps": [
+  {
+   "at": "1440 idle",
+   "found": []
+  },
+  {
+   "at": "1440 resized",
+   "found": []
+  },
+  {
+   "at": "1440 rejected",
+   "found": []
+  },
+  {
+   "at": "1920 idle",
+   "found": []
+  },
+  {
+   "at": "1920 resized",
+   "found": []
+  },
+  {
+   "at": "1920 rejected",
+   "found": []
+  },
+  {
+   "at": "1280 idle",
+   "found": []
+  },
+  {
+   "at": "1280 resized",
+   "found": []
+  },
+  {
+   "at": "1280 rejected",
+   "found": []
+  },
+  {
+   "at": "1440 key approved",
+   "found": []
+  }
+ ],
+ "layoutSaved": {
+  "1280": "{\"tape\":258,\"console\":460,\"drawer\":460}",
+  "1440": "{\"tape\":370,\"console\":477,\"drawer\":460}",
+  "1920": "{\"tape\":370,\"console\":580,\"drawer\":460}"
+ },
+ "tourSeenAfterSkip": "seen",
+ "hashes": {
+  "1440-idle.png": "bcaacb37ee82",
+  "1440-resized.png": "90d5e5164261",
+  "1440-resized-after-reload.png": "ac0614d52e4f",
+  "1440-tour-1-machine.png": "383b6affb241",
+  "1440-tour-3-tape.png": "798ac073754a",
+  "1440-tour-4-key.png": "7a9f4358009b",
+  "1440-palette.png": "45d49522af0e",
+  "1440-help.png": "0493877e7218",
+  "1440-rejected-rail.png": "d8f424cfef50",
+  "1920-idle.png": "2c5bf2388e1b",
+  "1920-resized.png": "10af3121178f",
+  "1920-resized-after-reload.png": "1f8eaa6e7e18",
+  "1920-tour-1-machine.png": "3cd2c99e8e50",
+  "1920-tour-3-tape.png": "1559d3fb9c87",
+  "1920-tour-4-key.png": "0908839fce73",
+  "1920-palette.png": "bff8180423ee",
+  "1920-help.png": "dd19f3e1210b",
+  "1920-rejected-rail.png": "422f8bf9b6cb",
+  "1280-idle.png": "24f64e36694d",
+  "1280-resized.png": "4ba4b7464847",
+  "1280-resized-after-reload.png": "9e43f6bbad65",
+  "1280-tour-1-machine.png": "fc251d0c3d16",
+  "1280-tour-3-tape.png": "e18e9fe07136",
+  "1280-tour-4-key.png": "f3941c977ead",
+  "1280-palette.png": "77919011e282",
+  "1280-help.png": "cffeb9d6f319",
+  "1280-rejected-rail.png": "836e36cec109",
+  "strip-reduced-rejected-0.png": "af61be133fbb",
+  "strip-reduced-rejected-1.png": "3be9d0d60ea8",
+  "strip-reduced-rejected-2.png": "058ebe7ed118",
+  "strip-reduced-rejected-3.png": "9b3f03f31d02",
+  "390-idle.png": "10cbe4e64944",
+  "strip-allowed-0.png": "2c26be432074",
+  "strip-allowed-1.png": "3143a0dc9e74",
+  "strip-allowed-2.png": "d6a0431faa89",
+  "strip-allowed-3.png": "75c322efc699",
+  "strip-allowed-4.png": "ae4737eb3167",
+  "strip-allowed-5.png": "97d8e7c8dec9",
+  "strip-allowed-6.png": "cc7a03756062",
+  "strip-allowed-7.png": "bbc503ce2afb",
+  "strip-rejected-0.png": "c77e8132b358",
+  "strip-rejected-1.png": "a6ea5ac633ec",
+  "strip-rejected-2.png": "2e644a4feb94",
+  "strip-rejected-3.png": "2006259c6c08",
+  "strip-rejected-4.png": "d90dc4fff5d0",
+  "strip-rejected-5.png": "857780bc3cb3",
+  "strip-rejected-6.png": "cf5d1886062c",
+  "strip-rejected-7.png": "9e6e70d26426",
+  "1440-key-approved.png": "9b59e2d37a71"
+ }
+}
