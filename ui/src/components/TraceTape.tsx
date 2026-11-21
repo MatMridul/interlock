@@ -76,7 +76,7 @@ export function TraceTape({ beats, policy, replay, logCount }: Props) {
             {ghosts.map((g, i) => {
               const k = (slot[g.tapeIndex] = (slot[g.tapeIndex] ?? -1) + 1);
               const x = LEFT + g.tapeIndex * PITCH + k * PITCH + 38;
-              return <g key={i} stroke="#ff6b5e"><line x1={x} x2={x} y1={40} y2={50} /><line x1={x - 7} x2={x + 7} y1={50} y2={50} strokeWidth="2" /></g>;
+              return <g key={i} stroke="#ff6b5e"><line x1={x} x2={x} y1={46} y2={53} /><line x1={x - 7} x2={x + 7} y1={53} y2={53} strokeWidth="2" /></g>;
             })}
           </svg>
           {(() => {
@@ -86,7 +86,7 @@ export function TraceTape({ beats, policy, replay, logCount }: Props) {
               return (
                 <div key={i} className="ghost" style={{ left: LEFT + g.tapeIndex * PITCH + k * PITCH }}>
                   <button type="button" className="cell-btn" aria-label={`Blocked ${g.symbol} in ${g.from}. ${g.reason ?? ""} Never written to the tape.`}>
-                    <b>VOID {g.symbol}</b><em>blocked in {g.from}</em>
+                    <b>VOID {g.symbol}</b><em>in {g.from}</em>
                     <span className="tip" role="tooltip">{g.reason ?? "rejected"}<br />{latencyText(g)}</span>
                   </button>
                 </div>
