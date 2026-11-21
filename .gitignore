@@ -11,3 +11,4 @@ scripts/bedrock_calls.log
 # large design-process screenshots; the comps and the contact sheet are kept
 docs/ui-v2/round1/*-1920-*.png
 docs/ui-v2/round1/*-390-*.png
+*.class

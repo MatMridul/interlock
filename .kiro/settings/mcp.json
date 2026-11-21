@@ -2,7 +2,7 @@
   "mcpServers": {
     "jflap": {
       "command": "python",
-      "args": ["C:/Users/mridu/jflap-cli/jflap_mcp.py"],
+      "args": ["third_party/jflap-cli/jflap_mcp.py"],
       "env": {},
       "disabled": false,
       "autoApprove": [

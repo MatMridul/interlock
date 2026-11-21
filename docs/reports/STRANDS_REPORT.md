@@ -51,10 +51,10 @@ $env:AWS_REGION='ap-south-1'; $env:BEDROCK_MODEL_ID='global.amazon.nova-2-lite-v
 .venv\Scripts\python scripts\strands_hello.py
 .venv\Scripts\python scripts\strands_real_run.py 1 2         # then 4, then 3
 .venv\Scripts\python -m pytest tests\test_strands_agent.py -q   # 37 passed in 1.25s
-.venv\Scripts\python -m pytest tests -q                         # 258 passed in 49.60s
+.venv\Scripts\python -m pytest tests -q                         # all passed at the time; current counts: docs/reports/TEST_COUNTS.md
 ```
 
-**Full suite: 258 passed, 0 failed = the 221 existing + 37 new.**
+**Full suite: all passed, 0 failed at the time of this report. Current counts: [TEST_COUNTS.md](TEST_COUNTS.md).**
 
 ### Hello world (real output, Nova 2 Lite, ap-south-1)
 

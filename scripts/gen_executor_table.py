@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-JFLAP_CLI = os.environ.get("JFLAP_CLI", r"C:\Users\mridu\jflap-cli\jflap_cli.py")
+JFLAP_CLI = os.environ.get("JFLAP_CLI", os.path.join(ROOT, "third_party", "jflap-cli", "jflap_cli.py"))
 JFF = os.path.join(ROOT, "policy", "finance.jff")
 OUT = os.path.join(ROOT, "bank", "executor_table.py")
 
@@ -76,7 +76,7 @@ def render(text=None):
 def main():
     text = render()
     if "--check" in sys.argv:
-        with open(OUT, newline="") as f:
+        with open(OUT) as f:  # text mode: tolerate CRLF checkouts (autocrlf)
             sys.exit(0 if f.read() == text else 1)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", newline="\n") as f:

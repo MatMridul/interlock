@@ -3,12 +3,12 @@
   "hooks": [
     {
       "name": "Policy checks on save",
-      "description": "DRAFT. When policy/finance_table.json or policy/finance.jff is saved: run the exhaustive and mutation checks (about 3 s), then check that bank/executor_table.py is not stale. Windows venv path; needs jflap-cli at its configured location.",
+      "description": "DRAFT. When policy/finance_table.json or policy/finance.jff is saved: run the exhaustive and mutation checks (about 3 s), then check that bank/executor_table.py is not stale. Run from the repo root with `python` on PATH (activate the venv first); uses the vendored third_party/jflap-cli, override with the JFLAP_CLI env var.",
       "trigger": "PostFileSave",
       "matcher": "policy[/\\\\](finance_table\\.json|finance\\.jff)$",
       "action": {
         "type": "command",
-        "command": ".venv\\Scripts\\python -m pytest tests/test_sm_exhaustive.py tests/test_sm_mutation.py -q && .venv\\Scripts\\python scripts/gen_executor_table.py --check"
+        "command": "python -m pytest tests/test_sm_exhaustive.py tests/test_sm_mutation.py -q && python scripts/gen_executor_table.py --check"
       },
       "timeout": 120,
       "enabled": true
