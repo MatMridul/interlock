@@ -8,7 +8,7 @@ DRAFT README for owner review.
 - A deterministic Gate decides which proposals run. The allowed order is a 5-state machine authored and checked in JFLAP 7.1.
 - At runtime the Gate uses a Python table generated from the JFLAP model, tested equal to it. JFLAP does not run at runtime.
 - The approval step (MFA) is done by a human through an HTTP endpoint. The model has no tool for it.
-- The repo includes a playground UI, 336 Python tests and 20 UI tests, and the reports that record what was and was not checked.
+- The repo includes an Instrument-style UI (custom SVG stage), 336 Python tests (320 in the fast subset re-run for this README) and 26 UI tests, and the reports that record what was and was not checked.
 
 Tools are stubs: no network, no money moves.
 
@@ -81,10 +81,10 @@ Open `http://127.0.0.1:8000`. Real model calls need AWS credentials from the sta
 
 ```
 .venv\Scripts\python -m pytest -q          # 336 tests collected as of this draft; expected all pass
-cd ui; npm test                            # 20 UI tests (Vitest) as reported in UI_REPORT.md
+cd ui; npm test                            # 26 UI tests (Vitest), see docs/ui-v2/UI_BUILD_REPORT.md
 ```
 
-The last full-suite result recorded in the reports is 334 passed (UI_REPORT.md); the 336 count and a fresh full pass were not re-run for this README (unverified). The suite takes 1 to 2 minutes; the JFLAP-based tests need `jflap-cli` and Java (`C:\Users\mridu\jflap-cli` in this setup). Quick check (about 3 s): `pytest tests\test_sm_exhaustive.py tests\test_sm_mutation.py`. Table freshness: `python scripts\gen_executor_table.py --check`.
+The last full-suite result recorded in the reports is 334 passed (UI_REPORT.md); the 336 count and a fresh full pass were not re-run (unverified); the fast subset without test_mutation_m3 and test_replay_m5 gives 320 passed. The suite takes 1 to 2 minutes; the JFLAP-based tests need `jflap-cli` and Java (`C:\Users\mridu\jflap-cli` in this setup). Quick check (about 3 s): `pytest tests\test_sm_exhaustive.py tests\test_sm_mutation.py`. Table freshness: `python scripts\gen_executor_table.py --check`.
 
 ## Honest non-guarantees
 
