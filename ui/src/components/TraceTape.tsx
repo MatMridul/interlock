@@ -37,7 +37,7 @@ export function TraceTape({ beats, policy, replay, logCount }: Props) {
   }, []);
   const gaps = Math.max(1, lanes.length - 1);
   const lane = Math.min(40, LANE + Math.max(0, bodyH - BASE_H) / gaps);
-  const cellTop = LANE_TOP + gaps * lane + 10;
+  const cellTop = LANE_TOP + gaps * lane + 6;
   const level = (st: string) => LANE_TOP + lanes.indexOf(st) * lane;
   useEffect(() => {
     const el = scroller.current;

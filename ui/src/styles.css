@@ -306,8 +306,8 @@ dialog h3 { margin: 0 0 4px; font: 600 16px var(--cond); letter-spacing: .16em; 
   .sep { display: none; }
   .stage-scroll { overflow-x: auto; }
   .stage-inner { width: 760px; }
-  .toasts { position: fixed; top: auto; bottom: 8px; left: 8px; right: 8px; transform: none; width: auto; }
-  .key.docked { position: static; transform: none !important; width: auto; height: auto; margin: 0; grid-row: 5; }
+
+  .key.docked { position: relative; transform: none !important; width: auto; height: auto; margin: 0; grid-row: 5; }
   .tape { grid-row: 6; height: auto; min-height: 220px; }
   .console { grid-column: 1; grid-row: 7; border-left: 0; border-top: 1px solid var(--line); min-height: 420px; }
   .app[data-console="closed"] .console { min-height: 0; }
