@@ -71,7 +71,7 @@ export function HumanKey({ disabled, turning, attention, shake, result, onSubmit
         <g className="cover"><rect x="2" y="2" width="42" height="42" className="k" fill="rgba(255,179,71,.14)" /><path d="M2 2L44 44M44 2L2 44" className="k" strokeDasharray="3 3" /></g>
       </svg>
       <h2>Human key</h2>
-      <p>HUMAN ONLY. Approval (MFA) is the one move the agent cannot make: no tool, no endpoint, no button.</p>
+      <p>HUMAN ONLY. The agent has no tool, endpoint or button for approval (MFA).</p>
       {!lifted ? (
         <button type="button" className="btn-key" disabled={disabled} aria-expanded="false" onClick={() => setLifted(true)}>Lift cover</button>
       ) : (
