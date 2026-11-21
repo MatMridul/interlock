@@ -64,28 +64,40 @@ Reports: [SPEC_GATE_v2.md](SPEC_GATE_v2.md), [VERIFICATION_REPORT.md](VERIFICATI
 
 Also: M1 exhaustive check of table, ordering rules and regex over all 2,015,539 strings up to length 8 (0 mismatches); 96 of 96 table mutants killed; 12 gate mutants with one survivor that led to property X1.
 
-## Run locally (Windows, bound to 127.0.0.1)
+<!-- quick-start:begin (maintained by the hardening task; the final README may replace this block) -->
+## Quick start (Windows, macOS, Linux)
+
+Needs Python 3.10+ (CI uses 3.12) and, for the UI, Node 20+. The JFLAP-based checks and tests also need a JDK (11+); JFLAP 7.1 and `jflap-cli` are vendored in `third_party/`.
 
 ```
-.venv\Scripts\python -m pip install -r requirements.txt
-cd ui; npm ci; npm run build; cd ..
-$env:DEMO_MFA_CODE = "<choose a demo code>"      # the code typed in the Human approval dialog
-# optional: $env:STUB = "1"   (canned model, no Bedrock)
-# optional: $env:AWS_REGION, $env:BEDROCK_MODEL_ID   (defaults: ap-south-1, global.amazon.nova-2-lite-v1:0)
-.venv\Scripts\python -m uvicorn server.app:app --host 127.0.0.1 --port 8000
+python scripts/setup.py          # creates .venv, installs requirements.txt, builds the UI (add --no-ui to skip)
 ```
 
-Open `http://127.0.0.1:8000`. Real model calls need AWS credentials from the standard boto3 chain and Bedrock model access in your account. UI dev server: `cd ui; npm run dev` (127.0.0.1:5173, proxies to :8000).
+Start the server (bound to 127.0.0.1; `STUB=1` uses a canned model, so no AWS account is needed):
+
+```
+# macOS / Linux
+STUB=1 .venv/bin/python -m uvicorn server.app:app --host 127.0.0.1 --port 8000
+
+# Windows (PowerShell)
+$env:STUB = "1"; .venv\Scripts\python -m uvicorn server.app:app --host 127.0.0.1 --port 8000
+```
+
+Open `http://127.0.0.1:8000`. The human approval (MFA) code is a random 6-digit number printed once on the server console; set `DEMO_MFA_CODE` to choose your own. Real model calls need AWS credentials from the standard boto3 chain and Bedrock model access (`AWS_REGION`, `BEDROCK_MODEL_ID`; defaults `ap-south-1`, `global.amazon.nova-2-lite-v1:0`). UI dev server: `cd ui && npm run dev` (127.0.0.1:5173, proxies to :8000). `INTERLOCK_ENV=production` refuses to start unless `DEMO_MFA_CODE` is set.
 
 ## Verify
 
+Commands and the last recorded results per suite are in [docs/reports/TEST_COUNTS.md](docs/reports/TEST_COUNTS.md). In short:
+
 ```
-.venv\Scripts\python -m pytest -q          # 336 tests collected as of this draft; expected all pass
-cd ui; npm test                            # 26 UI tests (Vitest), see docs/ui-v2/UI_BUILD_REPORT.md
+python -m pytest -q --ignore=tests/test_mutation_m3.py --ignore=tests/test_replay_m5.py   # fast subset
+python -m pytest -q tests/test_mutation_m3.py tests/test_replay_m5.py                     # slow, needs Java
+python scripts/gen_executor_table.py --check                                              # table freshness
+cd ui && npm test && npm run build                                                        # UI tests and build
 ```
 
-The last full-suite result recorded in the reports is 334 passed (UI_REPORT.md); the 336 count and a fresh full pass were not re-run (unverified); the fast subset without test_mutation_m3 and test_replay_m5 gives 320 passed. The suite takes 1 to 2 minutes; the JFLAP-based tests need `jflap-cli` and Java (`C:\Users\mridu\jflap-cli` in this setup). Quick check (about 3 s): `pytest tests\test_sm_exhaustive.py tests\test_sm_mutation.py`. Table freshness: `python scripts\gen_executor_table.py --check`.
-
+Set `JFLAP_CLI` to use a different `jflap_cli.py` than the vendored one.
+<!-- quick-start:end -->
 ## Honest non-guarantees
 
 - The model's text is not checked; the UI shows the gate's executed log.
