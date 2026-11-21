@@ -1,4 +1,4 @@
-"""FastAPI app. Local run (127.0.0.1 only): see BACKEND_REPORT.md."""
+"""FastAPI app. Local run (127.0.0.1 only): see docs/reports/BACKEND_REPORT.md."""
 import hmac
 import json
 import logging

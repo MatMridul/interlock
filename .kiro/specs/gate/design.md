@@ -1,6 +1,6 @@
 # Design: the Gate
 
-DRAFT for owner review. Details and evidence: `SPEC_GATE_v2.md`, `VERIFICATION_REPORT.md`, `EXECUTOR_REPORT.md`, `STRANDS_REPORT.md`, `BACKEND_REPORT.md`, `UI_REPORT.md`. Diagram: `docs/architecture/architecture.html`.
+DRAFT for owner review. Details and evidence: `SPEC_GATE_v2.md`, `docs/reports/VERIFICATION_REPORT.md`, `docs/reports/EXECUTOR_REPORT.md`, `docs/reports/STRANDS_REPORT.md`, `docs/reports/BACKEND_REPORT.md`, `docs/ui-v2/UI_BUILD_REPORT.md`. Diagram: `docs/architecture/architecture.html`.
 
 ## Architecture
 
@@ -51,7 +51,7 @@ Invariants:
 | INV-4 | `test_inv4_bad_symbol_rejects`, `test_inv4_unknown_tool_name_has_no_symbol` |
 | INV-5 | `tests/test_strands_agent.py` (adversarial orders, prompt corpus) |
 | INV-6 | `test_inv6_state_written_only_in_commit_and_init`, `test_inv6_state_property_is_read_only` |
-| INV-7 | JFLAP `inspect` (VERIFICATION_REPORT 2.1); not a pytest test |
+| INV-7 | JFLAP `inspect` (docs/reports/VERIFICATION_REPORT.md 2.1); not a pytest test |
 | INV-8 | 16-cell and bad-symbol tests, every reject in Hypothesis runs |
 | INV-9 | `tests/test_guard_s9.py` |
 | INV-10 | `test_latency_absent_when_no_measurement`, `test_latency_present_and_measured_with_perf_counter` in `tests/test_server_api.py` |
@@ -64,7 +64,7 @@ Verification layers: M1 exhaustive (2,015,539 strings, 321 accepted), M2 JFLAP, 
 Fail closed everywhere: any exception becomes a reject with no state change. Strands aborts an invocation if a hook raises, so the hook catches and cancels.
 
 ## Testing strategy
-Stub `Model` (`tests/stubmodel.py`) for the agent loop; no Bedrock in automated tests. One real adversarial run (Nova 2 Lite) is recorded in `STRANDS_REPORT.md`.
+Stub `Model` (`tests/stubmodel.py`) for the agent loop; no Bedrock in automated tests. One real adversarial run (Nova 2 Lite) is recorded in `docs/reports/STRANDS_REPORT.md`.
 
 ## Not verified
 Concurrent gate use; Claude on Bedrock; deployment host; Kiro hook STDIN fields.

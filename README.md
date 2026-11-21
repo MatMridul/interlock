@@ -8,7 +8,7 @@ DRAFT README for owner review.
 - A deterministic Gate decides which proposals run. The allowed order is a 5-state machine authored and checked in JFLAP 7.1.
 - At runtime the Gate uses a Python table generated from the JFLAP model, tested equal to it. JFLAP does not run at runtime.
 - The approval step (MFA) is done by a human through an HTTP endpoint. The model has no tool for it.
-- The repo includes an Instrument-style UI (custom SVG stage), 336 Python tests (320 in the fast subset re-run for this README) and 26 UI tests, and the reports that record what was and was not checked.
+- The repo includes an Instrument-style UI (custom SVG stage), Python and UI test suites (counts and commands: [TEST_COUNTS.md](docs/reports/TEST_COUNTS.md)), and the reports that record what was and was not checked.
 
 Tools are stubs: no network, no money moves.
 
@@ -45,7 +45,7 @@ Layer 1 (gate) and layer 2 (hook) each block alone; tests prove both.
 
 ## The 12 invariants and their tests
 
-Reports: [SPEC_GATE_v2.md](SPEC_GATE_v2.md), [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md), [EXECUTOR_REPORT.md](EXECUTOR_REPORT.md), [STRANDS_REPORT.md](STRANDS_REPORT.md), [BACKEND_REPORT.md](BACKEND_REPORT.md), [UI_REPORT.md](UI_REPORT.md).
+Reports: [SPEC_GATE_v2.md](SPEC_GATE_v2.md), [docs/reports/](docs/reports/README.md) (verification, executor, Strands, backend, UI build and hardening reports; test counts in [TEST_COUNTS.md](docs/reports/TEST_COUNTS.md)).
 
 | ID | Invariant | Covered by |
 | :-- | :-- | :-- |
@@ -55,7 +55,7 @@ Reports: [SPEC_GATE_v2.md](SPEC_GATE_v2.md), [VERIFICATION_REPORT.md](VERIFICATI
 | INV-4 | Unknown tool cannot run | `test_inv4_bad_symbol_rejects`, `test_inv4_unknown_tool_name_has_no_symbol` |
 | INV-5 | Model can act only through the checker | `tests/test_strands_agent.py` |
 | INV-6 | State changes only by accepted transition | `test_inv6_*` |
-| INV-7 | Model is deterministic and complete, only SINK is dead | JFLAP `inspect` (VERIFICATION_REPORT 2.1), not a pytest test |
+| INV-7 | Model is deterministic and complete, only SINK is dead | JFLAP `inspect` (docs/reports/VERIFICATION_REPORT.md 2.1), not a pytest test |
 | INV-8 | Rejections carry a reason | 16-cell tests, Hypothesis runs |
 | INV-9 | Argument limits | `tests/test_guard_s9.py` |
 | INV-10 | Latencies are measured | `test_latency_absent_when_no_measurement` |

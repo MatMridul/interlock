@@ -21,7 +21,7 @@ Vite + React + TypeScript with a hand-built SVG stage. No @xyflow/react, no CDN,
 - The STUB model answers instantly, so the timed screenshots (`*-token-in-flight`, `*-allowed-mid`, `*-rejected-barrier`, `*-rejected-shatter`) mostly show settled frames, not the true mid-animation moment. See weakest things below.
 - Frame sampling is software-rendered headless Chrome, not a real GPU.
 - Bedrock: 0 real calls.
-- The brief's 336 Python test count was not re-run in full; the fast subset was.
+- Python test counts: see docs/reports/TEST_COUNTS.md.
 
 ## Commit list (`git log --oneline main..ui-instrument`)
 
@@ -70,7 +70,7 @@ node docs/ui-v2/build/shoot-ui.mjs docs/ui-v2/build <file-with-code-outside-repo
 
 ## Tests
 
-- Python fast subset: 320 passed (11.5 s).
+- Python fast subset: passed (counts: docs/reports/TEST_COUNTS.md).
 - UI (Vitest + RTL): 26 passed in 5 files: SSE parser (chunk boundaries, multi-line data, split UTF-8), reducer, event queue (order, no loss, reduced motion), scoreboard side-effects, stage highlighting from policy JSON.
 - `npm run build`: passes, no TypeScript errors.
 

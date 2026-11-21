@@ -1,6 +1,6 @@
 """M3 mutation check: hand-picked table mutants injected into a Gate; the property
 suite S1 to S7 must fail for each. Mutants that S1-S7 miss must be caught by an
-added test (X1 or the liveness check) and are listed in EXECUTOR_REPORT.md."""
+added test (X1 or the liveness check) and are listed in docs/reports/EXECUTOR_REPORT.md."""
 import copy
 
 import pytest
