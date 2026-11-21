@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from server import config
+from server.limits import Limiter
 from server.session import Registry, stream_events
 
 
@@ -40,8 +41,17 @@ def default_model_factory():
     return make_bedrock_model()
 
 
-def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESSIONS):
+def _client(request: Request):
+    return request.client.host if request.client else "unknown"
+
+
+def _too_many(seconds):
+    return JSONResponse({"detail": "too many requests"}, status_code=429, headers={"Retry-After": str(seconds)})
+
+
+def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESSIONS, limiter=None):
     config.announce_mfa_code()
+    limiter = limiter or Limiter()
     app = FastAPI(title="Kiroween gate backend")
     registry = Registry(model_factory, max_sessions)
     app.state.registry = registry
@@ -64,11 +74,17 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
         return json.loads(POLICY_PATH.read_text(encoding="utf-8"))
 
     @app.post("/session")
-    def new_session():
+    def new_session(request: Request):
+        wait = limiter.rate_limited("session", _client(request))
+        if wait:
+            return _too_many(wait)
         return {"session_id": registry.create().id}
 
     @app.post("/session/{sid}/chat")
-    def chat(sid: str, body: ChatBody):
+    def chat(sid: str, body: ChatBody, request: Request):
+        wait = limiter.rate_limited("chat", _client(request))
+        if wait:
+            return _too_many(wait)
         s = registry.get(sid)
         if s is None:
             return _missing()
@@ -83,12 +99,21 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
         return _missing() if s is None else s.state_view()
 
     @app.post("/session/{sid}/mfa")
-    def mfa(sid: str, body: MfaBody):
+    def mfa(sid: str, body: MfaBody, request: Request):
+        client = _client(request)
+        wait = limiter.rate_limited("mfa", client)
+        if wait:
+            return _too_many(wait)
         s = registry.get(sid)
         if s is None:
             return _missing()
+        wait = limiter.mfa_locked(sid, client)  # checked before the code: a right guess during lockout fails too
+        if wait:
+            return _too_many(wait)
         if not hmac.compare_digest(body.code.encode(), config.demo_mfa_code().encode()):
+            limiter.mfa_failed(sid, client)
             return JSONResponse({"detail": "wrong code"}, status_code=403)
+        limiter.mfa_succeeded(sid)
         # source='human' is set here, by server code only. No request field reaches it.
         r = s.gate.run("MFA", {}, source="human")
         out = {"verdict": r["verdict"], "state": r["state"]}
