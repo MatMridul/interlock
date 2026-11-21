@@ -1,3 +1,5 @@
+> **Superseded.** This is an early planning document. The current design is `SPEC_GATE_v2.md` and `.kiro/specs/gate/`. Where this file differs from the repo, the repo is right (for example the UI is React with Vite).
+
 # SPEC GATE: The Chimeric Automaton (v1, supersedes the claims in CHIMERIC_AUTOMATON_SPEC.md where they differ)
 
 > SUPERSEDED by [SPEC_GATE_v2.md](SPEC_GATE_v2.md). Kept for history; where they differ, v2 is the spec.
@@ -70,7 +72,7 @@ Explicit non-guarantees: the model's natural-language claims are not checked; th
 4. Adversarial suite against a stub LLM (INV-5).
 5. Counter guard (INV-9).
 6. Real LLM wired behind the port.
-7. UI (Next.js + React Flow) and Proof Inspector (INV-10).
+7. UI (React (Vite) + React Flow) and Proof Inspector (INV-10).
 8. Deployment (container host for a working URL), video, write-up, blog.
 
 Day budget (Nov 15 -> Dec 4 = 19 days): steps 1-5 days 1-6, step 6 day 7-8, step 7 days 9-14, step 8 days 15-17, buffer days 18-19 (retakes, deploy fixes). The Devpost submission is done a day early.

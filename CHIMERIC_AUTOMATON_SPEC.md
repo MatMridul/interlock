@@ -1,3 +1,5 @@
+> **Superseded.** This is an early planning document. The current design is `SPEC_GATE_v2.md` and `.kiro/specs/gate/`. Where this file differs from the repo, the repo is right (for example the UI is React with Vite).
+
 # THE CHIMERIC AUTOMATON
 
 > Original pitch, kept for history. Several claims here (latency figures, "zero hallucination", file formats, JFLAP on the hot path) were corrected; see [SPEC_GATE_v2.md](SPEC_GATE_v2.md), which is the spec.
@@ -5,8 +7,8 @@
 **Hackathon Track:** Frankenstein (Stitching Fundamentally Incompatible Technologies)  
 **Target Category:** Best Frankenstein ($5,000) + Overall 1st Place ($30,000)  
 **Author:** Mridul Mathur  
-**Repository Working Directory:** `C:\Mridul\Programs\Kiroween`  
-**Core Technologies:** JFLAP 7.1 (Formal Automata Engine), Model Context Protocol (MCP), Kiro Agentic IDE & CLI, Next.js / React Flow
+**Repository Working Directory:** `<repo root>`  
+**Core Technologies:** JFLAP 7.1 (Formal Automata Engine), Model Context Protocol (MCP), Kiro Agentic IDE & CLI, React (Vite) / React Flow
 
 ---
 
@@ -149,7 +151,7 @@ Chimeric-Automaton/
 
 ## 5. Live Visual Playground Architecture
 
-A high-polish Next.js + React Flow application providing real-time visibility into the hybrid system:
+A high-polish React (Vite) + React Flow application providing real-time visibility into the hybrid system:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
@@ -220,7 +222,7 @@ Phase 2: Kiro Runtime Interceptor (Days 4 - 8)
   • Build the counterfactual steering loop for rejected actions.
 
 Phase 3: Visual Playground (Days 9 - 14)
-  • Build Next.js + React Flow state visualizer.
+  • Build React (Vite) + React Flow state visualizer.
   • Connect WebSocket / SSE to stream live JFLAP transition proofs and active states.
 
 Phase 4: Devpost Submission & Video (Days 15 - 18)
