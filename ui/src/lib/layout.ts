@@ -9,7 +9,7 @@ export interface Bounds { min: number; max: number }
 export type Viewport = { w: number; h: number };
 
 /** Fixed chrome above the tape: header 44, scoreboard about 84, notification rail 78. The stage keeps at least STAGE_MIN. */
-const CHROME_H = 216;
+const CHROME_H = 190;
 const STAGE_MIN_H = 240;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
