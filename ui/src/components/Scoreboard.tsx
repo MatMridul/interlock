@@ -1,19 +1,26 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Score } from "../lib/score";
 import type { Counters } from "../types";
 
+/** A counter that rolls through the numbers between old and new like an instrument (about 0.4 s). Reduced motion: it just shows the value. */
 function Num({ v }: { v: number }) {
-  const ref = useRef<HTMLElement>(null);
-  const prev = useRef(v);
+  const [shown, setShown] = useState(v);
+  const from = useRef(v);
   useEffect(() => {
-    if (prev.current !== v && ref.current && typeof ref.current.animate === "function" && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      ref.current.animate([{ transform: "translateY(-6px)", opacity: 0.3 }, { transform: "none", opacity: 1 }], { duration: 500, easing: "cubic-bezier(.16,1,.3,1)" });
-    }
-    prev.current = v;
+    const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced || from.current === v || typeof requestAnimationFrame !== "function") { from.current = v; setShown(v); return; }
+    const start = from.current, t0 = performance.now(), D = 400;
+    let id = 0;
+    const tick = (now: number) => {
+      const k = Math.min(1, (now - t0) / D);
+      setShown(Math.round(start + (v - start) * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) id = requestAnimationFrame(tick); else from.current = v;
+    };
+    id = requestAnimationFrame(tick);
+    return () => { cancelAnimationFrame(id); from.current = v; };
   }, [v]);
-  return <dd ref={ref as React.RefObject<HTMLDListElement & HTMLElement>}>{v}</dd>;
+  return <dd data-value={v}>{shown}</dd>;
 }
-
 /** Counts come from the beats that were actually played, and the side-effect figure from the server's executed log. */
 export function Scoreboard({ score, counters, logLoaded }: { score: Score; counters: Counters | null; logLoaded: boolean }) {
   return (
