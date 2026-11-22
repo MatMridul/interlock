@@ -1,6 +1,36 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MAX_LOG } from "../state";
-import type { Counters, LogEntry, Verdict } from "../types";
+import { parseSequence, whatIf } from "../lib/whatif";
+import type { Counters, LogEntry, Policy, Verdict } from "../types";
+
+/** C4: type or click a symbol sequence; the table from GET /policy decides. Nothing is sent to the server. */
+export function WhatIfBox({ policy }: { policy: Policy }) {
+  const [text, setText] = useState("");
+  const parsed = useMemo(() => parseSequence(policy, text), [policy, text]);
+  const result = useMemo(() => (text.trim() && !parsed.error ? whatIf(policy, parsed.symbols) : null), [policy, text, parsed]);
+  const add = (s: string) => setText((t) => `${t.trim()} ${s}`.trim());
+  return (
+    <div className="whatif" data-testid="whatif">
+      <label htmlFor="whatif-in" className="sr">Symbol sequence to test</label>
+      <div className="wi-row">
+        <input id="whatif-in" value={text} maxLength={400} spellCheck={false} autoComplete="off" placeholder="AUTH DRAFT TRANSFER  or  ADT" onChange={(e) => setText(e.target.value)} />
+        <button type="button" className="btn-ghost" onClick={() => setText("")} disabled={!text}>Clear</button>
+      </div>
+      <div className="wi-syms" role="group" aria-label="Add a symbol">
+        {policy.symbols.map((s) => <button key={s} type="button" className="btn-ghost" onClick={() => add(s)}>{s}</button>)}
+      </div>
+      <div role="status" aria-live="polite" className="wi-out">
+        {parsed.error ? <span className="bad">{parsed.error}</span> : result ? (
+          <>
+            <b className={result.accept ? "ok" : "bad"} data-testid="whatif-verdict">{result.accept ? "ACCEPT" : "REJECT"}</b>
+            {result.failedAt !== undefined && <span> at step {result.failedAt + 1}: {result.steps[result.failedAt].symbol} is not allowed in {result.steps[result.failedAt].from}</span>}
+            <ol className="wi-steps">{result.steps.map((st, i) => <li key={i} className={st.ok ? "" : "bad"}>{st.symbol}: {st.from} → {st.ok ? st.to : "undefined"}</li>)}</ol>
+          </>
+        ) : <span>Type symbols (AUTH, DRAFT, EDIT, MFA, TRANSFER, CANCEL) or their letters.</span>}
+      </div>
+    </div>
+  );
+}
 
 export const INVARIANTS: { id: string; text: string; where: string }[] = [
   { id: "INV-1", text: "Every executed action sequence is a word of the machine's language.", where: "EXECUTOR_REPORT.md" },
@@ -30,12 +60,16 @@ interface Props {
   counters: Counters | null;
   verdict: Verdict | null;
   engineNote?: string;
+  policy?: Policy | null;
+  /** C3: the plain sentence for the last block */
+  why?: string | null;
+  onExport?: () => void;
   /** the width separator on the drawer's left edge */
   resizer?: ReactNode;
 }
 
 /** Slide-over with the evidence. The executed log is the source of truth, not the chat. */
-export function ProofDrawer({ open, onClose, log, counters, verdict, resizer }: Props) {
+export function ProofDrawer({ open, onClose, log, counters, verdict, resizer, policy, why, onExport }: Props) {
   const closeBtn = useRef<HTMLButtonElement>(null);
   useEffect(() => { if (open) closeBtn.current?.focus(); }, [open]);
   const shown = log.slice(-MAX_LOG);
@@ -53,6 +87,8 @@ export function ProofDrawer({ open, onClose, log, counters, verdict, resizer }: 
           {shown.length === 0 && <li>nothing executed yet</li>}
           {shown.map((e, i) => <li key={i}>{e.symbol}{e.source ? <span className="ptr"> ({e.source})</span> : null}</li>)}
         </ol>
+
+        {onExport && <p><button type="button" className="btn-ghost" onClick={onExport} disabled={log.length === 0 && !verdict}>Export audit log (JSON lines)</button></p>}
 
         <h3>Counters</h3>
         {counters ? (
@@ -76,6 +112,9 @@ export function ProofDrawer({ open, onClose, log, counters, verdict, resizer }: 
             <dt>engine</dt><dd>{verdict.engine}</dd>
           </dl>
         ) : <p>none yet</p>}
+        {why && <p className="why" data-testid="why-drawer"><b>Why was this blocked?</b> {why}</p>}
+
+        {policy && (<><h3>What if</h3><p>Test a sequence against the machine. Computed here from GET /policy; no session is touched.</p><WhatIfBox policy={policy} /></>)}
 
         <h3>The 12 invariants</h3>
         <ol>

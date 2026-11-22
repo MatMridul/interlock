@@ -3,6 +3,7 @@ export interface Policy {
   states: string[];
   symbols: string[];
   initial: string;
+  letters?: Record<string, string>;
   accepting?: string[];
   transitions: Record<string, Record<string, string>>;
 }

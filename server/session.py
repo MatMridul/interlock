@@ -77,8 +77,9 @@ class Session:
     def __init__(self, sid, model, guard=True):
         self.id = sid
         self.gate = ObservedGate(guard=guard)
-        self.agent = build_agent(self.gate, model)
-        self.agent.add_hook(_observer_hook(self.gate), BeforeToolCallEvent)
+        self.agent = build_agent(self.gate, model) if model is not None else None  # None: model off, driven by hand
+        if self.agent is not None:
+            self.agent.add_hook(_observer_hook(self.gate), BeforeToolCallEvent)
         self.lock = threading.Lock()  # one chat turn at a time
 
     def run_chat(self, message, emit):

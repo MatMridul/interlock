@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import * as api from "./api";
 import { ColdOpen, shouldPlayColdOpen } from "./components/ColdOpen";
-import { Console, VECTORS } from "./components/Console";
+import { Console, VECTORS, type AgentMode } from "./components/Console";
+import type { StageWhy } from "./components/Stage";
+import { whyBlocked } from "./lib/why";
+import { SCRIPTS } from "./lib/scripted";
+import { auditLines } from "./lib/audit";
+import { decodeReplay, encodeReplay, states as replayStates } from "./lib/share";
 import { HumanKey, type CodeResult } from "./components/HumanKey";
 import { ProofDrawer } from "./components/ProofDrawer";
 import { Scoreboard } from "./components/Scoreboard";
@@ -49,6 +54,18 @@ function useMedia(q: string) {
   return m;
 }
 
+/** F: an instrument fault, not a generic error toast. */
+export function FaultPanel({ fault, onRetry }: { fault: { text: string; kind: string }; onRetry: () => void }) {
+  const title = fault.kind === "down" ? "NO SIGNAL from gate. Retry." : fault.kind === "lost" ? "SESSION LOST. The gate no longer knows this session." : "GATE FAULT";
+  return (
+    <div className="fault" role="alert" data-testid="fault">
+      <b>{title}</b>
+      <span className="fault-d">{fault.text}</span>
+      <div><button type="button" onClick={onRetry}>{fault.kind === "lost" ? "New session" : "Retry"}</button></div>
+    </div>
+  );
+}
+
 export function App() {
   const [policy, setPolicy] = useState<Policy | null>(null);
   const [sid, setSid] = useState<string | null>(null);
@@ -56,7 +73,7 @@ export function App() {
   const [nt, notify] = useReducer(notifyReducer, initialNotify);
   const [fault, setFault] = useState<{ text: string; kind: string } | null>(null);
   const [drawer, setDrawer] = useState(false);
-  const [consoleClosed, setConsoleClosed] = useState(false);
+  const [consoleClosed, setConsoleClosed] = useState(() => typeof window !== "undefined" && window.innerWidth <= 900); // narrow screens start with the console sheet down
   const [cold, setCold] = useState(() => shouldPlayColdOpen());
   const [soundOn, setSoundOn] = useState(false);
   const [hapticsOn, setHapticsOn] = useState(false);
@@ -70,6 +87,14 @@ export function App() {
   const narrow = useMedia("(max-width: 900px)");
   const lay = useLayout();
   const [dragging, setDragging] = useState(false);
+  const [mode, setMode] = useState<AgentMode>("model");
+  const [modelOff, setModelOff] = useState(false);
+  const [why, setWhy] = useState<StageWhy | null>(null);
+  const [scrub, setScrub] = useState<number | null>(null);
+  const [tapeCollapsed, setTapeCollapsed] = useState(false);
+  const [traceEdge, setTraceEdge] = useState<string | null>(null);
+  const [replayOnly, setReplayOnly] = useState(false);
+  const configRead = useRef(false);
 
   const fxRef = useRef<Fx | null>(null);
   const sound = useRef(new Sound());
@@ -82,7 +107,7 @@ export function App() {
   const counterLocked = useRef(false);
 
   const cue = useCallback((n: CueName) => { sound.current.play(n); haptics.current.play(n); }, []);
-  const toast = useCallback((kind: "info" | "allowed" | "blocked" | "needs-human" | "error", text: string, label?: string) => notify({ type: "push", kind, text, label }), []);
+  const toast = useCallback((kind: "info" | "allowed" | "blocked" | "needs-human" | "error", text: string, label?: string, live?: string) => notify({ type: "push", kind, text, label, live }), []);
   const pulse = (set: (v: boolean) => void, ms: number) => { set(true); setTimeout(() => set(false), ms); };
 
   const refresh = useCallback(async (id: string) => {
@@ -103,13 +128,16 @@ export function App() {
     const { hook, beat } = e;
     const pol = policyRef.current;
     if (beat.kind === "agent") {
-      if (hook === "spawn") notify({ type: "say", text: `Agent proposes ${beat.symbol}.` });
+      if (hook === "spawn") { setWhy(null); notify({ type: "say", text: `Agent proposes ${beat.symbol}.` }); }
       if (hook === "impact" && beat.verdict === "ACCEPT") {
-        if (beat.symbol !== "TRANSFER") toast("allowed", `Allowed: ${beat.symbol}. State is now ${beat.to}.`);
+        if (beat.symbol !== "TRANSFER") toast("allowed", `Allowed: ${beat.symbol}. State is now ${beat.to}.`, undefined, `Agent proposed ${beat.symbol}. Allowed. State is now ${beat.to}.`);
         cue(beat.symbol === "TRANSFER" ? "executed" : "allowed");
       }
       if (hook === "impact" && beat.verdict === "REJECT") {
-        toast("blocked", `Blocked: ${beat.symbol} in ${beat.from}. State unchanged. ${beat.reason ?? `${beat.symbol} not allowed in ${beat.from}`}.`);
+        const w = pol ? whyBlocked(pol, beat.from, beat.symbol, beat.reason) : null;
+        if (w) setWhy({ from: beat.from, symbol: beat.symbol, path: w.path, sentence: w.sentence });
+        toast("blocked", `Blocked: ${beat.reason ?? `${beat.symbol} not allowed in ${beat.from}`}. State unchanged. ${w?.sentence ?? ""}`.trim(),
+          undefined, `Agent proposed ${beat.symbol}. Blocked: ${beat.reason ?? `${beat.symbol} not allowed in ${beat.from}`}. State unchanged. ${w?.sentence ?? ""}`.trim());
         cue("blocked");
       }
       if (hook === "settle" && beat.verdict === "ACCEPT") {
@@ -144,9 +172,34 @@ export function App() {
     try {
       queue.current && (queue.current.alive.v = false);
       queue.current?.director.clear();
+      let rejectedReplay: string | null = null;
       const p = policyRef.current ?? (await api.getPolicy());
       policyRef.current = p;
       setPolicy(p);
+      if (!configRead.current) {
+        configRead.current = true;
+        const cfg = await api.getConfig();
+        if (cfg.model === "off") { setModelOff(true); setMode("you"); }
+        const frag = typeof location !== "undefined" ? location.hash : "";
+        if (frag.startsWith("#replay=")) {
+          const r = decodeReplay(p, frag);
+          if ("symbols" in r) {
+            // a shared replay: no session, no server state. The tape and stage are built from the word alone.
+            const sts = replayStates(p, r.symbols);
+            dispatch({ type: "reset", initial: p.initial });
+            r.symbols.forEach((symbol, i) => dispatch({ type: "beat_record", symbol, verdict: "ACCEPT", from: sts[i], to: sts[i + 1], kind: symbol === "MFA" ? "human" : "agent" }));
+            dispatch({ type: "state_loaded", view: { id: "replay", state: sts[sts.length - 1], executed_log: r.symbols.map((symbol) => ({ symbol })), counters: null } });
+            setReplayOnly(true);
+            setFault(null);
+            toast("info", `Replay loaded: ${r.symbols.length} steps. Drag the scrubber or use the arrow keys. Read only.`, "Replay");
+            return;
+          }
+          rejectedReplay = `Replay link rejected. ${r.error}`; // shown after the new-session reset below
+        }
+      }
+      setReplayOnly(false);
+      setScrub(null);
+      setWhy(null);
       const { session_id } = await api.createSession();
       sidRef.current = session_id;
       setSid(session_id);
@@ -161,6 +214,7 @@ export function App() {
       counterLocked.current = false;
       setKeyResult(null);
       toast("info", `New session. State is ${p.initial}.`);
+      if (rejectedReplay) toast("error", rejectedReplay, "Replay");
     } catch (e) {
       const d = describe(e);
       setFault({ text: d.text, kind: d.kind });
@@ -203,6 +257,30 @@ export function App() {
       await refresh(id);
     }
   }, [refresh, toast, cue]);
+
+  const proposeActions = useCallback(async (actions: api.ProposeAction[]) => {
+    const id = sidRef.current, q = queue.current;
+    if (!id || !q) return;
+    dispatch({ type: "send_start" });
+    try {
+      for await (const ev of api.propose(id, actions)) {
+        let data: unknown = null;
+        try { data = JSON.parse(ev.data); } catch { continue; }
+        q.builder.handle(ev.event, data);
+      }
+    } catch (e) {
+      const d = describe(e);
+      dispatch({ type: "notice", text: d.text });
+      toast("error", d.text);
+      cue("error");
+      if (d.kind === "lost" || d.kind === "down") setFault({ text: d.text, kind: d.kind });
+    } finally {
+      await q.director.idle();
+      dispatch({ type: "send_end" });
+      await refresh(id);
+    }
+  }, [refresh, toast, cue]);
+  const runScript = useCallback((id: string) => { const s = SCRIPTS[id]; if (s) void proposeActions(s); }, [proposeActions]);
 
   const submitKey = useCallback(async (code: string): Promise<CodeResult> => {
     const id = sidRef.current, q = queue.current;
@@ -285,13 +363,36 @@ export function App() {
   const lastAccepted = [...ui.beats].reverse().find((b) => b.verdict === "ACCEPT") ?? null;
   const lastWithLatency = [...ui.beats].reverse().find((b) => b.latency !== undefined);
   const locked = !!ui.counters?.locked;
+  const acceptedBeats = useMemo(() => ui.beats.filter((b) => b.verdict === "ACCEPT"), [ui.beats]);
+  const scrubStates = useMemo(() => (policy ? [policy.initial, ...acceptedBeats.map((b) => b.to)] : []), [policy, acceptedBeats]);
+  const scrubbing = scrub !== null && scrub < acceptedBeats.length;
+  const shownState = scrubbing ? scrubStates[scrub] ?? ui.machineState : ui.machineState;
+  const replayLabel = replayOnly ? `REPLAY · read only${scrubbing ? ` · step ${scrub} of ${acceptedBeats.length}` : ""}` : scrubbing ? `REPLAY · step ${scrub} of ${acceptedBeats.length} · read only` : null;
+  const shareReplay = async () => {
+    if (!policy) return;
+    const frag = encodeReplay(policy, ui.log.map((l) => l.symbol));
+    if (!frag) { toast("error", "Nothing to share yet: no step has run."); return; }
+    const url = `${location.origin}${location.pathname}${frag}`;
+    try { await navigator.clipboard.writeText(url); toast("info", "Replay link copied. It holds the executed word only; nobody needs your session.", "Replay"); }
+    catch { location.hash = frag; toast("info", "Replay link is in the address bar. Copy it from there.", "Replay"); }
+  };
+  const exportAudit = () => {
+    const body = auditLines(sid ?? "none", ui.log, ui.beats);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([body], { type: "application/x-ndjson" }));
+    a.download = `interlock-audit-${(sid ?? "session").slice(0, 8)}.jsonl`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast("info", `Audit log downloaded: ${ui.log.length} executed, ${ui.beats.length} verdicts.`, "Export");
+  };
+  const exitReplay = () => { history.replaceState(null, "", location.pathname + location.search); setReplayOnly(false); setScrub(null); void start(); };
   const status = `${ui.machineState} · ${ui.running ? "turn running" : "idle"}`;
 
   const toggleSound = () => { const on = sound.current.enable(!sound.current.on); setSoundOn(on); if (on) sound.current.play("allowed"); };
   const toggleHaptics = () => { haptics.current.on = !haptics.current.on; setHapticsOn(haptics.current.on); haptics.current.play("allowed"); };
 
   const runAction = (id: string) => {
-    if (id.startsWith("vec-")) { const v = VECTORS.find((x) => `vec-${x.key}` === id); if (v && !busy) void sendMessage(v.message); return; }
+    if (id.startsWith("vec-")) { const v = VECTORS.find((x) => `vec-${x.key}` === id); if (v && !busy) { if (mode === "you") runScript(v.id); else void sendMessage(v.message); } return; }
     switch (id) {
       case "autoplay": if (auto.on) stopAutoplay(); else if (!ui.running && !fault && sid) void startAutoplay(); break;
       case "reset-session": if (!ui.running) void start(); break;
@@ -338,60 +439,64 @@ export function App() {
   );
 
   return (
-    <div className="app" data-console={consoleClosed ? "closed" : "open"} data-dragging={dragging || undefined} data-testid="app"
-      style={{ "--console-w": `${consoleClosed ? 46 : lay.layout.console}px`, "--tape-h": `${lay.layout.tape}px`, "--drawer-w": `${lay.layout.drawer}px` } as React.CSSProperties}>
+    <div className="app" data-console={consoleClosed ? "closed" : "open"} data-dragging={dragging || undefined} data-testid="app" data-rail={nt.toasts.length === 0 ? "empty" : undefined}
+      style={{ "--console-w": `${consoleClosed ? 46 : lay.layout.console}px`, "--tape-h": `${tapeCollapsed ? 34 : lay.layout.tape}px`, "--drawer-w": `${lay.layout.drawer}px` } as React.CSSProperties}>
       <header className="top">
         <div className="mark">Inter<i>lock</i><small>The Chimeric Automaton</small></div>
         <div className="sub">M = (Q, Σ, δ, q₀, F) · the agent proposes, the gate decides</div>
         <div className="sp" />
+        <div className="seg" role="group" aria-label="Who proposes actions">
+          <span className="seg-l">Agent:</span>
+          <button type="button" className="tg" aria-pressed={mode === "model"} disabled={modelOff || replayOnly} onClick={() => setMode("model")}
+            title={modelOff ? "The model is off on this server (INTERLOCK_MODEL=off)" : "A model proposes actions"}>model</button>
+          <button type="button" className="tg" aria-pressed={mode === "you"} onClick={() => setMode("you")} title="You propose actions by hand; the real gate decides; no model runs">you</button>
+        </div>
+        {replayOnly && <button type="button" className="tg" onClick={exitReplay}>Exit replay</button>}
         <button type="button" className="tg" aria-pressed={soundOn} onClick={toggleSound} title="Synthesised cues, off by default. Starts only after this click.">{soundOn ? "Sound on" : "Sound off"}</button>
         {Haptics.supported() && (
-          <button type="button" className="tg" aria-pressed={hapticsOn} onClick={toggleHaptics} title="Vibration works only on supporting Android browsers (Chrome, Firefox). iOS Safari and most desktops ignore it.">{hapticsOn ? "Haptics on" : "Haptics off"}</button>
+          <button type="button" className="tg wide-only" aria-pressed={hapticsOn} onClick={toggleHaptics} title="Vibration works only on supporting Android browsers (Chrome, Firefox). iOS Safari and most desktops ignore it.">{hapticsOn ? "Haptics on" : "Haptics off"}</button>
         )}
-        <button type="button" className="tg" onClick={lay.resetAll} disabled={lay.isDefault && !consoleClosed} title="Put the tape, console and drawer back to their default sizes">Reset layout</button>
+        <button type="button" className="tg wide-only" onClick={lay.resetAll} disabled={lay.isDefault && !consoleClosed} title="Put the tape, console and drawer back to their default sizes">Reset layout</button>
         <button type="button" className="tg" data-tour="palette" aria-keyshortcuts="Control+K" onClick={() => setPalette(true)} title="Every action in one list (Ctrl+K or /)">Commands</button>
-        <button type="button" className="tg" aria-keyshortcuts="?" onClick={() => setHelp(true)} title="Every keyboard shortcut (?)">Keys</button>
-        <button type="button" className="tg" onClick={() => tourDispatch({ type: "start" })} title="Replay the 30-second tour (T)">Help</button>
+        <button type="button" className="tg wide-only" aria-keyshortcuts="?" onClick={() => setHelp(true)} title="Every keyboard shortcut (?)">Keys</button>
+        <button type="button" className="tg wide-only" onClick={() => tourDispatch({ type: "start" })} title="Replay the 30-second tour (T)">Help</button>
         <button type="button" className="tg" data-tour="proof" aria-expanded={drawer} aria-controls="drawer" onClick={() => setDrawer((v) => !v)}>Proof</button>
       </header>
 
       <Scoreboard score={score} counters={ui.counters} logLoaded={ui.counters !== null} />
 
-      <div className="rail" aria-label="Notifications">
+      <div className="rail" aria-label="Notifications" data-empty={nt.toasts.length === 0 || undefined}>
         <Toasts state={nt} onDismiss={(id) => notify({ type: "dismiss", id })} />
       </div>
 
       {policy ? (
-        <Stage policy={policy} current={ui.machineState} locked={locked} fxRef={fxRef} lastTaken={lastAccepted ? { from: lastAccepted.from, symbol: lastAccepted.symbol } : null}
+        <Stage policy={policy} current={shownState} locked={locked} fxRef={fxRef} why={scrubbing ? null : why} traceEdge={traceEdge} replayLabel={replayLabel} lastTaken={lastAccepted ? { from: lastAccepted.from, symbol: lastAccepted.symbol } : null}
           wordLength={score.allowed + score.human} lastDecision={lastWithLatency?.latency !== undefined ? `${lastWithLatency.latency} ms` : "n/a"} dim={!!fault}>
           {(m) => (
             <>
               {locked && <div className="locked" role="status"><div>Session locked</div><span>{ui.counters?.max_consecutive_rejects} rejected proposals in a row. The gate refuses everything. Reset to continue.</span></div>}
-              {fault && (
-                <div className="fault" role="alert">
-                  <b>Error</b>{fault.text}
-                  <div><button type="button" onClick={() => void start()}>{fault.kind === "lost" ? "New session" : "Retry"}</button></div>
-                </div>
-              )}
+              {fault && <FaultPanel fault={fault} onRetry={() => void start()} />}
               {!narrow && keyEl({ left: m.ox + KEY_ZONE.x * m.s, top: m.oy + KEY_ZONE.y * m.s, transformOrigin: "top left", transform: `scale(${m.s})` })}
             </>
           )}
         </Stage>
       ) : (
         <section className="stage" aria-label="The state machine">
-          {fault ? <div className="fault" role="alert"><b>Error</b>{fault.text}<div><button type="button" onClick={() => void start()}>Retry</button></div></div>
+          {fault ? <FaultPanel fault={fault} onRetry={() => void start()} />
             : <p style={{ padding: 20 }}>Loading the machine from GET /policy.</p>}
         </section>
       )}
       {narrow && keyEl(undefined, true)}
 
-      {policy && <TraceTape beats={ui.beats} policy={policy} replay={replay} logCount={ui.log.length} />}
+      {policy && <TraceTape beats={ui.beats} policy={policy} replay={replay} logCount={ui.log.length} scrub={scrubbing ? scrub : null} onScrub={setScrub} onShare={() => void shareReplay()}
+        collapsed={tapeCollapsed} onToggle={() => setTapeCollapsed((v) => !v)} onTrace={setTraceEdge} readOnly={replayOnly} />}
 
       <Console items={ui.items} running={ui.running} disabled={!sid || !!fault} reduced={reduced} closed={consoleClosed} autoplay={auto} status={status}
         onToggle={() => setConsoleClosed((v) => !v)} onSend={(t) => void sendMessage(t)}
+        mode={mode} policy={policy} onPropose={(a) => void proposeActions(a)} onScript={runScript}
         onAutoplay={() => void startAutoplay()} onStopAutoplay={stopAutoplay} onReset={() => void start()} />
 
-      <ProofDrawer open={drawer} onClose={() => setDrawer(false)} log={ui.log} counters={ui.counters} verdict={ui.lastVerdict}
+      <ProofDrawer open={drawer} onClose={() => setDrawer(false)} log={ui.log} counters={ui.counters} verdict={ui.lastVerdict} policy={policy} why={why?.sentence ?? null} onExport={exportAudit}
         resizer={!narrow && (
           <Separator orientation="vertical" growsToward="left" label="Resize the proof drawer" className="sep-drawer" controls="drawer" value={lay.layout.drawer}
             {...lay.bounds("drawer")} onChange={(v) => lay.set("drawer", v)} onReset={() => lay.reset("drawer")} onDragging={setDragging} />

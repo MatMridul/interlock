@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from server import config
+from server import manual
 from server.limits import Limiter
 from server.session import Registry, stream_events
 
@@ -33,6 +34,8 @@ log = logging.getLogger("server")
 
 
 def default_model_factory():
+    if not manual.model_enabled():  # INTERLOCK_MODEL=off: no model, no Bedrock; sessions are driven by hand
+        return None
     if os.environ.get("STUB") == "1":  # explicit opt-in only; any other value means off
         log.warning("STUB=1: using the canned dev model, NOT Bedrock. Never use this outside local UI testing.")
         from server.stub_model import StubModel
@@ -88,6 +91,8 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
         s = registry.get(sid)
         if s is None:
             return _missing()
+        if s.agent is None:
+            return JSONResponse({"detail": "model is off on this server"}, status_code=403)
         if not s.lock.acquire(blocking=False):
             return JSONResponse({"detail": "session busy"}, status_code=409)
         return StreamingResponse(stream_events(s, body.message), media_type="text/event-stream",
@@ -120,6 +125,8 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
         if "reason" in r:
             out["reason"] = r["reason"]
         return out
+
+    manual.add_routes(app, registry, limiter)  # C1: /config and /session/{sid}/propose
 
     if UI_DIST.is_dir():  # same-origin static UI; registered last so API routes win
         app.mount("/", StaticFiles(directory=str(UI_DIST), html=True), name="ui")

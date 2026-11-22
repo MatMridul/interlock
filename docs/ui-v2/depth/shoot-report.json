@@ -1,0 +1,25 @@
+{
+ "errors": [],
+ "shots": [
+  "390-idle-sheet-down.png",
+  "390-sheet-open-blocked.png",
+  "390-sheet-down-blocked.png"
+ ],
+ "strips": {},
+ "overlaps": [
+  {
+   "at": "390 sheet open",
+   "found": [
+    "rail overlaps stage",
+    "rail content clipped (a toast is hidden)",
+    "min stage text px: 10.0",
+    "stage 390x340"
+   ]
+  }
+ ],
+ "hashes": {
+  "390-idle-sheet-down.png": "57b0f153aa13",
+  "390-sheet-open-blocked.png": "30c5b227aba2",
+  "390-sheet-down-blocked.png": "43c33c8b303e"
+ }
+}

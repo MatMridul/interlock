@@ -35,6 +35,24 @@ export const postMfa = (sid: string, code: string) =>
     body: JSON.stringify({ code }),
   }).then((r) => json<{ verdict: string; state: string; reason?: string }>(r));
 
+export type ProposeAction = { tool: string; payee?: string; amount?: number };
+export const getConfig = () =>
+  fetch(`${BASE}/config`).then((r) => json<{ model: "on" | "off" }>(r)).catch((): { model: "on" | "off" } => ({ model: "on" }));
+
+/** C1: propose actions by hand. Same SSE events as chat; the server runs each through the real gate. */
+export async function* propose(sid: string, actions: ProposeAction[]): AsyncGenerator<SseEvent> {
+  const r = await fetch(`${BASE}/session/${sid}/propose`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ actions }),
+  });
+  if (!r.ok || !r.body) {
+    await json(r);
+    throw new ApiError(r.status, "no response body");
+  }
+  yield* readSse(r.body);
+}
+
 /** POST a chat message and yield SSE events. Throws ApiError for 404/409/422 before streaming. */
 export async function* chat(sid: string, message: string): AsyncGenerator<SseEvent> {
   const r = await fetch(`${BASE}/session/${sid}/chat`, {

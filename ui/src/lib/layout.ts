@@ -10,14 +10,15 @@ export type Viewport = { w: number; h: number };
 
 /** Fixed chrome above the tape: header 44, scoreboard about 84, notification rail 78. The stage keeps at least STAGE_MIN. */
 const CHROME_H = 222;
-const STAGE_MIN_H = 240;
+const STAGE_MIN_H = 320; // the stage keeps this much height and STAGE_MIN_W width: panels are clamped, labels are not shrunk
+const STAGE_MIN_W = 640;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 export function boundsFor(id: PanelId, vp: Viewport): Bounds {
   switch (id) {
     case "tape": return { min: 150, max: Math.max(150, Math.min(560, vp.h - CHROME_H - STAGE_MIN_H)) };
-    case "console": return { min: 280, max: Math.max(280, Math.min(680, Math.round(vp.w * 0.5))) };
+    case "console": return { min: 280, max: Math.max(280, Math.min(680, Math.round(vp.w * 0.5), vp.w - STAGE_MIN_W)) };
     case "drawer": return { min: 320, max: Math.max(320, Math.min(760, Math.round(vp.w * 0.8))) };
   }
 }
