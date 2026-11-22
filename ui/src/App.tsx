@@ -172,6 +172,7 @@ export function App() {
     try {
       queue.current && (queue.current.alive.v = false);
       queue.current?.director.clear();
+      let rejectedReplay: string | null = null;
       const p = policyRef.current ?? (await api.getPolicy());
       policyRef.current = p;
       setPolicy(p);
@@ -193,7 +194,7 @@ export function App() {
             toast("info", `Replay loaded: ${r.symbols.length} steps. Drag the scrubber or use the arrow keys. Read only.`, "Replay");
             return;
           }
-          toast("error", `Replay link rejected. ${r.error}`, "Replay");
+          rejectedReplay = `Replay link rejected. ${r.error}`; // shown after the new-session reset below
         }
       }
       setReplayOnly(false);
@@ -213,6 +214,7 @@ export function App() {
       counterLocked.current = false;
       setKeyResult(null);
       toast("info", `New session. State is ${p.initial}.`);
+      if (rejectedReplay) toast("error", rejectedReplay, "Replay");
     } catch (e) {
       const d = describe(e);
       setFault({ text: d.text, kind: d.kind });
