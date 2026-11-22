@@ -68,3 +68,6 @@ Stub `Model` (`tests/stubmodel.py`) for the agent loop; no Bedrock in automated 
 
 ## Not verified
 Concurrent gate use; Claude on Bedrock; deployment host; Kiro hook STDIN fields.
+
+## Second policy (Safe Ship)
+The engine is shared. `Gate(initial=..., symbols=...)` (defaults = this finance policy) lets `safeship/hook.py` run a second machine, `policy/safe_ship.jff`, on the same class. `scripts/gen_executor_table.py` now takes `--policy finance|safe_ship` (default: both). Spec: `.kiro/specs/safe-ship/`.

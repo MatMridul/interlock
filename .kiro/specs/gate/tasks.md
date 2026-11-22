@@ -30,3 +30,6 @@ DRAFT. Ticked = done and verified per the reports; open = not done. Checkbox for
 - [ ] 16. Record and upload the video (under 3:00) to YouTube
 - [ ] 17. Read the Devpost Rules, Resources and FAQ tabs; decide bonus prizes
 - [ ] 18. Submit on Devpost (target Thu 2026-12-03; deadline Fri 2026-12-04 2:00 PM PT)
+
+Added after the list above (2026-11-22):
+- [x] 19. Gate engine reused for a second policy (Safe Ship): `Gate(initial=, symbols=)`, generator `--policy`; finance behaviour and tests unchanged. See `.kiro/specs/safe-ship/tasks.md`.
