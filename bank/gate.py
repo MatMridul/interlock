@@ -37,13 +37,16 @@ def symbol_for_tool(name):
 
 
 class Gate:
-    def __init__(self, table=None, tools=None, guard=True):
+    def __init__(self, table=None, tools=None, guard=True, initial=None, symbols=None):
+        # initial/symbols let a second policy (safeship/, the Kiro hook) run on this same engine;
+        # the defaults are the finance policy.
+        self._symbols = SYMBOLS if symbols is None else symbols
         # table/tools are injectable for tests (mutants, fault injection).
         self._table = TABLE if table is None else table
         self._tools = DEFAULT_TOOLS if tools is None else tools
         self._lock = threading.Lock()
         self._log = []
-        self._state = INITIAL
+        self._state = INITIAL if initial is None else initial
         # guard: default ON. True/None = default limits, a GuardConfig = custom, False = off (explicit opt-out, tests only)
         self._guard = None if guard is False else Guard(GuardConfig() if guard in (True, None) else guard)
 
@@ -60,7 +63,7 @@ class Gate:
 
     def _expected(self, state, source):
         row = self._table[state]
-        return [s for s in SYMBOLS if s in row and (s != "MFA" or source == "human")]
+        return [s for s in self._symbols if s in row and (s != "MFA" or source == "human")]
 
     def _reject(self, symbol, reason, source="llm"):
         try:
@@ -72,7 +75,7 @@ class Gate:
 
     def _decide(self, symbol, source):
         """Pure check. Returns (next_state, None) or (None, reason)."""
-        if type(symbol) is not str or symbol not in SYMBOLS:
+        if type(symbol) is not str or symbol not in self._symbols:
             return None, "unknown symbol"
         if symbol == "MFA" and source != "human":
             return None, "MFA is human-only"
