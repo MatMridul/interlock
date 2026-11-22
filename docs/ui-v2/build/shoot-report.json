@@ -1,0 +1,69 @@
+{
+ "errors": [],
+ "frames": {
+  "n": 351,
+  "median": 16.699999999999818,
+  "p95": 16.900000000000546,
+  "max": 18.700000000000728,
+  "over33": 0,
+  "note": "headless Chrome, whole-page rAF deltas from page load through one allowed animation, software rendering"
+ },
+ "shots": [
+  "1440-cold-open.png",
+  "1440-idle.png",
+  "1440-token-in-flight.png",
+  "1440-allowed-mid.png",
+  "1440-rejected-barrier.png",
+  "1440-rejected-shatter.png",
+  "1440-after-reject-scoreboard.png",
+  "1440-key-cover-lifted.png",
+  "1440-key-keypad.png",
+  "1440-key-approved.png",
+  "1440-transfer-success.png",
+  "1440-proof-drawer.png",
+  "1440-locked.png",
+  "1440-autoplay-running.png",
+  "1440-autoplay-after-key.png",
+  "1920-cold-open.png",
+  "1920-idle.png",
+  "1920-token-in-flight.png",
+  "1920-allowed-mid.png",
+  "1920-rejected-barrier.png",
+  "1920-rejected-shatter.png",
+  "1920-after-reject-scoreboard.png",
+  "1920-key-cover-lifted.png",
+  "1920-key-keypad.png",
+  "1920-key-approved.png",
+  "1920-transfer-success.png",
+  "1920-proof-drawer.png",
+  "1920-locked.png",
+  "1920-autoplay-running.png",
+  "1920-autoplay-after-key.png",
+  "1280-idle.png",
+  "390-idle.png",
+  "390-rejected.png",
+  "390-after-reject.png"
+ ],
+ "strips": {
+  "allowed": [
+   263,
+   605,
+   961,
+   1304,
+   1665,
+   2006,
+   2411,
+   3001
+  ],
+  "rejected": [
+   251,
+   656,
+   1061,
+   1402,
+   1714,
+   2007,
+   2411,
+   3007
+  ]
+ }
+}
