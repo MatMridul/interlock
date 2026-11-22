@@ -14,7 +14,8 @@ import { Separator } from "./components/Separator";
 import { Stage, HUMAN_SYMBOLS } from "./components/Stage";
 import { Toasts } from "./components/Toasts";
 import { TraceTape } from "./components/TraceTape";
-import { AUTOPLAY_STEPS, runAutoplay } from "./lib/autoplay";
+import { AUTOPLAY_STEPS, SCRIPTED_STEPS, runAutoplay } from "./lib/autoplay";
+import { AutoStart } from "./components/AutoStart";
 import { Haptics, Sound, prefersReducedMotion, type CueName } from "./lib/cues";
 import { BeatBuilder, Director, type Beat } from "./lib/director";
 import type { Fx } from "./lib/fx";
@@ -106,6 +107,9 @@ export function App() {
   const sidRef = useRef<string | null>(null);
   const queue = useRef<{ director: Director; builder: BeatBuilder; alive: { v: boolean } } | null>(null);
   const humanWait = useRef<((ok: boolean) => void) | null>(null);
+  const autoCode = useRef<string | null>(null); // the owner's demo code for this autoplay run: memory only, cleared at the end
+  const [autoPrompt, setAutoPrompt] = useState(false);
+  const scoreRef = useRef<{ proposed: number; allowed: number; blocked: number; human: number } | null>(null);
   const autoStop = useRef({ stopped: false, wake: [] as (() => void)[] });
   const policyRef = useRef<Policy | null>(null);
   const counterLocked = useRef(false);
@@ -330,30 +334,53 @@ export function App() {
     setKeyRequested(false);
   }, []);
 
-  const startAutoplay = useCallback(async () => {
+  const startAutoplay = useCallback(async (scripted = false, code: string | null = null) => {
     const s = autoStop.current;
     s.stopped = false;
     s.wake = [];
+    autoCode.current = code;
     setAuto({ on: true, label: "" });
     await start();
-    toast("info", `Autoplay started: ${AUTOPLAY_STEPS.length} steps, about 70 s. Press Esc or Stop to end.`, "Autoplay");
-    const res = await runAutoplay(AUTOPLAY_STEPS, {
+    const steps = scripted ? SCRIPTED_STEPS : AUTOPLAY_STEPS;
+    toast("info", `Autoplay started: ${steps.length} steps, about 70 s. Press Esc or Stop to end.`, "Autoplay");
+    const askHuman = () => new Promise<"approved" | "stopped">((resolve) => {
+      humanWait.current = (ok) => resolve(ok ? "approved" : "stopped");
+      setKeyRequested(true);
+      toast("needs-human", "Approval needed: a human must turn the key. The agent cannot. Enter the demo code to continue.");
+      cue("needs-human");
+    });
+    const res = await runAutoplay(steps, {
       isStopped: () => s.stopped,
       sleep: (ms) => new Promise<void>((r) => { const h = setTimeout(r, ms); s.wake.push(() => { clearTimeout(h); r(); }); }),
-      onStep: (i, n, label) => setAuto({ on: true, label: `${i + 1} of ${n}: ${label}` }),
+      onStep: (i, n, label) => {
+        const sc = scoreRef.current;
+        const tail = steps[i].kind === "final" && sc ? ` ${sc.proposed} proposed, ${sc.allowed + sc.human} ran, ${sc.blocked} blocked.` : "";
+        setAuto({ on: true, label: `${i + 1} of ${n}: ${label}.${tail}` });
+      },
       chat: (m) => sendMessage(m),
-      human: () => new Promise<boolean>((resolve) => {
-        humanWait.current = resolve;
-        setKeyRequested(true);
-        toast("needs-human", "Approval needed: a human must turn the key. The agent cannot. Enter the demo code to continue.");
-        cue("needs-human");
-      }),
+      propose: (a) => proposeActions(a),
+      human: async () => {
+        const c = autoCode.current;
+        if (scripted && c === null) {
+          toast("info", "Human step skipped by the owner. Nobody approves, so the gate will refuse the transfer.", "Autoplay");
+          return "skipped";
+        }
+        if (scripted && c) {
+          // the real /mfa call with the code the owner typed; a refusal falls back to the key dialog so the owner can retry
+          const r = await submitKey(c);
+          if (r.ok) return "approved";
+          autoCode.current = "";
+        }
+        return askHuman();
+      },
     });
+    autoCode.current = null;
     setAuto({ on: false, label: "" });
     setKeyRequested(false);
     toast("info", res.completed ? "Autoplay finished." : `Autoplay stopped at step ${Math.min(res.stoppedAt + 1, res.total)} of ${res.total}.`, "Autoplay");
-  }, [start, toast, sendMessage, cue]);
-
+  }, [start, toast, sendMessage, proposeActions, submitKey, cue]);
+  // the no-model sequence asks the owner for the human step first; the model sequence keeps its own key dialog
+  const requestAutoplay = useCallback(() => { if (mode === "you") setAutoPrompt(true); else void startAutoplay(false); }, [mode, startAutoplay]);
   // ---- keyboard: see lib/keymap.ts. Esc stops autoplay or closes the drawer; single keys stay silent while typing ----
   const busy = ui.running || !sid || auto.on || !!fault;
   const [tour, tourDispatch] = useReducer((s: TourState, a: TourAction) => tourReducer(s, a), tourClosed);
@@ -363,6 +390,7 @@ export function App() {
   const closeTour = useCallback((a: TourAction) => { tourDispatch(a); markTourSeen(safeStorage()); }, []);
   const keyHandler = useRef<(e: KeyboardEvent) => void>(() => {});
   const score = useMemo(() => scoreboard(ui.beats, ui.proposed, ui.log), [ui.beats, ui.proposed, ui.log]);
+  scoreRef.current = score;
   const replay = useMemo(() => (policy ? replayLog(policy, ui.log.map((l) => l.symbol)) : null), [policy, ui.log]);
   const lastAccepted = [...ui.beats].reverse().find((b) => b.verdict === "ACCEPT") ?? null;
   const lastWithLatency = [...ui.beats].reverse().find((b) => b.latency !== undefined);
@@ -398,7 +426,7 @@ export function App() {
   const runAction = (id: string) => {
     if (id.startsWith("vec-")) { const v = VECTORS.find((x) => `vec-${x.key}` === id); if (v && !busy) { if (mode === "you") runScript(v.id); else void sendMessage(v.message); } return; }
     switch (id) {
-      case "autoplay": if (auto.on) stopAutoplay(); else if (!ui.running && !fault && sid) void startAutoplay(); break;
+      case "autoplay": if (auto.on) stopAutoplay(); else if (!ui.running && !fault && sid) requestAutoplay(); break;
       case "reset-session": if (!ui.running) void start(); break;
       case "toggle-console": setConsoleClosed((v) => !v); break;
       case "toggle-drawer": setDrawer((v) => !v); break;
@@ -473,6 +501,7 @@ export function App() {
         <button type="button" className="tg" data-tour="proof" aria-expanded={drawer} aria-controls="drawer" onClick={() => setDrawer((v) => !v)}>Proof</button>
       </header>
 
+      {autoPrompt && <AutoStart onCancel={() => setAutoPrompt(false)} onStart={(c) => { setAutoPrompt(false); void startAutoplay(true, c); }} />}
       <Scoreboard score={score} counters={ui.counters} logLoaded={ui.counters !== null} />
 
       <div className="rail" aria-label="Notifications" data-empty={nt.toasts.length === 0 || undefined}>
@@ -504,7 +533,7 @@ export function App() {
       <Console items={ui.items} running={ui.running} disabled={!sid || !!fault} reduced={reduced} closed={consoleClosed} autoplay={auto} status={status}
         onToggle={() => setConsoleClosed((v) => !v)} onSend={(t) => void sendMessage(t)}
         mode={mode} policy={policy} onPropose={(a) => void proposeActions(a)} onScript={runScript}
-        onAutoplay={() => void startAutoplay()} onStopAutoplay={stopAutoplay} onReset={() => void start()} />
+        onAutoplay={requestAutoplay} onStopAutoplay={stopAutoplay} onReset={() => void start()} />
 
       <ProofDrawer open={drawer} onClose={() => setDrawer(false)} log={ui.log} counters={ui.counters} verdict={ui.lastVerdict} policy={policy} why={why?.sentence ?? null} onExport={exportAudit}
         resizer={!narrow && (

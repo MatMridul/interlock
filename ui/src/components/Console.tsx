@@ -168,10 +168,10 @@ export function Console({ items, running, disabled, reduced, closed, autoplay, s
         <div className="vec" data-tour="vectors">
           <div className="vec-h">
             <h3>Attack vectors <span className="sr">keys 1 to 6</span>{you && <span className="scripted" title="No model runs: each vector is a fixed script of proposals sent through the real gate">scripted</span>}</h3>
-            {you ? null : autoplay.on ? (
+            {autoplay.on ? (
               <button type="button" className="btn-play stop" onClick={onStopAutoplay}>■ Stop (Esc)</button>
             ) : (
-              <button type="button" className="btn-play" onClick={onAutoplay} disabled={running || disabled} title="Runs a scripted sequence of real chat messages and the real human key step">▶ Autoplay</button>
+              <button type="button" className="btn-play" onClick={onAutoplay} disabled={running || disabled} title={you ? "Plays a fixed 70 s sequence of proposals through the real gate, with the real human key step. No model." : "Runs a scripted sequence of real chat messages and the real human key step"}>▶ Autoplay</button>
             )}
           </div>
           {autoplay.on && <p className="autocap" role="status">{autoplay.label}</p>}
