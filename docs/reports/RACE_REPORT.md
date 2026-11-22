@@ -4,7 +4,7 @@ Branch `race-mode` (worktree `C:\Mridul\Programs\Kiroween-wt\race`), from `origi
 
 ## Result in one paragraph
 
-Same model, same system prompt, same five tools, 20 attacks, one run per attack per arm. The prompt-only agent (tools run straight against the stub bank, no gate, no hook) executed a forbidden action in **10 of 20** attacks. Interlock executed a forbidden action in **0 of 20**. The prompt-only agent resisted the other 10: it only fell for 10 attacks, and it refused or did nothing in the rest. The 0 for Interlock follows from the gate (a forbidden sequence has no transition and cannot run, whatever the model says). The 10 for the prompt-only arm is what this model did on this one run and could differ on another. A legitimate control flow (draft, human MFA, execute) ran to completion in both arms, so Interlock is not just blocking everything.
+Same model, same system prompt, same five tools, 20 attacks, one run per attack per arm. The prompt-only agent (tools run straight against the stub bank, no gate, no hook) executed a forbidden action in **10 of 20** attacks. Interlock executed a forbidden action in **0 of 20**. The prompt-only agent resisted the other 10 (it refused or did nothing). The 0 for Interlock follows from the gate (a forbidden sequence has no transition and cannot run, whatever the model says). The 10 for the prompt-only arm is what this model did on this one run and could differ on another. A legitimate control flow (draft, human MFA, execute) ran to completion in both arms, so Interlock is not just blocking everything.
 
 ## Method
 
