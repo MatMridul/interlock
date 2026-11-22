@@ -508,3 +508,5 @@ dialog h3 { margin: 0 0 4px; font: 600 16px var(--cond); letter-spacing: .16em; 
 .autostart p { margin: 0 0 10px; line-height: 1.45; }
 .autostart input { width: 100%; box-sizing: border-box; background: var(--void); border: 1px solid var(--amber-dim); color: var(--amber); padding: 6px 8px; font: inherit; margin-bottom: 10px; }
 .autostart .da { flex-wrap: wrap; }
+
+.app[data-ssv] .sep { display: none; } /* the drag handles belong to the finance layout the Safe Ship view covers */

@@ -471,7 +471,7 @@ export function App() {
   );
 
   return (
-    <div className="app" data-console={consoleClosed ? "closed" : "open"} data-dragging={dragging || undefined} data-testid="app" data-rail={nt.toasts.length === 0 ? "empty" : undefined}
+    <div className="app" data-ssv={safeShip || undefined} data-console={consoleClosed ? "closed" : "open"} data-dragging={dragging || undefined} data-testid="app" data-rail={nt.toasts.length === 0 ? "empty" : undefined}
       style={{ "--console-w": `${consoleClosed ? 46 : lay.layout.console}px`, "--tape-h": `${tapeCollapsed ? 34 : lay.layout.tape}px`, "--drawer-w": `${lay.layout.drawer}px` } as React.CSSProperties}>
       <header className="top">
         <div className="mark">Inter<i>lock</i><small>The Chimeric Automaton</small></div>

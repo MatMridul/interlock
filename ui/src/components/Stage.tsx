@@ -122,7 +122,7 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
               })}
               {why && <text x="24" y={96 + ledger.length * 16 + 6} className="row undef" data-row="undefined">{"› "}δ({why.from}, {why.symbol}) = undefined</text>}
             </g>
-            {replayLabel && <text x="24" y="86" className="silk replay-tag" data-testid="replay-tag">{replayLabel}</text>}
+            {replayLabel && <text x="24" y="84" className="silk replay-tag" data-testid="replay-tag">{replayLabel}</text>}
             {why && <text x="24" y={VIEW.h - 16} className="why-cap" data-testid="why-cap">{why.sentence}</text>}
 
             {edges.map((e) => {
