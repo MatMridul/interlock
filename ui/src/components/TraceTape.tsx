@@ -17,10 +17,19 @@ interface Props {
   policy: Policy;
   replay: Replay | null;
   logCount: number;
+  /** replay position: number of executed cells shown, or null for the live state */
+  scrub?: number | null;
+  onScrub?: (n: number | null) => void;
+  onShare?: () => void;
+  collapsed?: boolean;
+  onToggle?: () => void;
+  /** a hovered or focused cell re-traces its step on the stage */
+  onTrace?: (edge: string | null) => void;
+  readOnly?: boolean;
 }
 
 /** The executed word w, written one symbol per cell. Blocked proposals hang above it as VOID stamps and never enter it. */
-export function TraceTape({ beats, policy, replay, logCount }: Props) {
+export function TraceTape({ beats, policy, replay, logCount, scrub = null, onScrub, onShare, collapsed = false, onToggle, onTrace, readOnly = false }: Props) {
   const accepted = useMemo(() => beats.filter((b) => b.verdict === "ACCEPT"), [beats]);
   const ghosts = useMemo(() => beats.filter((b) => b.verdict === "REJECT"), [beats]);
   const scroller = useRef<HTMLDivElement>(null);
@@ -51,12 +60,28 @@ export function TraceTape({ beats, policy, replay, logCount }: Props) {
   accepted.forEach((b, i) => { d += `H${LEFT + i * PITCH + 43}V${level(b.to)}`; });
   d += `H${LEFT + accepted.length * PITCH + 43}`;
   const slot: Record<number, number> = {};
+  const pos = scrub ?? accepted.length;
+  const trace = (e: string | null) => onTrace?.(e);
 
   return (
-    <section className="tape" data-tour="tape" aria-labelledby="tape-h">
+    <section className="tape" data-tour="tape" aria-labelledby="tape-h" data-collapsed={collapsed || undefined}>
       <div className="tape-h">
         <h2 id="tape-h">Trace tape</h2>
-        <span>executed word w · BLOCKED proposals hang above as VOID and are never written</span>
+        {onToggle && <button type="button" className="tg" aria-expanded={!collapsed} aria-controls="tape-body" onClick={onToggle} title="Collapse the tape to one line or expand it">{collapsed ? "Expand" : "Collapse"}</button>}
+        {collapsed ? <span className="tape-one" data-testid="tape-one">w = {accepted.length ? accepted.map((b) => b.symbol).join(" ") : "empty"} · {ghosts.length} blocked</span>
+          : <span className="tape-note">executed word w · BLOCKED proposals hang above as VOID and are never written</span>}
+        {!collapsed && accepted.length > 0 && onScrub && (
+          <label className="scrub" data-testid="scrub">
+            <span>{scrub === null ? "live" : "replay"}</span>
+            <input type="range" min={0} max={accepted.length} step={1} value={pos} aria-label="Scrub through the executed log: arrow keys step, the stage shows that state (read-only)"
+              aria-valuetext={pos === 0 ? `before any step, state ${policy.initial}` : `after step ${pos} of ${accepted.length}: ${accepted[pos - 1].symbol}, state ${accepted[pos - 1].to}`}
+              onChange={(e) => { const n = Number(e.target.value); onScrub(n >= accepted.length ? null : n); }} />
+            <span>{pos} of {accepted.length}</span>
+            {scrub !== null && <button type="button" className="tg" onClick={() => onScrub(null)}>Back to live</button>}
+          </label>
+        )}
+        {!collapsed && accepted.length > 0 && onShare && <button type="button" className="tg" onClick={onShare} title="Copies a link that replays this executed word without the server keeping anything">Share replay</button>}
+        {readOnly && <span className="replay-flag" role="status">REPLAY · read only</span>}
         {replay && logCount > 0 && (
           <span className={`chk${replay.inLanguage ? "" : " bad"}`} role="status">
             executed trace {replay.inLanguage ? "is" : "is NOT"} in L(M)
@@ -64,7 +89,7 @@ export function TraceTape({ beats, policy, replay, logCount }: Props) {
           </span>
         )}
       </div>
-      <div className="tapes" ref={scroller} tabIndex={0} aria-label="Trace tape, scrollable">
+      <div className="tapes" id="tape-body" ref={scroller} hidden={collapsed} tabIndex={0} aria-label="Trace tape, scrollable">
         <div className="lanes" aria-hidden="true">
           {lanes.map((l, i) => <div key={l} className="lane-lab" style={{ top: LANE_TOP - 7 + i * lane }}>{l}</div>)}
         </div>
@@ -85,7 +110,7 @@ export function TraceTape({ beats, policy, replay, logCount }: Props) {
               const k = (s2[g.tapeIndex] = (s2[g.tapeIndex] ?? -1) + 1);
               return (
                 <div key={i} className="ghost" style={{ left: LEFT + g.tapeIndex * PITCH + k * PITCH }}>
-                  <button type="button" className="cell-btn" aria-label={`Blocked ${g.symbol} in ${g.from}. ${g.reason ?? ""} Never written to the tape.`}>
+                  <button type="button" className="cell-btn" onMouseEnter={() => trace(null)} aria-label={`Blocked ${g.symbol} in ${g.from}. ${g.reason ?? ""} Never written to the tape.`}>
                     <b>VOID {g.symbol}</b><em>in {g.from}</em>
                     <span className="tip" role="tooltip">{g.reason ?? "rejected"}<br />{latencyText(g)}</span>
                   </button>
@@ -94,7 +119,8 @@ export function TraceTape({ beats, policy, replay, logCount }: Props) {
             });
           })()}
           {accepted.map((b, i) => (
-            <div key={i} className={`cell${b.kind === "human" ? " human" : ""}`} style={{ left: LEFT + i * PITCH, top: cellTop }}>
+            <div key={i} className={`cell${b.kind === "human" ? " human" : ""}${scrub !== null && i === scrub - 1 ? " at" : ""}`} style={{ left: LEFT + i * PITCH, top: cellTop }}
+              onMouseEnter={() => trace(`${b.from}>${b.to}`)} onMouseLeave={() => trace(null)} onFocus={() => trace(`${b.from}>${b.to}`)} onBlur={() => trace(null)}>
               <button type="button" className="cell-btn" aria-label={`Executed ${b.symbol}, led to ${b.to}. ${latencyText(b)}`}>
                 <b>{b.symbol}</b><em>→ {b.to}{b.kind === "human" ? " · human" : ""}</em>
                 <span className="tip" role="tooltip">{b.from} → {b.to}<br />{latencyText(b)}</span>
