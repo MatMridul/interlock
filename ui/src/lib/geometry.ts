@@ -5,7 +5,9 @@ export const VIEW = { w: 1000, h: 560 };
 export const ORB_R = 50;
 export const AGENT_PORT: Pt = { x: 956, y: 84 };
 export const SINK: Pt = { x: 92, y: 488 };
-export const AIRLOCK: Pt = { x: 798, y: 470 };
+export const AIRLOCK: Pt = { x: 754, y: 492 };
+/** Where the human key panel sits, in stage units. Nothing else (conduit, label, port text) may be drawn inside it. */
+export const KEY_ZONE = { x: 770, y: 428, w: 228, h: 126 };
 
 export interface Pt {
   x: number;
@@ -107,7 +109,7 @@ export function buildEdges(policy: Policy, pos: Record<string, Pt>): Edge[] {
       const n = { x: -u.y, y: u.x };
       const dist = len(sub(B, A));
       let bow = 0;
-      if (dist > 330) bow = (n.y >= 0 ? 1 : -1) * 150; // long return conduit swings below the row
+      if (dist > 330) bow = (n.y >= 0 ? 1 : -1) * 105; // long return conduit swings below the row, but stays above the key panel
       else if (has(g.to, g.from)) bow = 34; // antiparallel pair: each bends to its own side
       const mid = add({ x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 }, n, bow * 2);
       const p0 = add(A, norm(sub(mid, A)), ORB_R + 3);

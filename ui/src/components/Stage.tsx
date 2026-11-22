@@ -83,7 +83,7 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
   const nSym = policy.symbols.length;
 
   return (
-    <section className="stage" ref={wrap} data-locked={locked || undefined} data-dim={dim || undefined} aria-label="The state machine">
+    <section className="stage" data-tour="machine" ref={wrap} data-locked={locked || undefined} data-dim={dim || undefined} aria-label="The state machine">
       <div className="stage-scroll" ref={scroller}>
         <div className="stage-inner">
           <svg className="stage-svg" viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} preserveAspectRatio="xMidYMid meet" role="img"
@@ -147,6 +147,7 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
             <text x={AGENT_PORT.x - 22} y={AGENT_PORT.y - 2} className="port-t">AGENT PORT</text>
             <text x={AGENT_PORT.x - 22} y={AGENT_PORT.y + 13} className="port-s">proposes, never decides</text>
             <circle cx={AIRLOCK.x} cy={AIRLOCK.y} r="4" fill="none" stroke="#7a5c26" />
+            <text x={AIRLOCK.x - 10} y={AIRLOCK.y + 4} className="port-s">human port</text>
           </svg>
           <canvas className="stage-cv" ref={canvas} aria-hidden="true" />
           {children?.(map)}

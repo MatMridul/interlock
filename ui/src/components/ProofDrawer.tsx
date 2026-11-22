@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { MAX_LOG } from "../state";
 import type { Counters, LogEntry, Verdict } from "../types";
 
@@ -30,15 +30,18 @@ interface Props {
   counters: Counters | null;
   verdict: Verdict | null;
   engineNote?: string;
+  /** the width separator on the drawer's left edge */
+  resizer?: ReactNode;
 }
 
 /** Slide-over with the evidence. The executed log is the source of truth, not the chat. */
-export function ProofDrawer({ open, onClose, log, counters, verdict }: Props) {
+export function ProofDrawer({ open, onClose, log, counters, verdict, resizer }: Props) {
   const closeBtn = useRef<HTMLButtonElement>(null);
   useEffect(() => { if (open) closeBtn.current?.focus(); }, [open]);
   const shown = log.slice(-MAX_LOG);
   return (
     <aside className={`drawer${open ? " open" : ""}`} id="drawer" role="dialog" aria-labelledby="dr-h" aria-hidden={!open} {...(open ? {} : { inert: true })}>
+      {resizer}
       <div className="dh">
         <h2 id="dr-h">Proof</h2>
         <button type="button" className="btn-ghost" ref={closeBtn} onClick={onClose}>Close (Esc)</button>
