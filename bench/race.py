@@ -25,7 +25,6 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from bank import real_tools  # noqa: E402  (the arm-A stub bank; agent/tools.py itself never imports it)
 from bank.gate import Gate  # noqa: E402
 from bank.guard import DEFAULT_CONFIG, validate_draft_args  # noqa: E402
 from tests.props import check_s2, check_s3  # noqa: E402
@@ -88,10 +87,9 @@ class UngatedBank:
                 self.draft = {"payee": args.get("payee"), "amount": args.get("amount")}
             if symbol == "TRANSFER":
                 args = dict(self.draft or {})
-            fn = {"AUTH": real_tools.authenticate_user, "DRAFT": real_tools.create_transfer_draft,
-                  "EDIT": real_tools.edit_transfer_draft, "TRANSFER": real_tools.execute_transfer,
-                  "CANCEL": real_tools.cancel_transfer_draft}[symbol]
-            result = fn(args, self._log)
+            # own stub entries, same shape as bank/real_tools.py (INV-1: only bank/gate.py imports that module)
+            self._log.append({"symbol": symbol, "args": args})
+            result = "executed (stub, no money moved)"
         return {"verdict": "ACCEPT", "state": self.state, "symbol": symbol, "result": result}
 
     def human_mfa(self):
@@ -99,7 +97,7 @@ class UngatedBank:
         with self.lock:
             if self.draft is None:
                 return {"verdict": "REJECT", "reason": "no draft open"}
-            real_tools.record_mfa_human({}, self._log)
+            self._log.append({"symbol": "MFA", "args": {}, "source": "human"})
             return {"verdict": "ACCEPT"}
 
 

@@ -18,23 +18,23 @@ function Lane({ arm, run, step, tried, forbidden, total, ready }: { arm: Arm; ru
   const list = run ? chips(run, step) : [];
   const done = !!run && step >= run.events.length;
   return (
-    <section className={`lane ${open ? "open" : "gated"}`} data-testid={`lane-${arm}`} aria-label={open ? "Prompt-only agent, unprotected" : "Interlock agent"}>
-      <h2>{open ? "PROMPT-ONLY" : "INTERLOCK"}<span className="lane-tag">{open ? "UNPROTECTED" : "GATE + HOOK"}</span></h2>
-      <p className="lane-sub">{open
+    <section className={`rlane ${open ? "open" : "gated"}`} data-testid={`lane-${arm}`} aria-label={open ? "Prompt-only agent, unprotected" : "Interlock agent"}>
+      <h2>{open ? "PROMPT-ONLY" : "INTERLOCK"}<span className="rlane-tag">{open ? "UNPROTECTED" : "GATE + HOOK"}</span></h2>
+      <p className="rlane-sub">{open
         ? "Same model, same prompt, same five tools. No gate, no hook: only the prompt protects. Stub bank, no money moves."
         : "Same model, same prompt, same five tools. The state machine decides what may run."}</p>
-      <div className="strip" aria-label="Executed log" data-testid={`strip-${arm}`}>
-        {list.length === 0 && <span className="strip-empty">{ready ? "waiting" : "no run yet"}</span>}
+      <div className="rstrip" aria-label="Executed log" data-testid={`strip-${arm}`}>
+        {list.length === 0 && <span className="rstrip-empty">{ready ? "waiting" : "no run yet"}</span>}
         {list.map((c) => (
-          <span key={c.key} className={`chip ${c.kind}${c.forbidden ? " forbidden" : ""}`} title={c.detail} data-kind={c.kind} data-forbidden={c.forbidden || undefined}>
+          <span key={c.key} className={`rchip ${c.kind}${c.forbidden ? " forbidden" : ""}`} title={c.detail} data-kind={c.kind} data-forbidden={c.forbidden || undefined}>
             {c.sym}{c.kind === "blocked" ? " blocked" : ""}{c.forbidden ? " FORBIDDEN" : ""}
           </span>
         ))}
       </div>
-      <p className="lane-note" aria-live="polite">
+      <p className="rlane-note" aria-live="polite">
         {!run ? "" : !done ? "running" : run.violation ? "A forbidden action executed." : run.error ? `Run ended early (${run.error.split(":")[0]}). Nothing forbidden executed.` : "Nothing forbidden executed."}
       </p>
-      <dl className="lane-count">
+      <dl className="rlane-count">
         <div><dt>Attacks tried</dt><dd data-testid={`tried-${arm}`}>{tried}<small> of {total}</small></dd></div>
         <div className={forbidden > 0 ? "bad" : ""}><dt>Forbidden actions executed</dt><dd data-testid={`forbidden-${arm}`}>{forbidden}</dd></div>
       </dl>
@@ -139,7 +139,7 @@ export function RaceView({ onClose, modelOn, reduced }: { onClose: () => void; m
             {selAttack ? <><b>{selAttack.id}</b> {selAttack.category}. Forbidden outcome: {selAttack.forbidden}.</> : ""}
             {pair && step > 0 && <q>{userText(pair.interlock ?? pair["prompt-only"], step)}</q>}
           </p>
-          <div className="lanes">
+          <div className="rlanes">
             {ARMS.map((arm) => (
               <Lane key={arm} arm={arm} run={pair?.[arm]} step={pair ? step : 0} ready={playing} tried={cnt(arm).tried} forbidden={cnt(arm).forbidden} total={totalFor} />
             ))}
