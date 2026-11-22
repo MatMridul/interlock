@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from server import config
 from server import manual
+from server import race
 from server.limits import Limiter
 from server.session import Registry, stream_events
 
@@ -127,6 +128,7 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
         return out
 
     manual.add_routes(app, registry, limiter)  # C1: /config and /session/{sid}/propose
+    race.add_routes(app, model_factory, limiter)  # C2: /race/replay, /race/live (own arms, no registry session)
 
     if UI_DIST.is_dir():  # same-origin static UI; registered last so API routes win
         app.mount("/", StaticFiles(directory=str(UI_DIST), html=True), name="ui")
