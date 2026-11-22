@@ -82,13 +82,13 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| D1 | **Safe Ship policy:** a Kiro `PreToolUse` hook runs the gate on the coding agent's own tool calls (no push or deploy until tests ran after the last edit). **Spike done 2026-11-21: GO** (live on Kiro CLI 3.5.0, branch `safe-ship-spike`, report `docs/spikes/SAFE_SHIP_SPIKE.md`). Remaining: production integration (about 1.5 to 2 days), IDE and Crew live test (D6). **Fallback:** AWS change-approval policy | Me | P0 | doing (branch safe-ship) | Hook blocks a real Kiro tool call in a recorded run, wired into the policy picker (C7) |
-| D2 | Custom agent in `.kiro/agents/` (a verifier agent that runs the policy checks) used during the build | Me | P0 | doing (branch safe-ship) | File committed and used in at least one logged task |
-| D3 | A Kiro power or documented MCP integration for the JFLAP checks | Me | P1 | doing (branch safe-ship) | Installable from the repo; documented |
-| D4 | Specs: keep `.kiro/specs/gate` in sync; add one spec per new feature (race mode, Safe Ship) and work them through tasks | Me | P0 | todo | Every shipped feature maps to a spec task ticked off |
+| D1 | **Safe Ship policy:** a Kiro `PreToolUse` hook runs the gate on the coding agent's own tool calls (no push or deploy until tests ran after the last edit). **Spike done 2026-11-21: GO** (live on Kiro CLI 3.5.0, branch `safe-ship-spike`, report `docs/spikes/SAFE_SHIP_SPIKE.md`). Remaining: production integration (about 1.5 to 2 days), IDE and Crew live test (D6). **Fallback:** AWS change-approval policy | Me | P0 | done (branch safe-ship, PR #9; live CLI re-check passed; IDE and Crew untested; UI picker C7 open) | Hook blocks a real Kiro tool call in a recorded run, wired into the policy picker (C7) |
+| D2 | Custom agent in `.kiro/agents/` (a verifier agent that runs the policy checks) used during the build | Me | P0 | done (gate-verifier agent validated and run 3 times, PR #9) | File committed and used in at least one logged task |
+| D3 | A Kiro power or documented MCP integration for the JFLAP checks | Me | P1 | doing (powers/jflap written per docs; install not run) | Installable from the repo; documented |
+| D4 | Specs: keep `.kiro/specs/gate` in sync; add one spec per new feature (race mode, Safe Ship) and work them through tasks | Me | P0 | done (safe-ship spec added, gate spec updated, PR #9) | Every shipped feature maps to a spec task ticked off |
 | D5 | Steering: keep the product, tech and security files current | Me | P1 | todo | Reviewed before submit |
 | D6 | Open the repo once in Kiro IDE and Kiro CLI, confirm the MCP loads and the hook fires, take screenshots | **You** | P0 | todo | Screenshots stored in `docs/evidence/`; write-up can truthfully compare IDE, CLI and Crew |
-| D7 | Property-based testing section stated honestly: Hypothesis tests we wrote, plus Kiro PBT if used in D4 | Me | P1 | todo | Write-up matches the repo |
+| D7 | Property-based testing section stated honestly: Hypothesis tests we wrote, plus Kiro PBT if used in D4 | Me | P1 | done (Hypothesis only; Kiro PBT not used, stated) | Write-up matches the repo |
 
 ### E. Deploy and operations (P0, needs your approval first)
 
