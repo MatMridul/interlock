@@ -1,4 +1,5 @@
 """Server settings. Everything tunable lives here; values come from env vars."""
+import json
 import os
 import secrets
 import sys
@@ -57,3 +58,18 @@ def announce_mfa_code():
 
 def cors_origin():
     return os.environ.get("CORS_ORIGIN", DEFAULT_CORS_ORIGIN)
+
+
+def client_ip(request):
+    """Address used for rate limits. Behind a Lambda Function URL every request reaches the app from
+    the Web Adapter (127.0.0.1), so with INTERLOCK_TRUST_PROXY=lambda the caller's address is read from
+    the x-amzn-request-context header the adapter adds (http.sourceIp). Never trusted otherwise."""
+    if os.environ.get("INTERLOCK_TRUST_PROXY", "").strip().lower() == "lambda":
+        try:
+            ctx = json.loads(request.headers.get("x-amzn-request-context", ""))
+            ip = ctx["http"]["sourceIp"]
+            if isinstance(ip, str) and 0 < len(ip) <= 64:
+                return ip
+        except Exception:
+            pass
+    return request.client.host if request.client else "unknown"
