@@ -71,12 +71,12 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
 | C1 | "You are the agent" mode: visitors propose actions by hand with no model, using the real gate; becomes the default on the public URL | Me | P0 | done (branch product-depth, PR #8) | Works with zero Bedrock calls |
-| C2 | Race mode: the same attack against a prompt-only agent and against Interlock, side by side, with a raw-counts scoreboard (include attacks the prompt-only agent resists) | Me | P0 | doing (branch race-mode; capped at 150 Nova calls) | A 20-attack run produces honest counts; results saved as a replay |
+| C2 | Race mode: the same attack against a prompt-only agent and against Interlock, side by side, with a raw-counts scoreboard (include attacks the prompt-only agent resists) | Me | P0 | done (PR #10: prompt-only 10 of 20 forbidden executed, Interlock 0 of 20; 91 Nova calls) | A 20-attack run produces honest counts; results saved as a replay |
 | C3 | "Why was this blocked?" overlay: show the shortest allowed path from the current state on the machine | Me | P0 | done (branch product-depth, PR #8) | Appears on every block |
 | C4 | "What if" box: type a symbol sequence, see accept or reject and the step it fails at | Me | P1 | done (branch product-depth, PR #8) | Matches the JFLAP table on all of the 21 documented traces |
 | C5 | Session replay and scrubber, plus shareable replay files | Me | P1 | done (branch product-depth, PR #8) | Any finished session can be replayed step by step |
 | C6 | Audit log export (JSON lines) | Me | P1 | done (branch product-depth, PR #8) | Download button; format documented |
-| C7 | Second policy behind a policy picker (see D1) | Me | P0 | todo | Picker switches machines; second machine passes the same verification as the first |
+| C7 | Second policy behind a policy picker (see D1) | Me | P0 | doing (branch release, integrates PRs #6 to #10) | Picker switches machines; second machine passes the same verification as the first |
 
 ### D. Kiro-usage evidence (P0, this is 20% of the score)
 
@@ -114,16 +114,16 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| G1 | README rewrite: 5-line pitch, 10-second GIF, quick start, architecture, honest limits, links to evidence | Me | P0 | todo | A stranger runs it in under 10 minutes |
-| G2 | `docs/JUDGES.md`: how to evaluate in 3 minutes, mapped to the five criteria with evidence links (also readable by automated analysis) | Me | P0 | todo | One page |
-| G3 | Kiro write-up covering IDE/CLI/Web/Crew, custom agents, hooks, specs, steering, MCP, PBT, powers, with real moments | Me | P0 | todo | Every claim traceable to a repo file or a log |
+| G1 | README rewrite: 5-line pitch, 10-second GIF, quick start, architecture, honest limits, links to evidence | Me | P0 | doing (branch release, integrates PRs #6 to #10) | A stranger runs it in under 10 minutes |
+| G2 | `docs/JUDGES.md`: how to evaluate in 3 minutes, mapped to the five criteria with evidence links (also readable by automated analysis) | Me | P0 | doing (branch release, integrates PRs #6 to #10) | One page |
+| G3 | Kiro write-up covering IDE/CLI/Web/Crew, custom agents, hooks, specs, steering, MCP, PBT, powers, with real moments | Me | P0 | doing (branch release, integrates PRs #6 to #10) | Every claim traceable to a repo file or a log |
 | G4 | Video script (under 3:00, open on the blocked transfer next to the human key), shot list, pre-flight checklist | Me | P0 | draft exists | Updated to the final UI |
 | G5 | **Record, edit and upload the video** to YouTube (public). No third-party trademarks or copyrighted music. | **You** | P0 | todo | Public link |
-| G6 | Devpost text: tagline, description, how built, challenges, what's next | Me drafts, You paste | P0 | draft exists | Final copy ready |
-| G7 | Blog post for the Bonus Blog Prize: must be published on a third-party platform during the submission period and say it is written for Kiroween 2026 | Me drafts, **You publish** | P1 | draft exists | Public URL |
-| G8 | Social post for Social Blitz: must **start** with `#KiroweenHackathon26`, share your favorite thing about Kiro and how it changed your approach, original voice | Me drafts, **You post** | P1 | todo | Public URL |
+| G6 | Devpost text: tagline, description, how built, challenges, what's next | Me drafts, You paste | P0 | doing (branch release, integrates PRs #6 to #10) | Final copy ready |
+| G7 | Blog post for the Bonus Blog Prize: must be published on a third-party platform during the submission period and say it is written for Kiroween 2026 | Me drafts, **You publish** | P1 | doing (branch release, integrates PRs #6 to #10) | Public URL |
+| G8 | Social post for Social Blitz: must **start** with `#KiroweenHackathon26`, share your favorite thing about Kiro and how it changed your approach, original voice | Me drafts, **You post** | P1 | doing (branch release, integrates PRs #6 to #10) | Public URL |
 | G9 | Best Student details for the form: LinkedIn, student email, year and degree, school name; be ready to show proof of enrollment | **You** | P0 | todo | Details ready in a private note, never in the repo |
-| G10 | Architecture diagram refresh (Archify) for the final system | Me | P1 | draft exists | Matches the deployed design |
+| G10 | Architecture diagram refresh (Archify) for the final system | Me | P1 | doing (branch release, integrates PRs #6 to #10) | Matches the deployed design |
 
 ### H. Final gate (Dec 2 to 3)
 
