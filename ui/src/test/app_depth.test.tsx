@@ -19,6 +19,7 @@ function mockFetch() {
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
     calls.push({ url, body });
     if (url.endsWith("/policy")) return Response.json(policy);
+    if (url.endsWith("/policies/safe_ship")) return new Response("{}", { status: 404 }); // the picker test only checks the request and the view shell
     if (url.endsWith("/config")) return Response.json({ model: modelOff ? "off" : "on" });
     if (url.endsWith("/session")) return Response.json({ session_id: "s1" });
     if (url.includes("/state")) return Response.json({ id: "s1", state, executed_log: [], counters: { transfers: 0, max_transfers: 3, consecutive_rejects: 0, max_consecutive_rejects: 5, locked: false, spend_cap: 5000 } });
@@ -126,5 +127,19 @@ describe("instrument fault panel", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("NO SIGNAL from gate. Retry.");
     act(() => { fireEvent.click(screen.getByRole("button", { name: "Retry" })); });
     expect(retry).toHaveBeenCalled();
+  });
+});
+describe("policy picker (C7)", () => {
+  it("finance is selected by default; safe-ship opens the Safe Ship view and finance returns", async () => {
+    render(<App />);
+    await screen.findByTestId("you-panel");
+    expect(screen.getByRole("button", { name: "finance" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "safe-ship" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByTestId("safeship-view")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "safe-ship" }));
+    expect(await screen.findByTestId("safeship-view")).toBeInTheDocument();
+    expect(calls.some((c) => c.url.endsWith("/policies/safe_ship"))).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "finance" }));
+    expect(screen.queryByTestId("safeship-view")).toBeNull();
   });
 });

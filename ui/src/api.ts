@@ -72,3 +72,6 @@ export const getRaceReplay = () => fetch(`${BASE}/race/replay`).then((r) => json
 export const postRaceLive = (attack_id: string) =>
   fetch(`${BASE}/race/live`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ attack_id }) })
     .then((r) => json<import("./lib/race").RaceLive>(r));
+
+/** C7: read-only machine table for a named policy; safe_ship also carries the recorded Kiro CLI run. */
+export const getPolicyData = (name: "finance" | "safe_ship") => fetch(`${BASE}/policies/${name}`).then((r) => json<{ policy: Policy; recorded?: unknown }>(r));

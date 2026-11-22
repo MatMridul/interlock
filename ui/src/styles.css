@@ -486,3 +486,18 @@ dialog h3 { margin: 0 0 4px; font: 600 16px var(--cond); letter-spacing: .16em; 
 .race-table tbody tr { cursor: pointer; }
 .race-fine { margin: 0; font-size: 11.5px; color: var(--faint); max-width: 110ch; }
 @media (max-width: 900px) { .rlanes { grid-template-columns: 1fr; } }
+
+/* C7 policy picker: the Safe Ship view covers everything under the header, so the picker stays reachable */
+.ssv { grid-column: 1 / -1; grid-row: 2 / -1; z-index: 20; background: var(--void); color: var(--ink); overflow: auto; padding: 10px 18px 14px; display: flex; flex-direction: column; gap: 10px; }
+.ssv-intro { margin: 0; font-size: 12.5px; color: var(--muted); }
+.ssv-stage { position: relative; height: min(52vh, 460px); min-height: 280px; display: grid; }
+.ssv-stage .stage { grid-column: auto; grid-row: auto; }
+.ssv-box { border: 1px solid var(--line); padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+.ssv-box h2 { margin: 0; font: 600 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ssv-box label { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.ssv-box input { background: var(--panel); color: var(--ink); border: 1px solid var(--line2); padding: 4px 8px; font: 13px var(--mono); min-width: 260px; }
+.ssv-box p { margin: 0; font-size: 12.5px; }
+.ssv-ctl { display: flex; gap: 8px; flex-wrap: wrap; }
+.ssv-steps { margin: 0; padding-left: 20px; font-size: 12.5px; display: flex; flex-direction: column; gap: 3px; }
+.ssv-steps .no { color: var(--bad, #ff6b6b); }
+.ssv-steps .ok { color: var(--ph); }

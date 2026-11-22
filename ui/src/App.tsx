@@ -26,6 +26,7 @@ import { HelpOverlay } from "./components/HelpOverlay";
 import { Palette } from "./components/Palette";
 import { Tour } from "./components/Tour";
 import { RaceView } from "./components/RaceView";
+import { SafeShipView } from "./components/SafeShipView";
 import { initialNotify, notifyReducer } from "./lib/notify";
 import { replayLog, scoreboard } from "./lib/score";
 import { initialUi, reducer } from "./state";
@@ -96,6 +97,7 @@ export function App() {
   const [traceEdge, setTraceEdge] = useState<string | null>(null);
   const [replayOnly, setReplayOnly] = useState(false);
   const [race, setRace] = useState(false);
+  const [safeShip, setSafeShip] = useState(false);
   const configRead = useRef(false);
 
   const fxRef = useRef<Fx | null>(null);
@@ -453,6 +455,11 @@ export function App() {
             title={modelOff ? "The model is off on this server (INTERLOCK_MODEL=off)" : "A model proposes actions"}>model</button>
           <button type="button" className="tg" aria-pressed={mode === "you"} onClick={() => setMode("you")} title="You propose actions by hand; the real gate decides; no model runs">you</button>
         </div>
+        <div className="seg" role="group" aria-label="Policy">
+          <span className="seg-l">Policy:</span>
+          <button type="button" className="tg" aria-pressed={!safeShip} onClick={() => setSafeShip(false)} title="The live finance transfer demo">finance</button>
+          <button type="button" className="tg" aria-pressed={safeShip} onClick={() => setSafeShip(true)} title="Safe Ship: the second policy, shown read-only with Kiro's recorded run">safe-ship</button>
+        </div>
         {replayOnly && <button type="button" className="tg" onClick={exitReplay}>Exit replay</button>}
         <button type="button" className="tg" aria-pressed={soundOn} onClick={toggleSound} title="Synthesised cues, off by default. Starts only after this click.">{soundOn ? "Sound on" : "Sound off"}</button>
         {Haptics.supported() && (
@@ -512,6 +519,7 @@ export function App() {
         <Separator orientation="vertical" growsToward="left" label="Resize the agent console" className="sep-console" value={lay.layout.console}
           {...lay.bounds("console")} onChange={(v) => lay.set("console", v)} onReset={() => lay.reset("console")} onDragging={setDragging} />
       )}
+      {safeShip && <SafeShipView reduced={reduced} />}
       {race && <RaceView onClose={() => setRace(false)} modelOn={!modelOff} reduced={reduced} />}
       {cold && <ColdOpen onDone={() => setCold(false)} />}
       {palette && <Palette items={paletteItems} onRun={runAction} onClose={() => setPalette(false)} />}

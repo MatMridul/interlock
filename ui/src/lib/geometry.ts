@@ -20,6 +20,10 @@ const LAYOUT: Record<string, Pt> = {
   AUTHED: { x: 376, y: 300 },
   DRAFTED: { x: 630, y: 300 },
   APPROVED: { x: 872, y: 300 },
+  // Safe Ship (second policy)
+  CLEAN: { x: 124, y: 300 },
+  EDITED: { x: 376, y: 300 },
+  TESTED: { x: 630, y: 300 },
 };
 
 export function orbPositions(states: string[]): Record<string, Pt> {
