@@ -1,0 +1,29 @@
+{
+  "hooks": [
+    {
+      "enabled": true,
+      "action": {
+        "command": "\"<VENV>\\Scripts\\python.exe\" \"<SCRATCH>\\live2\\hook\\safe_ship_hook.py\" --phase pre",
+        "type": "command"
+      },
+      "trigger": "PreToolUse",
+      "matcher": "str_replace|fs_write|fs_append|execute_pwsh|execute_bash",
+      "name": "safe-ship-pre",
+      "description": "DISABLED SPIKE. Blocks push/deploy unless a test run exited 0 after the last edit. Copy to .kiro/hooks/ and set enabled true to use.",
+      "timeout": 30
+    },
+    {
+      "enabled": true,
+      "action": {
+        "command": "\"<VENV>\\Scripts\\python.exe\" \"<SCRATCH>\\live2\\hook\\safe_ship_hook.py\" --phase post",
+        "type": "command"
+      },
+      "trigger": "PostToolUse",
+      "matcher": "execute_pwsh|execute_bash",
+      "name": "safe-ship-post",
+      "description": "DISABLED SPIKE. Records a green test run (exit code 0) for safe-ship-pre.",
+      "timeout": 30
+    }
+  ],
+  "version": "v1"
+}

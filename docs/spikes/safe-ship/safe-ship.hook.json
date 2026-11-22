@@ -1,0 +1,29 @@
+{
+  "hooks": [
+    {
+      "timeout": 30,
+      "description": "DISABLED SPIKE. Blocks push/deploy unless a test run exited 0 after the last edit. Copy to .kiro/hooks/ and set enabled true to use.",
+      "action": {
+        "type": "command",
+        "command": "python docs/spikes/safe-ship/safe_ship_hook.py --phase pre"
+      },
+      "trigger": "PreToolUse",
+      "enabled": false,
+      "matcher": "str_replace|fs_write|fs_append|execute_pwsh|execute_bash",
+      "name": "safe-ship-pre"
+    },
+    {
+      "timeout": 30,
+      "description": "DISABLED SPIKE. Records a green test run (exit code 0) for safe-ship-pre.",
+      "action": {
+        "type": "command",
+        "command": "python docs/spikes/safe-ship/safe_ship_hook.py --phase post"
+      },
+      "trigger": "PostToolUse",
+      "enabled": false,
+      "matcher": "execute_pwsh|execute_bash",
+      "name": "safe-ship-post"
+    }
+  ],
+  "version": "v1"
+}
