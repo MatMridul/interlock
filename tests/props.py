@@ -44,8 +44,8 @@ def prop_s1(factory, seq):
     assert not t or t[0] == "AUTH", t
 
 
-def prop_s2(factory, seq):
-    _, t, _ = play(factory, seq)
+def check_s2(t):
+    """S2 on an executed symbol trace (also used by bench/race.py to judge both arms)."""
     for i, s in enumerate(t):
         if s != "TRANSFER":
             continue
@@ -56,8 +56,13 @@ def prop_s2(factory, seq):
         assert not {"TRANSFER", "CANCEL"} & set(t[j + 1:i]), ("TRANSFER on a spent/cancelled draft", t)
 
 
-def prop_s3(factory, seq):
+def prop_s2(factory, seq):
     _, t, _ = play(factory, seq)
+    check_s2(t)
+
+
+def check_s3(t):
+    """S3 on an executed symbol trace (also used by bench/race.py)."""
     since_draft = True  # becomes False after a TRANSFER, True again after a DRAFT
     for s in t:
         if s == "DRAFT":
@@ -65,6 +70,11 @@ def prop_s3(factory, seq):
         elif s == "TRANSFER":
             assert since_draft, ("second TRANSFER without DRAFT", t)
             since_draft = False
+
+
+def prop_s3(factory, seq):
+    _, t, _ = play(factory, seq)
+    check_s3(t)
 
 
 def prop_s4(factory, seq):

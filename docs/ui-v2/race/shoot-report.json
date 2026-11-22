@@ -1,0 +1,181 @@
+{
+ "errors": [],
+ "shots": [
+  "1440-race-before.png",
+  "1440-race-mid.png",
+  "1440-race-after.png",
+  "1920-race-before.png",
+  "1920-race-mid.png",
+  "1920-race-after.png",
+  "strip-edit-01-0.png",
+  "strip-edit-01-1.png",
+  "strip-edit-01-2.png",
+  "strip-edit-01-3.png",
+  "strip-edit-01-4.png",
+  "strip-edit-01-5.png",
+  "strip-edit-01-6.png",
+  "strip-edit-01-7.png"
+ ],
+ "strips": {
+  "edit01": {
+   "frames": 8,
+   "distinct": 8
+  }
+ },
+ "checks": [
+  {
+   "at": "1440 before",
+   "scrollH": 900,
+   "clientH": 900,
+   "scrollW": 1440,
+   "clientW": 1440,
+   "lanes": [
+    [
+     695,
+     263
+    ],
+    [
+     695,
+     263
+    ]
+   ],
+   "counts": {
+    "triedA": "0 of 20",
+    "forbA": "0",
+    "triedB": "0 of 20",
+    "forbB": "0"
+   }
+  },
+  {
+   "at": "1440 mid",
+   "scrollH": 900,
+   "clientH": 900,
+   "scrollW": 1440,
+   "clientW": 1440,
+   "lanes": [
+    [
+     695,
+     264
+    ],
+    [
+     695,
+     264
+    ]
+   ],
+   "counts": {
+    "triedA": "8 of 20",
+    "forbA": "4",
+    "triedB": "8 of 20",
+    "forbB": "0"
+   }
+  },
+  {
+   "at": "1440 after (finished=true)",
+   "scrollH": 900,
+   "clientH": 900,
+   "scrollW": 1440,
+   "clientW": 1440,
+   "lanes": [
+    [
+     695,
+     264
+    ],
+    [
+     695,
+     264
+    ]
+   ],
+   "counts": {
+    "triedA": "20 of 20",
+    "forbA": "10",
+    "triedB": "20 of 20",
+    "forbB": "0"
+   }
+  },
+  {
+   "at": "1920 before",
+   "scrollH": 1080,
+   "clientH": 1080,
+   "scrollW": 1920,
+   "clientW": 1920,
+   "lanes": [
+    [
+     935,
+     258
+    ],
+    [
+     935,
+     258
+    ]
+   ],
+   "counts": {
+    "triedA": "0 of 20",
+    "forbA": "0",
+    "triedB": "0 of 20",
+    "forbB": "0"
+   }
+  },
+  {
+   "at": "1920 mid",
+   "scrollH": 1080,
+   "clientH": 1080,
+   "scrollW": 1920,
+   "clientW": 1920,
+   "lanes": [
+    [
+     935,
+     259
+    ],
+    [
+     935,
+     259
+    ]
+   ],
+   "counts": {
+    "triedA": "8 of 20",
+    "forbA": "4",
+    "triedB": "8 of 20",
+    "forbB": "0"
+   }
+  },
+  {
+   "at": "1920 after (finished=true)",
+   "scrollH": 1080,
+   "clientH": 1080,
+   "scrollW": 1920,
+   "clientW": 1920,
+   "lanes": [
+    [
+     935,
+     259
+    ],
+    [
+     935,
+     259
+    ]
+   ],
+   "counts": {
+    "triedA": "20 of 20",
+    "forbA": "10",
+    "triedB": "20 of 20",
+    "forbB": "0"
+   }
+  }
+ ],
+ "hashes": {
+  "1440-race-before.png": "062ce17b4386",
+  "1440-race-mid.png": "7f935dd12395",
+  "1440-race-after.png": "be9183e30d1a",
+  "1920-race-before.png": "1ebbad98c788",
+  "1920-race-mid.png": "bd08b5a7902b",
+  "1920-race-after.png": "7b37fa8a5d74",
+  "strip-edit-01-0.png": "71169f922187",
+  "strip-edit-01-1.png": "7645481a289b",
+  "strip-edit-01-2.png": "4940b0054505",
+  "strip-edit-01-3.png": "0f79ef900439",
+  "strip-edit-01-4.png": "a4ef57ecb43b",
+  "strip-edit-01-5.png": "0a0be455e586",
+  "strip-edit-01-6.png": "5e08a1902f16",
+  "strip-edit-01-7.png": "ae8b2d8b288c"
+ }
+}

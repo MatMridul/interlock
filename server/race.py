@@ -1,0 +1,126 @@
+"""Race mode (C2): GET /race/replay serves the recorded benchmark (no model call);
+POST /race/live runs ONE corpus attack against both arms with the real model.
+
+Isolation: bench.race.run_attack builds its own fresh Gate (arm B) and its own UngatedBank (arm A)
+for every run. Neither is a registry session, so a live race can never read or change the state of
+any /session/{sid} gate, and the unprotected arm only ever touches the in-memory stub bank (no money moves).
+Live runs are allowed only when INTERLOCK_MODEL is on, take an attack id from the fixed corpus (no
+free text), run one at a time, and spend from a per-process daily model-call budget.
+
+shortcut: the daily budget lives in this process (resets on restart, not shared between workers).
+Upgrade to a shared counter if the app ever runs with more than one worker.
+"""
+import datetime
+import json
+import os
+import threading
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
+
+from bench import race as bench
+from server import manual
+
+DAILY_CALLS = 40  # model invocations per UTC day per process (override: RACE_DAILY_CALLS)
+MIN_CALLS_TO_START = 6  # a two-arm run of one attack needs about this many
+LATEST = bench.RESULTS / "latest.json"
+
+
+def daily_limit():
+    try:
+        return max(0, int(os.environ.get("RACE_DAILY_CALLS", DAILY_CALLS)))
+    except ValueError:
+        return DAILY_CALLS
+
+
+class DailyCap:
+    def __init__(self, today=lambda: datetime.datetime.now(datetime.timezone.utc).date()):
+        self._today, self._day, self.used = today, None, 0
+        self._lock = threading.Lock()
+
+    def _roll(self):
+        d = self._today()
+        if d != self._day:
+            self._day, self.used = d, 0
+
+    def remaining(self):
+        with self._lock:
+            self._roll()
+            return max(0, daily_limit() - self.used)
+
+    def take(self):
+        with self._lock:
+            self._roll()
+            if self.used >= daily_limit():
+                return False
+            self.used += 1
+            return True
+
+
+class RaceMeter:
+    """Same interface as bench.race.CallMeter, but spends from the daily cap and writes no file."""
+
+    def __init__(self, cap, run_cap=bench.RUN_CALL_CAP):
+        self.cap, self.run_cap, self.run_calls, self.label = cap, run_cap, 0, ""
+
+    def start_run(self, label):
+        self.run_calls, self.label = 0, label
+
+    def hook(self, event):
+        if self.run_calls >= self.run_cap:
+            raise bench.BudgetExceeded(f"run cap {self.run_cap} reached")
+        if not self.cap.take():
+            raise bench.BudgetExceeded("daily cap reached")
+        self.run_calls += 1
+
+
+class LiveBody(BaseModel):
+    attack_id: str = Field(min_length=1, max_length=32)
+
+
+def _load_corpus():
+    return json.loads(bench.CORPUS.read_text(encoding="utf-8"))
+
+
+def add_routes(app: FastAPI, model_factory, limiter):
+    cap = DailyCap()
+    busy = threading.Lock()
+    app.state.race_cap = cap
+
+    @app.get("/race/replay")
+    def replay():
+        if not LATEST.exists():
+            return JSONResponse({"detail": "no recorded run"}, status_code=404)
+        return json.loads(LATEST.read_text(encoding="utf-8"))
+
+    @app.post("/race/live")
+    def live(body: LiveBody, request: Request):
+        if not manual.model_enabled():
+            return JSONResponse({"detail": "model is off on this server"}, status_code=403)
+        client = request.client.host if request.client else "unknown"
+        wait = limiter.rate_limited("chat", client)
+        if wait:
+            return JSONResponse({"detail": "too many requests"}, status_code=429, headers={"Retry-After": str(wait)})
+        corpus = _load_corpus()
+        attack = next((a for a in corpus["attacks"] if a["id"] == body.attack_id), None)
+        if attack is None:
+            return JSONResponse({"detail": "unknown attack"}, status_code=404)
+        if cap.remaining() < MIN_CALLS_TO_START:
+            return JSONResponse({"detail": "daily race budget used up, try the recorded run"}, status_code=429)
+        if not busy.acquire(blocking=False):
+            return JSONResponse({"detail": "a race is already running"}, status_code=409)
+        try:
+            model = model_factory()
+            if model is None:
+                return JSONResponse({"detail": "model is off on this server"}, status_code=403)
+            model_id = (model.get_config() or {}).get("model_id", "unknown")
+            meter = RaceMeter(cap)
+            runs = [bench.run_attack(attack, arm, model, meter) for arm in bench.ARMS]
+        finally:
+            busy.release()
+        keep = ("attack_id", "category", "arm", "events", "executed_log", "violation", "rules_fired",
+                "model_calls", "error")
+        return {"label": f"live run, {datetime.date.today().isoformat()}, model {model_id}",
+                "model": model_id, "attack": attack,
+                "runs": [{k: r[k] for k in keep} for r in runs], "calls_left": cap.remaining()}
