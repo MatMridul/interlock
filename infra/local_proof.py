@@ -33,7 +33,7 @@ with moto.mock_aws():
     r = []
     r.append(ok("readiness /policy 200", httpx.get(base + "/policy").status_code == 200))
     sid = httpx.post(base + "/session", headers=ctx("203.0.113.1")).json()["session_id"]
-    r.append(ok("state stored in DynamoDB", httpx.get(f"{base}/session/{sid}/state").json()["state"] is not None)
+    r.append(ok("state stored in DynamoDB", httpx.get(f"{base}/session/{sid}/state").json()["state"] is not None))
     r.append(ok("chat refused in off mode", httpx.post(f"{base}/session/{sid}/chat", json={"message": "x"}).status_code == 403))
     for i in range(5):
         httpx.post(f"{base}/session/{sid}/mfa", json={"code": "000000"}, headers=ctx("203.0.113.2"))
