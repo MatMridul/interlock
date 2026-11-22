@@ -1,0 +1,30 @@
+[tool] Run safe_ship machine and engine tests
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] status: Completed
+[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=46
+[tool] status: Completed
+[tool] Check generated table freshness
+[tool] status: InProgress
+[tool] status: InProgress
+[tool] @jflap/jflap_inspect
+[tool] status: InProgress
+[tool] status: Completed
+[tool] @jflap/jflap_equivalence_check
+[tool] status: InProgress
+[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=65
+[tool] status: Completed
+[tool] status: Completed
+All checks passed for `safe_ship`.
+
+| # | Check | Command or tool | Result | Counts |
+|---|---|---|---|---|
+| 1a | Exhaustive check | `python -m pytest tests/test_safe_ship_machine.py tests/test_safe_ship_engine.py -q -s` | Pass | 488281 strings checked, 93241 accepted, 0 mismatches |
+| 1b | Mutant check | same run | Pass | 40 killed, 5 equivalent, 0 survivors |
+| 1c | Pytest summary | same run | Pass | 17 passed in 11.26s |
+| 2 | Generated table freshness | `python scripts/gen_executor_table.py --policy safe_ship --check` | Fresh | exit 0 |
+| 3a | JFLAP inspect | `jflap_inspect` on `policy/safe_ship.jff` | Deterministic: true. Complete: true. | 4 states (CLEAN, EDITED, TESTED, SINK). Alphabet: C, D, E, P, T. Dead states: [3] (SINK). Unreachable: none. |
+| 3b | JFLAP self-equivalence | `jflap_equivalence_check` of `safe_ship.jff` against itself | Equivalent: true | Shortest distinguishing string: null |
+
+[INFO] [KRS] <-- GenerateAssistantResponseCommand done totalEvents=104
+The alphabet lists five letters, so the JFLAP file has no extra symbols. Dead state 3 is SINK, which the policy file defines as the non-accepting sink. The self-equivalence check only shows the tool works. It does not compare the `.jff` file to the generated table. That comparison is covered by the exhaustive test in 1a.
