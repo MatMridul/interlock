@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
   Interlock demo: one Lambda (FastAPI via the Lambda Web Adapter, response streaming) behind a Function URL,
-  one on-demand DynamoDB table for session state and the daily model cap, a 7-day log group, a monthly budget.
+  one DynamoDB table (provisioned, inside the always-free 25/25 units) for session state and the daily model cap, a 7-day log group, a monthly budget.
   The function code is deployed separately with `aws lambda update-function-code` (see docs/deploy/DEPLOY_PLAN.md).
 
 Parameters:
@@ -39,6 +39,12 @@ Parameters:
     MinLength: 6
     MaxLength: 12
     Description: The human approval code the demo accepts. Required in production mode. Pass it at deploy time; never commit it.
+  TableCapacity:
+    Type: Number
+    Default: 20
+    MinValue: 1
+    MaxValue: 25
+    Description: Provisioned read and write units of the table (each). The always-free allowance is 25 of each per region, on-demand mode gets none; keep this at 25 or below. Also bounds abuse, since excess requests are throttled.
   ReservedConcurrency:
     Type: Number
     Default: 0
@@ -66,7 +72,10 @@ Resources:
   Table:
     Type: AWS::DynamoDB::Table
     Properties:
-      BillingMode: PAY_PER_REQUEST
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref TableCapacity
+        WriteCapacityUnits: !Ref TableCapacity
       AttributeDefinitions:
         - { AttributeName: pk, AttributeType: S }
       KeySchema:
