@@ -70,21 +70,21 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| C1 | "You are the agent" mode: visitors propose actions by hand with no model, using the real gate; becomes the default on the public URL | Me | P0 | doing (branch product-depth) | Works with zero Bedrock calls |
-| C2 | Race mode: the same attack against a prompt-only agent and against Interlock, side by side, with a raw-counts scoreboard (include attacks the prompt-only agent resists) | Me | P0 | todo | A 20-attack run produces honest counts; results saved as a replay |
-| C3 | "Why was this blocked?" overlay: show the shortest allowed path from the current state on the machine | Me | P0 | doing (branch product-depth) | Appears on every block |
-| C4 | "What if" box: type a symbol sequence, see accept or reject and the step it fails at | Me | P1 | doing (branch product-depth) | Matches the JFLAP table on all of the 21 documented traces |
-| C5 | Session replay and scrubber, plus shareable replay files | Me | P1 | doing (branch product-depth) | Any finished session can be replayed step by step |
-| C6 | Audit log export (JSON lines) | Me | P1 | doing (branch product-depth) | Download button; format documented |
+| C1 | "You are the agent" mode: visitors propose actions by hand with no model, using the real gate; becomes the default on the public URL | Me | P0 | done (branch product-depth, PR #8) | Works with zero Bedrock calls |
+| C2 | Race mode: the same attack against a prompt-only agent and against Interlock, side by side, with a raw-counts scoreboard (include attacks the prompt-only agent resists) | Me | P0 | doing (branch race-mode; capped at 150 Nova calls) | A 20-attack run produces honest counts; results saved as a replay |
+| C3 | "Why was this blocked?" overlay: show the shortest allowed path from the current state on the machine | Me | P0 | done (branch product-depth, PR #8) | Appears on every block |
+| C4 | "What if" box: type a symbol sequence, see accept or reject and the step it fails at | Me | P1 | done (branch product-depth, PR #8) | Matches the JFLAP table on all of the 21 documented traces |
+| C5 | Session replay and scrubber, plus shareable replay files | Me | P1 | done (branch product-depth, PR #8) | Any finished session can be replayed step by step |
+| C6 | Audit log export (JSON lines) | Me | P1 | done (branch product-depth, PR #8) | Download button; format documented |
 | C7 | Second policy behind a policy picker (see D1) | Me | P0 | todo | Picker switches machines; second machine passes the same verification as the first |
 
 ### D. Kiro-usage evidence (P0, this is 20% of the score)
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| D1 | **Safe Ship policy:** a Kiro `PreToolUse` hook runs the gate on the coding agent's own tool calls (no push or deploy until tests ran after the last edit). **Spike done 2026-11-21: GO** (live on Kiro CLI 3.5.0, branch `safe-ship-spike`, report `docs/spikes/SAFE_SHIP_SPIKE.md`). Remaining: production integration (about 1.5 to 2 days), IDE and Crew live test (D6). **Fallback:** AWS change-approval policy | Me | P0 | doing | Hook blocks a real Kiro tool call in a recorded run, wired into the policy picker (C7) |
-| D2 | Custom agent in `.kiro/agents/` (a verifier agent that runs the policy checks) used during the build | Me | P0 | todo | File committed and used in at least one logged task |
-| D3 | A Kiro power or documented MCP integration for the JFLAP checks | Me | P1 | todo | Installable from the repo; documented |
+| D1 | **Safe Ship policy:** a Kiro `PreToolUse` hook runs the gate on the coding agent's own tool calls (no push or deploy until tests ran after the last edit). **Spike done 2026-11-21: GO** (live on Kiro CLI 3.5.0, branch `safe-ship-spike`, report `docs/spikes/SAFE_SHIP_SPIKE.md`). Remaining: production integration (about 1.5 to 2 days), IDE and Crew live test (D6). **Fallback:** AWS change-approval policy | Me | P0 | doing (branch safe-ship) | Hook blocks a real Kiro tool call in a recorded run, wired into the policy picker (C7) |
+| D2 | Custom agent in `.kiro/agents/` (a verifier agent that runs the policy checks) used during the build | Me | P0 | doing (branch safe-ship) | File committed and used in at least one logged task |
+| D3 | A Kiro power or documented MCP integration for the JFLAP checks | Me | P1 | doing (branch safe-ship) | Installable from the repo; documented |
 | D4 | Specs: keep `.kiro/specs/gate` in sync; add one spec per new feature (race mode, Safe Ship) and work them through tasks | Me | P0 | todo | Every shipped feature maps to a spec task ticked off |
 | D5 | Steering: keep the product, tech and security files current | Me | P1 | todo | Reviewed before submit |
 | D6 | Open the repo once in Kiro IDE and Kiro CLI, confirm the MCP loads and the hook fires, take screenshots | **You** | P0 | todo | Screenshots stored in `docs/evidence/`; write-up can truthfully compare IDE, CLI and Crew |
@@ -94,11 +94,11 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| E1 | Choose the host (AgentCore Runtime or one container) after a short spike; list monthly cost before creating anything | Me proposes, **You approve** | P0 | doing (design and template on branch deploy-prep; nothing created on AWS) | Written cost estimate and your yes |
+| E1 | Choose the host (AgentCore Runtime or one container) after a short spike; list monthly cost before creating anything | Me proposes, **You approve** | P0 | done as plan and template (PR #7); waits on owner approval to deploy | Written cost estimate and your yes |
 | E2 | Deploy so it stays up and free through 2027-01-29 | Me | P0 | doing (design and template on branch deploy-prep; nothing created on AWS) | Public URL passes the demo script |
-| E3 | Spend and abuse controls: default to "you are the agent" and stub; real-model chat behind a daily cap; AWS budget alarm | Me | P0 | doing (design and template on branch deploy-prep; nothing created on AWS) | Cap proven by test; alarm exists |
+| E3 | Spend and abuse controls: default to "you are the agent" and stub; real-model chat behind a daily cap; AWS budget alarm | Me | P0 | done as plan and template (PR #7); waits on owner approval to deploy | Cap proven by test; alarm exists |
 | E4 | Rate limits and a lockout on `/mfa` attempts; session limits | Me | P0 | done (branch hardening-ci, unmerged) | Brute force is blocked by test |
-| E5 | Uptime check and a rollback plan | Me | P1 | doing (design and template on branch deploy-prep; nothing created on AWS) | Documented |
+| E5 | Uptime check and a rollback plan | Me | P1 | done as plan and template (PR #7); waits on owner approval to deploy | Documented |
 | E6 | Claude access (Anthropic use-case form in the Bedrock console) for one real Claude run | **You** | P2 | todo | Haiku answers from the CLI |
 
 ### F. Security and quality (P0 to P1)
