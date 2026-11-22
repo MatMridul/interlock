@@ -67,6 +67,14 @@ describe("RaceView", () => {
     expect(screen.getByRole("table", { name: "Per-attack results" })).toHaveTextContent("EXECUTED");
     expect(calls.filter((c) => c.includes("live"))).toEqual([]);
   });
+  it("the attack selector follows the attack being played during Replay all", async () => {
+    render(<RaceView onClose={() => {}} modelOn={false} reduced={false} />);
+    await screen.findByTestId("race-label");
+    const sel = screen.getByLabelText("Attack") as HTMLSelectElement;
+    expect(sel.value).toBe("a-1");
+    fireEvent.click(screen.getByRole("button", { name: /Replay all 2/ }));
+    await waitFor(() => expect(sel.value).toBe("a-2"), { timeout: 8000 });
+  }, 12000);
   it("plays one attack in steps: the forbidden chip appears only in the prompt-only lane", async () => {
     render(<RaceView onClose={() => {}} modelOn={false} reduced={false} />);
     await screen.findByTestId("race-label");

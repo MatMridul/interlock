@@ -72,6 +72,8 @@ export function RaceView({ onClose, modelOn, reduced }: { onClose: () => void; m
   const pair = cur ? pairs[cur] : undefined;
   const len = Math.max(pair?.["prompt-only"]?.events.length ?? 0, pair?.interlock?.events.length ?? 0);
 
+  useEffect(() => { if (playing && cur) setSel(cur); }, [playing, cur]); // the selector follows the attack being played
+
   useEffect(() => {
     if (!playing || !cur) return;
     let t: ReturnType<typeof setTimeout>;
