@@ -296,7 +296,7 @@ Rule: hardest invariant first. Today is Thu Nov 19. D = days after today. Dates 
 | D3 | Nov 22 | Export table, generated executor, `gate.run/peek`, stub tools, Hypothesis suite S1 to S7, M5. | INV-1,2,3,4,6,8 green. **This is the real gate.** |
 | D4 | Nov 23 | Strands wrappers, hook, SequentialToolExecutor, stub-`Model` adversarial suite (S10), INV-11, INV-12. | INV-5 green. |
 | D5 | Nov 24 | Argument guard (S9). Real Bedrock model through the same agent. **Deploy spike** for the live URL (section 5). | One real end-to-end run recorded; chosen host answers a request. |
-| D6 to D9 | Nov 25 to 28 | API (SSE events), Next.js + React Flow UI: chat, live automaton, executed-log, Proof Inspector (INV-10), MFA button. | Demo script runs locally end to end. |
+| D6 to D9 | Nov 25 to 28 | API (SSE events), React (Vite) + React Flow UI: chat, live automaton, executed-log, Proof Inspector (INV-10), MFA button. | Demo script runs locally end to end. |
 | D10 | Nov 29 | Deploy for real. Smoke test the public URL. | Public URL passes the demo script. |
 | D11 to D12 | Nov 30 to Dec 1 | Video (under 3 min), Kiro write-up, README, license, blog, disclosures. | Draft submission complete. |
 | D13 | Dec 2 | Feature freeze. Full test pass, retakes. | All suites green on the deployed build. |

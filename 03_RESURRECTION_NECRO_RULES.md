@@ -1,3 +1,5 @@
+> **Superseded.** This is an early planning document. The current design is `SPEC_GATE_v2.md` and `.kiro/specs/gate/`. Where this file differs from the repo, the repo is right (for example the UI is React with Vite).
+
 # RESURRECTION TRACK: NecroRules (1980s Expert Systems & The Rete Algorithm Revived)
 **Track:** Resurrection  
 **Target Category:** Best Resurrection ($5,000) + Overall Placement ($10,000 - $30,000)  
@@ -117,7 +119,7 @@ NecroRules showcases Kiro’s spec-driven development and hooks at the deepest l
 
 * **Core Engine:** TypeScript / Rust compiled to WebAssembly (Wasm) for ultra-fast in-memory Rete evaluation.
 * **Synthesizer:** Kiro Agent prompts + AST code generation scripts.
-* **Interactive Workbench:** Next.js + React Flow + Lucide Icons:
+* **Interactive Workbench:** React (Vite) + React Flow + Lucide Icons:
   * Left Panel: Natural language policy input (e.g. paste a 3-page return policy or lending rulebook).
   * Center Panel: Real-time visual rendering of the compiled Rete Alpha/Beta network DAG with live fact tokens flowing through nodes.
   * Right Panel: Interactive fact injection sandbox with microsecond execution timer and causal proof inspector.

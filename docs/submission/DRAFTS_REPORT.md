@@ -1,6 +1,6 @@
 # DRAFTS_REPORT (item it_3f1b70b7)
 
-All files are new drafts. Nothing committed or pushed, no Bedrock calls, no existing file edited, no LICENSE added. No file collided with an existing name, so no `-draft` names were needed. The full test suite was not run (memory); only `pytest --collect-only` (336 tests) and JSON/Archify validation.
+All files are new drafts. Nothing committed or pushed, no Bedrock calls, no existing file edited, no LICENSE added. No file collided with an existing name, so no `-draft` names were needed. The full test suite was not run (memory); only `pytest --collect-only` and JSON/Archify validation.
 
 ## Files created
 | File | Purpose |
@@ -30,7 +30,7 @@ All files are new drafts. Nothing committed or pushed, no Bedrock calls, no exis
 - Matcher escaping on Windows paths (I allow `/` or `\`); the hook was not run inside Kiro. The command uses the Windows venv path and needs jflap-cli and Java.
 - Exact `tasks.md` checkbox grammar beyond `- [ ]`/`- [x]` (docs page did not show it; from general knowledge).
 - Kiro hook STDIN fields (unread, not needed).
-- Not verified: that the specs/steering/hook were authored in the Kiro IDE (they were written by a helper); that Kiro loads `.kiro/settings/mcp.json` with the absolute path `C:/Users/mridu/jflap-cli/jflap_mcp.py`.
+- Not verified: that the specs/steering/hook were authored in the Kiro IDE (they were written by a helper); that Kiro loads `.kiro/settings/mcp.json` with the repo-relative path `third_party/jflap-cli/jflap_mcp.py`.
 - Not re-run: the full pytest suite and `npm test`; test counts are from reports and collect-only. Browser view of the diagram was a headless screenshot only.
 
 ## Owner must decide or supply
@@ -46,10 +46,10 @@ All files are new drafts. Nothing committed or pushed, no Bedrock calls, no exis
 ## Inconsistencies found in the repo
 - `.gitignore` does not ignore `.hypothesis`, `.pytest_cache`, or `scripts/bedrock_calls.log` (the first two appear in the repo root). `.kiro` is not ignored (checked with `git check-ignore`).
 - `server/config.py` holds a default demo MFA code in source (UI_REPORT says it is not in UI source; it is in `ui/README.md` and `server/config.py`). Consider requiring the env var for a public repo. I did not write the value anywhere.
-- Test counts: UI_REPORT.md says 334; `pytest --collect-only` now gives 336. README uses 336 as "collected".
+- Test counts: superseded; see docs/reports/TEST_COUNTS.md.
 - `.kiro/settings/mcp.json` uses a machine-specific absolute path; it will not work for others.
 - `SPEC_GATE_v2.md` section 10/1 lists the hook trigger as `FileSave`; current docs overview shows `PostFileSave`.
 - `SPEC_GATE.md` (v1) and `CHIMERIC_AUTOMATON_SPEC.md` remain with the superseded claims; fine if labelled, risky for judges reading the repo.
-- `SPEC_GATE_v2.md` section 7 says Next.js; the UI is Vite (UI_REPORT).
+- `SPEC_GATE_v2.md` section 7 named the old UI framework; the UI is Vite (docs/ui-v2/UI_BUILD_REPORT.md).
 - EXECUTOR_REPORT says full suite is 87 s while VERIFICATION_REPORT's "about 3 s" applies only to M1/M4; hook uses only the 3 s tests.
 - Docs checklist items "ROUND_2": `shoot.mjs` looks for `#tg-proof`, absent in comp D (already stated there).

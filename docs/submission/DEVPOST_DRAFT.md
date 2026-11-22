@@ -22,7 +22,7 @@ A Strands agent on Amazon Bedrock proposes tool calls (log in, draft, edit, tran
 Keeping the claims honest (the first spec overclaimed JFLAP's runtime role); proving the table equals the model; a mutation survivor that exposed a missing property; Bedrock model access.
 
 ## Accomplishments
-336 Python tests, 20 UI tests; all 2,015,539 strings up to length 8 checked three ways with 0 mismatches; 96 of 96 table mutants caught; two independent enforcement layers each shown to block alone. (Numbers from the repo's reports; re-run before submitting.)
+Python and UI test suites (counts: docs/reports/TEST_COUNTS.md); all 2,015,539 strings up to length 8 checked three ways with 0 mismatches; 96 of 96 table mutants caught; two independent enforcement layers each shown to block alone. (Numbers from the repo's reports; re-run before submitting.)
 
 ## What we learned
 Mutation testing finds missing properties, not just missing tests. A default-off safety feature is a trap. Say what the checker cannot see.

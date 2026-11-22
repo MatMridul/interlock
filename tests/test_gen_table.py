@@ -18,7 +18,7 @@ def export_text():
 
 
 def test_generated_file_is_fresh(export_text):
-    with open(gen.OUT, newline="") as f:
+    with open(gen.OUT) as f:  # text mode: tolerate CRLF checkouts
         on_disk = f.read()
     assert on_disk.startswith("# GENERATED, DO NOT EDIT."), "header missing"
     assert gen.render(export_text) == on_disk, "regenerating changes bank/executor_table.py"

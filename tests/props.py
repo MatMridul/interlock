@@ -102,7 +102,7 @@ PROPS = {"S1": prop_s1, "S2": prop_s2, "S3": prop_s3, "S4": prop_s4,
 
 
 def prop_x1_no_stacked_drafts(factory, seq):
-    """Added after a mutant survived S1 to S7 (see EXECUTOR_REPORT.md)."""
+    """Added after a mutant survived S1 to S7 (see docs/reports/EXECUTOR_REPORT.md)."""
     _, t, _ = play(factory, seq)
     open_draft = False
     for s in t:

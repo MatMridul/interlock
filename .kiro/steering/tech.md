@@ -6,7 +6,7 @@ inclusion: always
 
 - Python 3.12, Strands Agents SDK 1.65.0, Amazon Bedrock (defaults `global.amazon.nova-2-lite-v1:0`, `ap-south-1`; override `BEDROCK_MODEL_ID`, `AWS_REGION`), FastAPI + uvicorn, Hypothesis + pytest. Pins in `requirements.txt`.
 - UI in `ui/`: Vite, React 19, TypeScript, `@xyflow/react`, Vitest. FastAPI serves `ui/dist`.
-- JFLAP 7.1 through `jflap-cli` (outside this repo; MCP binding in `.kiro/settings/mcp.json`).
+- JFLAP 7.1 through `jflap-cli` (vendored in `third_party/jflap-cli`; MCP binding in `.kiro/settings/mcp.json`).
 
 ## Rules
 1. `bank/executor_table.py` is GENERATED. Never hand-edit it. Change `policy/finance_table.json`, run `python scripts/gen_jff.py`, then regenerate with `python scripts/gen_executor_table.py` (check with `--check`).

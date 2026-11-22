@@ -1,6 +1,6 @@
 # VERIFICATION REPORT: finance state machine (plan days D1 to D2)
 
-Run on 2026-11-19 (IST), Windows, Python 3.12.10, Java 27.0.1, JFLAP 7.1 via `C:\Users\mridu\jflap-cli` (`jflap_cli.py`, the same code the `jflap_mcp.py` server wraps; the MCP server itself was not loaded, the CLI was called from a shell). Spec: `SPEC_GATE_v2.md` (unmodified). Nothing committed or pushed. No Strands, Bedrock or AWS used.
+Run on 2026-11-19 (IST), Windows, Python 3.12.10, Java 27.0.1, JFLAP 7.1 via `third_party/jflap-cli` (`jflap_cli.py`, the same code the `jflap_mcp.py` server wraps; the MCP server itself was not loaded, the CLI was called from a shell). Spec: `SPEC_GATE_v2.md` (unmodified). Nothing committed or pushed. No Strands, Bedrock or AWS used.
 
 ## Files produced
 
@@ -18,7 +18,7 @@ Run on 2026-11-19 (IST), Windows, Python 3.12.10, Java 27.0.1, JFLAP 7.1 via `C:
 
 The spec's table was copied unchanged. No disagreement with the spec was found; the spec's counts (2,015,539 strings, 321 accepted, 96 mutants) were all confirmed.
 
-## M2: JFLAP checks (commands from the repo root; `J` = `python C:\Users\mridu\jflap-cli\jflap_cli.py`)
+## M2: JFLAP checks (commands from the repo root; `J` = `python third_party/jflap-cli/jflap_cli.py`)
 
 | # | Command | Result (raw, see `policy/jflap_raw_output.txt`) | Pass |
 | :-- | :-- | :-- | :-- |

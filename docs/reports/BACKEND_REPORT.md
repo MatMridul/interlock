@@ -14,7 +14,7 @@ Changed:
 - `bank/gate.py` (minimal, see below), `agent/factory.py` (hook passes the tool args to `peek` and reports its refusals to the gate), `agent/bedrock.py` (defaults now `global.amazon.nova-2-lite-v1:0` / `ap-south-1`, override with `BEDROCK_MODEL_ID` and `AWS_REGION`).
 
 ### Changes to `bank/gate.py` and why
-1. `Gate(table, tools, guard=None)`. `guard=True` (or a `GuardConfig`) turns the guard on. **Default is off**: 258 existing tests call `DRAFT` with `{}` or payee `"x"` and `EDIT` with 9000, which the guard rightly rejects. Keeping the default off keeps those tests and behavior unchanged. The server always builds gates with `guard=True`. Risk: a caller who forgets `guard=True` gets no argument guard. The server is the only production caller.
+1. `Gate(table, tools, guard=None)`. `guard=True` (or a `GuardConfig`) turns the guard on. **Default is off**: the existing tests call `DRAFT` with `{}` or payee `"x"` and `EDIT` with 9000, which the guard rightly rejects. Keeping the default off keeps those tests and behavior unchanged. The server always builds gates with `guard=True`. Risk: a caller who forgets `guard=True` gets no argument guard. The server is the only production caller.
 2. `run` is split into `run` (lock + retry counting) and `_run` (old logic). In `_run`, after the table accepts and before the tool runs: locked check, `guard.check`, and for TRANSFER the args are replaced by the stored latest DRAFT/EDIT. Counters update only after the tool ran and the state committed.
 3. `peek(..., args=None)` also applies the guard checks (read-only). `note_rejected_proposal()` lets the hook layer count its refusals toward the retry limit (otherwise the hook would catch almost every bad proposal first and the lock would never trigger). `guard_state()` exposes counters.
 
@@ -23,7 +23,7 @@ Guard rejections use the same four fields plus `reason`, and change no state. Re
 ## Commands
 
 ```
-cd C:\Mridul\Programs\Kiroween
+cd <repo root>
 .venv\Scripts\python -m pip install -r requirements.txt
 .venv\Scripts\python -m pytest -q                      # full suite
 # run the server, localhost only (real Bedrock; model/region from env, defaults Nova 2 Lite / ap-south-1)
@@ -64,12 +64,7 @@ data: {"from": "START", "to": "AUTHED"}
 
 ## Tests (all run, all passing)
 
-| Group | Tests |
-| :-- | :-- |
-| Existing (state machine, gate, mutation, replay, Strands) | 258 |
-| `tests/test_guard_s9.py` (S9, boundaries, bad types, lock, Hypothesis, mutants) | 51 |
-| `tests/test_server_api.py` (API, SSE, INV-10, hygiene, 4.7 e2e) | 19 |
-| **Full suite** | **328 passed, 0 failed** (258 + 70) |
+Test groups added here: `tests/test_guard_s9.py` (S9, boundaries, bad types, lock, Hypothesis, mutants) and `tests/test_server_api.py` (API, SSE, INV-10, hygiene, 4.7 e2e). Counts per suite: [TEST_COUNTS.md](TEST_COUNTS.md).
 
 `test_s9_argument_caps` covers cap-0.01, cap, cap+0.01, transfers 3 and 4, retry exhaustion and lock. Other tests cover bad payee/amount types (None, bool, strings, NaN, inf, 3 decimals), stored-draft TRANSFER (model-supplied args ignored), EDIT voiding MFA, and two Hypothesis tests (random arguments never give an executed TRANSFER above the cap, off the list, or a 4th). End-to-end test `test_e2e_section_4_7_accept_traces_through_api` replays the nine 4.7 accept traces (stub model plus human `/mfa`); every one ended with the expected executed log, no rejects. Final states: A/ADMT/ADEMT/ADMEMT/ADMC/ADMTDMT/ADEEMEEMT end AUTHED, AD DRAFTED, ADM APPROVED; e.g. ADMTDMT executed `AUTH DRAFT MFA TRANSFER DRAFT MFA TRANSFER`, transfers=2.
 

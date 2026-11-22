@@ -8,7 +8,7 @@ DRAFT README for owner review.
 - A deterministic Gate decides which proposals run. The allowed order is a 5-state machine authored and checked in JFLAP 7.1.
 - At runtime the Gate uses a Python table generated from the JFLAP model, tested equal to it. JFLAP does not run at runtime.
 - The approval step (MFA) is done by a human through an HTTP endpoint. The model has no tool for it.
-- The repo includes an Instrument-style UI (custom SVG stage), 336 Python tests (320 in the fast subset re-run for this README) and 26 UI tests, and the reports that record what was and was not checked.
+- The repo includes an Instrument-style UI (custom SVG stage), Python and UI test suites (counts and commands: [TEST_COUNTS.md](docs/reports/TEST_COUNTS.md)), and the reports that record what was and was not checked.
 
 Tools are stubs: no network, no money moves.
 
@@ -45,7 +45,7 @@ Layer 1 (gate) and layer 2 (hook) each block alone; tests prove both.
 
 ## The 12 invariants and their tests
 
-Reports: [SPEC_GATE_v2.md](SPEC_GATE_v2.md), [VERIFICATION_REPORT.md](VERIFICATION_REPORT.md), [EXECUTOR_REPORT.md](EXECUTOR_REPORT.md), [STRANDS_REPORT.md](STRANDS_REPORT.md), [BACKEND_REPORT.md](BACKEND_REPORT.md), [UI_REPORT.md](UI_REPORT.md).
+Reports: [SPEC_GATE_v2.md](SPEC_GATE_v2.md), [docs/reports/](docs/reports/README.md) (verification, executor, Strands, backend, UI build and hardening reports; test counts in [TEST_COUNTS.md](docs/reports/TEST_COUNTS.md)).
 
 | ID | Invariant | Covered by |
 | :-- | :-- | :-- |
@@ -55,7 +55,7 @@ Reports: [SPEC_GATE_v2.md](SPEC_GATE_v2.md), [VERIFICATION_REPORT.md](VERIFICATI
 | INV-4 | Unknown tool cannot run | `test_inv4_bad_symbol_rejects`, `test_inv4_unknown_tool_name_has_no_symbol` |
 | INV-5 | Model can act only through the checker | `tests/test_strands_agent.py` |
 | INV-6 | State changes only by accepted transition | `test_inv6_*` |
-| INV-7 | Model is deterministic and complete, only SINK is dead | JFLAP `inspect` (VERIFICATION_REPORT 2.1), not a pytest test |
+| INV-7 | Model is deterministic and complete, only SINK is dead | JFLAP `inspect` (docs/reports/VERIFICATION_REPORT.md 2.1), not a pytest test |
 | INV-8 | Rejections carry a reason | 16-cell tests, Hypothesis runs |
 | INV-9 | Argument limits | `tests/test_guard_s9.py` |
 | INV-10 | Latencies are measured | `test_latency_absent_when_no_measurement` |
@@ -64,28 +64,40 @@ Reports: [SPEC_GATE_v2.md](SPEC_GATE_v2.md), [VERIFICATION_REPORT.md](VERIFICATI
 
 Also: M1 exhaustive check of table, ordering rules and regex over all 2,015,539 strings up to length 8 (0 mismatches); 96 of 96 table mutants killed; 12 gate mutants with one survivor that led to property X1.
 
-## Run locally (Windows, bound to 127.0.0.1)
+<!-- quick-start:begin (maintained by the hardening task; the final README may replace this block) -->
+## Quick start (Windows, macOS, Linux)
+
+Needs Python 3.10+ (CI uses 3.12) and, for the UI, Node 20+. The JFLAP-based checks and tests also need a JDK (11+); JFLAP 7.1 and `jflap-cli` are vendored in `third_party/`.
 
 ```
-.venv\Scripts\python -m pip install -r requirements.txt
-cd ui; npm ci; npm run build; cd ..
-$env:DEMO_MFA_CODE = "<choose a demo code>"      # the code typed in the Human approval dialog
-# optional: $env:STUB = "1"   (canned model, no Bedrock)
-# optional: $env:AWS_REGION, $env:BEDROCK_MODEL_ID   (defaults: ap-south-1, global.amazon.nova-2-lite-v1:0)
-.venv\Scripts\python -m uvicorn server.app:app --host 127.0.0.1 --port 8000
+python scripts/setup.py          # creates .venv, installs requirements.txt, builds the UI (add --no-ui to skip)
 ```
 
-Open `http://127.0.0.1:8000`. Real model calls need AWS credentials from the standard boto3 chain and Bedrock model access in your account. UI dev server: `cd ui; npm run dev` (127.0.0.1:5173, proxies to :8000).
+Start the server (bound to 127.0.0.1; `STUB=1` uses a canned model, so no AWS account is needed):
+
+```
+# macOS / Linux
+STUB=1 .venv/bin/python -m uvicorn server.app:app --host 127.0.0.1 --port 8000
+
+# Windows (PowerShell)
+$env:STUB = "1"; .venv\Scripts\python -m uvicorn server.app:app --host 127.0.0.1 --port 8000
+```
+
+Open `http://127.0.0.1:8000`. The human approval (MFA) code is a random 6-digit number printed once on the server console; set `DEMO_MFA_CODE` to choose your own. Real model calls need AWS credentials from the standard boto3 chain and Bedrock model access (`AWS_REGION`, `BEDROCK_MODEL_ID`; defaults `ap-south-1`, `global.amazon.nova-2-lite-v1:0`). UI dev server: `cd ui && npm run dev` (127.0.0.1:5173, proxies to :8000). `INTERLOCK_ENV=production` refuses to start unless `DEMO_MFA_CODE` is set.
 
 ## Verify
 
+Commands and the last recorded results per suite are in [docs/reports/TEST_COUNTS.md](docs/reports/TEST_COUNTS.md). In short:
+
 ```
-.venv\Scripts\python -m pytest -q          # 336 tests collected as of this draft; expected all pass
-cd ui; npm test                            # 26 UI tests (Vitest), see docs/ui-v2/UI_BUILD_REPORT.md
+python -m pytest -q --ignore=tests/test_mutation_m3.py --ignore=tests/test_replay_m5.py   # fast subset
+python -m pytest -q tests/test_mutation_m3.py tests/test_replay_m5.py                     # slow, needs Java
+python scripts/gen_executor_table.py --check                                              # table freshness
+cd ui && npm test && npm run build                                                        # UI tests and build
 ```
 
-The last full-suite result recorded in the reports is 334 passed (UI_REPORT.md); the 336 count and a fresh full pass were not re-run (unverified); the fast subset without test_mutation_m3 and test_replay_m5 gives 320 passed. The suite takes 1 to 2 minutes; the JFLAP-based tests need `jflap-cli` and Java (`C:\Users\mridu\jflap-cli` in this setup). Quick check (about 3 s): `pytest tests\test_sm_exhaustive.py tests\test_sm_mutation.py`. Table freshness: `python scripts\gen_executor_table.py --check`.
-
+Set `JFLAP_CLI` to use a different `jflap_cli.py` than the vendored one.
+<!-- quick-start:end -->
 ## Honest non-guarantees
 
 - The model's text is not checked; the UI shows the gate's executed log.
@@ -96,15 +108,9 @@ The last full-suite result recorded in the reports is 334 passed (UI_REPORT.md);
 - Demo only: in-memory sessions, no auth on session endpoints, a shared demo MFA code.
 - Browser checks covered only the stub-model flow.
 
-## Third-party
+## Third-party and provenance
 
-| Item | Use | License |
-| :-- | :-- | :-- |
-| JFLAP 7.1 (Duke University) | build-time model checking | check; text to be added by owner |
-| jflap-cli / JFLAP MCP server | wraps JFLAP; first commit 2026-11-13, pre-existing | check (owner's own project) |
-| Strands Agents SDK 1.65.0 | runtime agent | check (believed Apache-2.0, unverified) |
-| Amazon Bedrock, Amazon Nova 2 Lite | runtime model (Claude Haiku 4.5 was targeted but blocked) | AWS terms |
-| FastAPI, React, React Flow, Vite, Hypothesis, others | see `requirements.txt`, `ui/package.json` | check |
+Every dependency, bundled asset (JFLAP 7.1, `jflap-cli`, fonts), model and service, with the license text or metadata it was read from, is in [THIRD_PARTY.md](THIRD_PARTY.md). It also records which parts pre-date this repository (JFLAP 7.1; `jflap-cli`, first commit 2026-11-13) and what was built after this repository's first commit (2026-11-15).
 
 ## Roadmap
 

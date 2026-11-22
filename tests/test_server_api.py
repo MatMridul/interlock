@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from server import config, session as session_mod
 from server.app import create_app
+from server.limits import Limiter
 from server.session import ObservedGate, verdict_event
 from stubmodel import ScriptedModel, Step
 
@@ -20,6 +21,8 @@ END = Step([])  # the model answers with plain text and the turn ends
 
 
 def make_client(steps, **kw):
+    kw.setdefault("limiter", Limiter(rate_session=(10**6, 60), rate_chat=(10**6, 60), rate_mfa=(10**6, 60),
+                                     mfa_max_wrong=10**6, client_max_wrong=10**6))  # limits have their own tests
     return TestClient(create_app(lambda: ScriptedModel(steps), **kw))
 
 
