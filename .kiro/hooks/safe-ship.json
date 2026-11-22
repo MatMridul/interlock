@@ -1,0 +1,29 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "safe-ship-pre",
+      "description": "Safe Ship (disabled by default). Blocks git push and deploy commands until a test run exited 0 after the last edit. Turn on with: python scripts/safe_ship.py enable (writes an untracked local copy). See docs/SAFE_SHIP.md.",
+      "trigger": "PreToolUse",
+      "matcher": "str_replace|fs_write|fs_append|execute_pwsh|execute_bash",
+      "action": {
+        "type": "command",
+        "command": "python safeship/hook.py --phase pre"
+      },
+      "timeout": 30,
+      "enabled": false
+    },
+    {
+      "name": "safe-ship-post",
+      "description": "Safe Ship (disabled by default). Records a green test run (exit code 0) for safe-ship-pre.",
+      "trigger": "PostToolUse",
+      "matcher": "execute_pwsh|execute_bash",
+      "action": {
+        "type": "command",
+        "command": "python safeship/hook.py --phase post"
+      },
+      "timeout": 30,
+      "enabled": false
+    }
+  ]
+}

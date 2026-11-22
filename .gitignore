@@ -12,3 +12,6 @@ scripts/bedrock_calls.log
 docs/ui-v2/round1/*-1920-*.png
 docs/ui-v2/round1/*-390-*.png
 *.class
+
+# local Safe Ship switch (written by scripts/safe_ship.py enable); never commit
+.kiro/hooks/*.local.json
