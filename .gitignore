@@ -12,3 +12,6 @@ scripts/bedrock_calls.log
 docs/ui-v2/round1/*-1920-*.png
 docs/ui-v2/round1/*-390-*.png
 *.class
+
+# Lambda build output
+build/
