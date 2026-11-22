@@ -21,7 +21,6 @@ export function Toasts({ state, onDismiss }: { state: NotifyState; onDismiss: (i
   return (
     <>
       <div className="toasts">{state.toasts.map((t) => <Item key={t.id} t={t} onDismiss={onDismiss} />)}</div>
-      {state.toasts.length === 0 && <p className="rail-empty">Nothing to report. Verdicts, approvals and errors show up in this rail, never over the machine.</p>}
       <div className="sr" role="status" aria-live={state.live.priority} aria-atomic="true" data-testid="live">{state.live.text}</div>
     </>
   );
