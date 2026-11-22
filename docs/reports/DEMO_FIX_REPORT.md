@@ -71,7 +71,7 @@ At 390x844: `390-finance-idle.png`, `390-safe-ship.png` (full page).
 
 ## 6. Commits (`git log --oneline origin/release..demo-fixes`)
 
-See the list at the end of this file, filled from git at the time of writing (the last commit adds the screenshots and this report).
+Two more commits come after the list below: b623601 Add final screenshots, and the one that adds this report. The report is the final file.
 
 ```
 11c9e26 Fix Safe Ship ledger overlap
