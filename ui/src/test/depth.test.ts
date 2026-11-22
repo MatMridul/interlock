@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import policyRaw from "../../../policy/finance_table.json?raw";
+import reportRaw from "../../../docs/reports/VERIFICATION_REPORT.md?raw";
 import { describe, expect, it } from "vitest";
 import { auditLines } from "../lib/audit";
 import { decodeReplay, encodeReplay } from "../lib/share";
@@ -6,7 +7,7 @@ import { parseSequence, whatIf } from "../lib/whatif";
 import { shortestPath, whyBlocked } from "../lib/why";
 import type { Policy } from "../types";
 
-const policy = JSON.parse(readFileSync("../policy/finance_table.json", "utf8")) as Policy;
+const policy = JSON.parse(policyRaw) as Policy;
 
 // every undefined live cell (16) and its shortest allowed path; null = never allowed from here
 const EXPECT: Record<string, Record<string, string[] | null>> = {
@@ -47,7 +48,7 @@ describe("why blocked (C3)", () => {
 });
 
 describe("what if (C4)", () => {
-  const report = readFileSync("../docs/reports/VERIFICATION_REPORT.md", "utf8");
+  const report = reportRaw;
   const rows = [...report.matchAll(/^\| (\d+) \| ([A-Z ]+?) \| [ADEMTC]+ \| (ACCEPT|REJECT) \|/gm)];
   it("reads all 21 documented traces", () => expect(rows.length).toBe(21));
   it.each(rows.map((r) => [r[1], r[2], r[3]]))("trace %s: %s", (_n, trace, expected) => {
