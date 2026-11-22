@@ -25,6 +25,7 @@ import { safeStorage } from "./lib/layout";
 import { HelpOverlay } from "./components/HelpOverlay";
 import { Palette } from "./components/Palette";
 import { Tour } from "./components/Tour";
+import { RaceView } from "./components/RaceView";
 import { initialNotify, notifyReducer } from "./lib/notify";
 import { replayLog, scoreboard } from "./lib/score";
 import { initialUi, reducer } from "./state";
@@ -94,6 +95,7 @@ export function App() {
   const [tapeCollapsed, setTapeCollapsed] = useState(false);
   const [traceEdge, setTraceEdge] = useState<string | null>(null);
   const [replayOnly, setReplayOnly] = useState(false);
+  const [race, setRace] = useState(false);
   const configRead = useRef(false);
 
   const fxRef = useRef<Fx | null>(null);
@@ -460,6 +462,7 @@ export function App() {
         <button type="button" className="tg" data-tour="palette" aria-keyshortcuts="Control+K" onClick={() => setPalette(true)} title="Every action in one list (Ctrl+K or /)">Commands</button>
         <button type="button" className="tg wide-only" aria-keyshortcuts="?" onClick={() => setHelp(true)} title="Every keyboard shortcut (?)">Keys</button>
         <button type="button" className="tg wide-only" onClick={() => tourDispatch({ type: "start" })} title="Replay the 30-second tour (T)">Help</button>
+        <button type="button" className="tg" aria-pressed={race} onClick={() => setRace(true)} title="The same attacks against a prompt-only agent and against Interlock, side by side">Race</button>
         <button type="button" className="tg" data-tour="proof" aria-expanded={drawer} aria-controls="drawer" onClick={() => setDrawer((v) => !v)}>Proof</button>
       </header>
 
@@ -509,6 +512,7 @@ export function App() {
         <Separator orientation="vertical" growsToward="left" label="Resize the agent console" className="sep-console" value={lay.layout.console}
           {...lay.bounds("console")} onChange={(v) => lay.set("console", v)} onReset={() => lay.reset("console")} onDragging={setDragging} />
       )}
+      {race && <RaceView onClose={() => setRace(false)} modelOn={!modelOff} reduced={reduced} />}
       {cold && <ColdOpen onDone={() => setCold(false)} />}
       {palette && <Palette items={paletteItems} onRun={runAction} onClose={() => setPalette(false)} />}
       {help && <HelpOverlay onClose={() => setHelp(false)} />}

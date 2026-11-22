@@ -66,3 +66,9 @@ export async function* chat(sid: string, message: string): AsyncGenerator<SseEve
   }
   yield* readSse(r.body);
 }
+
+/** C2 race mode. Replay is a plain GET of the recorded run (no model). Live needs the model on. */
+export const getRaceReplay = () => fetch(`${BASE}/race/replay`).then((r) => json<import("./lib/race").RaceData>(r));
+export const postRaceLive = (attack_id: string) =>
+  fetch(`${BASE}/race/live`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ attack_id }) })
+    .then((r) => json<import("./lib/race").RaceLive>(r));
