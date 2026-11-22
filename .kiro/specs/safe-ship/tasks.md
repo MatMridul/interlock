@@ -19,7 +19,7 @@ Ticked = done and verified; open = not done. Evidence paths are in `docs/SAFE_SH
 - [x] 7. Custom agent `.kiro/agents/gate-verifier.json`, used for real (`docs/evidence/gate_verifier_runs.md`)
 - [x] 8. `powers/jflap/` written to the documented format; `docs/KIRO_MCP.md`
 - [x] 9. `docs/SAFE_SHIP.md`
-- [ ] 10. Policy picker entry in the UI (C7, separate item, not part of this branch)
+- [x] 10. Policy picker entry in the UI (C7): `GET /policies/safe_ship`, `ui/src/components/SafeShipView.tsx`, tests `tests/test_policies_c7.py` and `ui/src/test/safeship.test.tsx`; replays the recorded Kiro CLI run, runs no hook in the browser
 - [ ] 11. Run in Kiro IDE and record tool names and STDERR display (D6, owner)
 - [ ] 12. Run in Kiro Crew's own agent (not tested)
 - [ ] 13. Live-check `fs_write`, `fs_append`, `execute_bash` payloads (names are guesses)
