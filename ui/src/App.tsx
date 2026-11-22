@@ -454,12 +454,12 @@ export function App() {
         {replayOnly && <button type="button" className="tg" onClick={exitReplay}>Exit replay</button>}
         <button type="button" className="tg" aria-pressed={soundOn} onClick={toggleSound} title="Synthesised cues, off by default. Starts only after this click.">{soundOn ? "Sound on" : "Sound off"}</button>
         {Haptics.supported() && (
-          <button type="button" className="tg" aria-pressed={hapticsOn} onClick={toggleHaptics} title="Vibration works only on supporting Android browsers (Chrome, Firefox). iOS Safari and most desktops ignore it.">{hapticsOn ? "Haptics on" : "Haptics off"}</button>
+          <button type="button" className="tg wide-only" aria-pressed={hapticsOn} onClick={toggleHaptics} title="Vibration works only on supporting Android browsers (Chrome, Firefox). iOS Safari and most desktops ignore it.">{hapticsOn ? "Haptics on" : "Haptics off"}</button>
         )}
-        <button type="button" className="tg" onClick={lay.resetAll} disabled={lay.isDefault && !consoleClosed} title="Put the tape, console and drawer back to their default sizes">Reset layout</button>
+        <button type="button" className="tg wide-only" onClick={lay.resetAll} disabled={lay.isDefault && !consoleClosed} title="Put the tape, console and drawer back to their default sizes">Reset layout</button>
         <button type="button" className="tg" data-tour="palette" aria-keyshortcuts="Control+K" onClick={() => setPalette(true)} title="Every action in one list (Ctrl+K or /)">Commands</button>
-        <button type="button" className="tg" aria-keyshortcuts="?" onClick={() => setHelp(true)} title="Every keyboard shortcut (?)">Keys</button>
-        <button type="button" className="tg" onClick={() => tourDispatch({ type: "start" })} title="Replay the 30-second tour (T)">Help</button>
+        <button type="button" className="tg wide-only" aria-keyshortcuts="?" onClick={() => setHelp(true)} title="Every keyboard shortcut (?)">Keys</button>
+        <button type="button" className="tg wide-only" onClick={() => tourDispatch({ type: "start" })} title="Replay the 30-second tour (T)">Help</button>
         <button type="button" className="tg" data-tour="proof" aria-expanded={drawer} aria-controls="drawer" onClick={() => setDrawer((v) => !v)}>Proof</button>
       </header>
 

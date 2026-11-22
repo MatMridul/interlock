@@ -426,7 +426,7 @@ dialog h3 { margin: 0 0 4px; font: 600 16px var(--cond); letter-spacing: .16em; 
   .stage { grid-row: 2; }
   .read { grid-row: 3; }
   .rail { grid-row: 4; }
-  .console { position: fixed; left: 0; right: 0; bottom: 0; grid-column: auto; grid-row: auto; z-index: 20; max-height: 72dvh; min-height: 0; border-top: 2px solid var(--ph-dim); transition: transform .25s var(--ease-out); overflow-y: auto; box-shadow: 0 -8px 24px rgba(0,0,0,.6); }
+  .console { position: fixed; left: 0; right: 0; bottom: 0; grid-column: auto; grid-row: auto; z-index: 20; max-height: 50dvh; min-height: 0; border-top: 2px solid var(--ph-dim); transition: transform .25s var(--ease-out); overflow-y: auto; box-shadow: 0 -8px 24px rgba(0,0,0,.6); }
   .console .ch::before { content: ""; display: block; width: 44px; height: 4px; border-radius: 2px; background: var(--line2); margin: 0 auto 6px; position: absolute; left: calc(50% - 22px); top: 4px; }
   .console .ch { position: relative; padding-top: 14px; }
   .app[data-console="closed"] .console { min-height: 0; }
@@ -438,3 +438,5 @@ dialog h3 { margin: 0 0 4px; font: 600 16px var(--cond); letter-spacing: .16em; 
 @media (prefers-reduced-motion: reduce) { .ghost-path, .row.on, .row.undef { animation: none; } .console { transition: none; } }
 .stage .orb-cur, .stage .sink-t { font-size: max(11px, calc(10px / var(--s, 1))); }
 .stage .silk.title { font-size: max(14px, calc(11px / var(--s, 1))); }
+
+@media (max-width: 900px) { .wide-only { display: none; } .top .mark small { display: none; } }
