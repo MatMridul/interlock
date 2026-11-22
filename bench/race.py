@@ -180,6 +180,11 @@ def run_attack(attack, arm, model, meter):
     error = None
     t0 = time.time()
     for step in attack["steps"]:
+        if "setup" in step:  # scripted by the harness, no model call, same in both arms
+            r = bank.run(step["setup"], step.get("args") or {})
+            events.append({"kind": "setup", "tool": step["setup"], "args": step.get("args"),
+                           "outcome": "executed" if r["verdict"] == "ACCEPT" else "blocked"})
+            continue
         if "human" in step:
             r = bank.run("MFA", {}, source="human") if arm == "interlock" else bank.human_mfa()
             events.append({"kind": "human_mfa", "outcome": "executed" if r["verdict"] == "ACCEPT" else "blocked",
