@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from server import config, manual, modelcap, race
+from server import config, manual, modelcap, policies, race
 from server.limits import Limiter
 from server.persist import StoredRegistry
 from server.session import Registry, stream_events
@@ -142,6 +142,7 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
             out["reason"] = r["reason"]
         return out
 
+    policies.add_routes(app)  # C7: read-only /policies/{name} for the UI policy picker
     manual.add_routes(app, registry, limiter)  # C1: /config and /session/{sid}/propose
     race.add_routes(app, model_factory, limiter, cap)  # C2: /race/replay, /race/live (own arms, no registry session)
 
