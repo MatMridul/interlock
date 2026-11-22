@@ -136,7 +136,7 @@ export function App() {
       if (hook === "impact" && beat.verdict === "REJECT") {
         const w = pol ? whyBlocked(pol, beat.from, beat.symbol, beat.reason) : null;
         if (w) setWhy({ from: beat.from, symbol: beat.symbol, path: w.path, sentence: w.sentence });
-        toast("blocked", `Blocked: ${beat.symbol} in ${beat.from}. State unchanged. ${beat.reason ?? `${beat.symbol} not allowed in ${beat.from}`}. ${w?.sentence ?? ""}`.trim(),
+        toast("blocked", `Blocked: ${beat.reason ?? `${beat.symbol} not allowed in ${beat.from}`}. State unchanged. ${w?.sentence ?? ""}`.trim(),
           undefined, `Agent proposed ${beat.symbol}. Blocked: ${beat.reason ?? `${beat.symbol} not allowed in ${beat.from}`}. State unchanged. ${w?.sentence ?? ""}`.trim());
         cue("blocked");
       }
