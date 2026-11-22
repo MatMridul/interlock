@@ -172,6 +172,8 @@ Free option: a GitHub Actions workflow on a schedule (every 15 minutes, `curl --
 ## 11. Commits (`git log --oneline origin/sync-main..deploy-prep`, this plan is one more)
 
 ```
+341fad8 Avoid account-id literals, random proof code
+86443f8 Add deploy plan with costs and commands
 b5ee811 Use provisioned table inside free tier
 87341f3 Fix local proof script syntax
 01a07ea Add local proof script and LF rules
