@@ -32,7 +32,7 @@ c4b5615 Add manual propose endpoint and model flag
 
 ## Tests
 
-- UI: 113 passed (was 52 before this work; new: `depth.test.ts` 61 incl. all 16 undefined cells and 21 traces, `app_depth.test.tsx` 7).
+- UI: 113 passed (was 52 before this work; new: `depth.test.ts` 54 incl. all 16 undefined cells and 21 traces, `app_depth.test.tsx` 7).
 - Python fast subset (`pytest -q --ignore=tests/test_mutation_m3.py --ignore=tests/test_replay_m5.py`): 340 passed, including 9 new in `tests/test_manual_c1.py` (no spoofing, guard, lockout, 404, 409, 429, 422, model off).
 - `npm run build` passes. JS bundle 311.2 kB, **99.0 kB gzipped** (CSS 7.6 kB gzipped).
 - Slow suites (mutation, replay vs JFLAP) not run.
