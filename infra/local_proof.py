@@ -3,14 +3,16 @@ in-process fake, Function-URL client-IP header) served by uvicorn on the Web Ada
 Run: python infra/local_proof.py  (needs moto, see infra/requirements-dev.txt)"""
 import json
 import os
+import secrets
 import sys
 import threading
 import time
 from pathlib import Path
 
+CODE = "".join(secrets.choice("0123456789") for _ in range(6))  # random per run
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 os.environ.update(AWS_ACCESS_KEY_ID="x", AWS_SECRET_ACCESS_KEY="x", AWS_DEFAULT_REGION="ap-south-1",
-                  INTERLOCK_ENV="production", DEMO_MFA_CODE="246810", INTERLOCK_STORE="dynamodb",
+                  INTERLOCK_ENV="production", DEMO_MFA_CODE=CODE, INTERLOCK_STORE="dynamodb",
                   INTERLOCK_TABLE="t", INTERLOCK_TRUST_PROXY="lambda", INTERLOCK_MODEL="off")
 import boto3, httpx, moto, uvicorn  # noqa: E402
 
@@ -37,7 +39,7 @@ with moto.mock_aws():
     r.append(ok("chat refused in off mode", httpx.post(f"{base}/session/{sid}/chat", json={"message": "x"}).status_code == 403))
     for i in range(5):
         httpx.post(f"{base}/session/{sid}/mfa", json={"code": "000000"}, headers=ctx("203.0.113.2"))
-    r.append(ok("session locked after 5 wrong codes", httpx.post(f"{base}/session/{sid}/mfa", json={"code": "246810"},
+    r.append(ok("session locked after 5 wrong codes", httpx.post(f"{base}/session/{sid}/mfa", json={"code": CODE},
                                                               headers=ctx("203.0.113.3")).status_code == 429))
     n = [httpx.post(base + "/session", headers=ctx("198.51.100.7")).status_code for _ in range(32)]
     r.append(ok("rate limit is per caller IP (32nd call 429)", n[-1] == 429 and n[0] == 200))

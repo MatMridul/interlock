@@ -48,7 +48,7 @@ Measured on this machine: **31.0 MB zipped, 66.5 MB unzipped** (dependencies 82 
 | :-- | :-- | :-- | :-- |
 | 1 | Web Adapter runs a Python FastAPI app from a zip with a layer, handler `run.sh`, env `AWS_LAMBDA_EXEC_WRAPPER=/opt/bootstrap` | https://aws.github.io/aws-lambda-web-adapter/getting-started/zip-packages.html and the repo example https://github.com/awslabs/aws-lambda-web-adapter/tree/main/examples/fastapi-response-streaming-zip | Read in docs. Not run on Lambda. |
 | 2 | Response streaming needs `AWS_LWA_INVOKE_MODE=response_stream` plus Function URL `InvokeMode: RESPONSE_STREAM` | same example template (`template.yaml`) and the adapter README | Read in docs. Not run on Lambda. |
-| 3 | arm64 layer ARN `arn:aws:lambda:<region>:753240598075:layer:LambdaAdapterLayerArm64:30`, version 30 | https://github.com/awslabs/aws-lambda-web-adapter (README, "Lambda Layer") | Read in docs. **Not checked that version 30 exists in ap-south-1** (a read-only `lambda get-layer-version-by-arn` call could confirm; not run). It is a template parameter. |
+| 3 | arm64 layer ARN `arn:aws:lambda:<region>:<publisher account>:layer:LambdaAdapterLayerArm64:30` (publisher account and version are template parameters, defaults from the README) | https://github.com/awslabs/aws-lambda-web-adapter (README, "Lambda Layer") | Read in docs. **Not checked that version 30 exists in ap-south-1** (a read-only `lambda get-layer-version-by-arn` call could confirm; not run). Both are template parameters. |
 | 4 | Windows-built zips need LF and mode 755 for the startup script | zip-packages page above | Done in `infra/build_zip.py`; checked the mode in the produced zip (0o100755). |
 | 5 | Adapter forwards request context in `x-amzn-request-context`; Function URL events carry `requestContext.http.sourceIp` | https://aws.github.io/aws-lambda-web-adapter/features/request-context.html (header and `requestContext.http.sourceIp` appear in the page) | **Partly.** The header name and field were read in docs; that a client cannot forge the header through a Function URL was not tested. Tested locally with a simulated header only. |
 | 6 | Runtime `python3.12` is supported, deprecation Oct 31 2028 | https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html | Read. Matches the Python 3.12.10 the tests run on. |
@@ -101,8 +101,7 @@ Needs: AWS CLI signed in to the account, Python 3.12+, Node. Run from the repo r
 # 2. Create the stack (function with a placeholder, table, role, log group, URL, budget)
 aws cloudformation deploy --region ap-south-1 --stack-name interlock `
   --template-file infra/template.yaml --capabilities CAPABILITY_IAM `
-  --parameter-overrides BudgetEmail=<owner-email> DemoMfaCode=<6-digit-code> Mode=off `
-  AdapterLayerArn=arn:aws:lambda:ap-south-1:753240598075:layer:LambdaAdapterLayerArm64:30
+  --parameter-overrides BudgetEmail=<owner-email> DemoMfaCode=<6-digit-code> Mode=off
 
 # 3. Upload the real code (no S3 bucket needed)
 aws lambda update-function-code --region ap-south-1 --function-name interlock-app `

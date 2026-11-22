@@ -50,10 +50,14 @@ Parameters:
     Default: 0
     MinValue: 0
     Description: 0 = do not set. Lambda only allows reserving (account unreserved concurrency minus 100), so accounts with a quota of 1000 or less cannot use it.
-  AdapterLayerArn:
+  AdapterLayerAccount:
     Type: String
-    Default: arn:aws:lambda:ap-south-1:753240598075:layer:LambdaAdapterLayerArm64:30
-    Description: Published Lambda Web Adapter layer (arm64) for the deploy region.
+    Default: "753240598075"
+    Description: AWS account that publishes the Lambda Web Adapter layer (public, not ours).
+  AdapterLayerVersion:
+    Type: Number
+    Default: 30
+    Description: Version of LambdaAdapterLayerArm64 to attach.
   LogRetentionDays:
     Type: Number
     Default: 7
@@ -164,7 +168,7 @@ Resources:
       MemorySize: !Ref MemorySize
       Timeout: 120
       Handler: run.sh
-      Layers: [!Ref AdapterLayerArn]
+      Layers: [!Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AdapterLayerAccount}:layer:LambdaAdapterLayerArm64:${AdapterLayerVersion}"]
       ReservedConcurrentExecutions: !If [ReserveConcurrency, !Ref ReservedConcurrency, !Ref "AWS::NoValue"]
       # Placeholder only: the real zip is uploaded with `aws lambda update-function-code`, which needs no S3 bucket.
       Code:
