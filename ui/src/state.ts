@@ -7,7 +7,7 @@ export type ChatItem =
   | { id: number; kind: "user"; text: string }
   | { id: number; kind: "assistant"; text: string }
   | { id: number; kind: "proposed"; name: string }
-  | { id: number; kind: "verdict"; v: Verdict }
+  | { id: number; kind: "verdict"; v: Verdict; from: string; at: number }
   | { id: number; kind: "error"; text: string };
 
 export interface BeatRecord {
@@ -121,7 +121,7 @@ function onSse(s: UiState, name: string, d: unknown): UiState {
       }
       if (Array.isArray(d.expected_symbols)) v.expected_symbols = d.expected_symbols.filter((x) => typeof x === "string");
       if (typeof d.latency_ms === "number") v.latency_ms = d.latency_ms;
-      return push({ ...s, lastVerdict: v }, { kind: "verdict", v });
+      return push({ ...s, lastVerdict: v }, { kind: "verdict", v, from: s.machineState, at: Date.now() });
     }
     case "state_change":
       return { ...s, machineState: str(d.to) ?? s.machineState };
