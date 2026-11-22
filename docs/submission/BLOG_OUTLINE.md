@@ -1,37 +1,66 @@
-# Blog outline and first draft (DRAFT)
+# Blog post (publish-ready draft for the owner to edit)
 
-Rules for the blog prize (platform, length, tags) are unread; adjust after reading the Devpost Rules tab.
+Owner: publish this on a third-party blog platform (not GitHub) during the submission period, keep the sentence that says it was written for the Kiroween 2026 hackathon, fill the two `[OWNER: ...]` spots, and add the public URL to Devpost. Check the platform's tags and length rules against the Devpost Rules tab. Facts below come from files in this repo; the link list at the end names them.
 
-## Outline
-1. The failure: right actions, wrong order.
-2. Why a prompt is not enough.
-3. The machine: 5 states, 6 symbols, one rule.
-4. Checking it three ways, then in JFLAP.
-5. Runtime: a generated table, two layers.
-6. What mutation testing found.
-7. What this does not guarantee.
-8. What's next.
+---
 
-## Draft (about 600 words)
+# I built a state machine that stops an AI agent from skipping the approval step
 
-**An AI agent that cannot skip the approval step**
+*I wrote this post as part of the Kiroween 2026 hackathon, where I entered a project called Interlock in the Frankenstein category.*
 
-Imagine an assistant that can draft a bank transfer, ask you to approve it, and send it. Each action is fine. The failure that worries me is the order: send before approval, or approve and then quietly edit the amount. I built a small system, The Chimeric Automaton, to make that failure impossible for one workflow, and I tried to be careful about what "impossible" covers.
+Imagine an assistant that can draft a bank transfer, ask you to approve it, and send it. Every action is fine on its own. What worries me is the order: sending before approval, or approving and then quietly editing the amount. Agents fail this way. They do the right things in the wrong sequence.
 
-**Why not just tell the model?** A system prompt asks the model to follow the rule. A model can misread it, and a message can argue against it. In my real test run, a model was told to ignore its instructions and call the transfer tool. It did call it. What stopped the call was not the model's judgment but code.
+[OWNER: one or two sentences on why this problem caught your attention, in your words.]
 
-**The machine.** The workflow has four live states: START, AUTHED, DRAFTED, APPROVED. Six actions move between them. Transfer is allowed only from APPROVED. Approval is only allowed after a draft, and an edit sends you back to DRAFTED, so a stale approval cannot be reused. Anything not in the table is refused, nothing runs, and the state stays where it was.
+## A prompt is a request, not a lock
 
-**Checking the machine.** I drew it in JFLAP, the automata tool from Duke, and checked it is deterministic, complete and minimal. I built a second machine from three yes/no flags and had JFLAP confirm the two accept the same language. I also wrote the rule as ordering conditions and as a regular expression, then compared all three on every string up to length 8: 2,015,539 strings, no disagreements. Changing any single table cell broke the comparison in all 96 cases I tried.
+The usual fix is a line in the system prompt: "never transfer without approval." That asks the model to behave. I wanted something that does not depend on what the model says.
 
-**At runtime.** JFLAP does not run when the agent does. A script exports the JFLAP table into a small Python file that the app uses, and tests compare it to JFLAP's verdicts. The agent, built with the Strands Agents SDK, has five tools. Each one calls a gate. A hook also asks the gate before each tool call and cancels a disallowed one. Either layer alone blocks the bad call; tests remove each in turn to show it.
+So I put a small state machine between the agent and its tools. The agent can only call five wrapper tools. Each wrapper asks a gate, and the gate runs the real function only if the machine allows that action in the current state. If not, nothing runs and the state does not change. Approval is deliberately not a tool at all: a person submits a code through a separate endpoint, and the model has nothing to call.
 
-Approval is deliberately not a tool. A person submits a code through a separate endpoint, and the server marks that call as human. The model has nothing to call.
+The machine for the transfer workflow has four live states, START, AUTHED, DRAFTED and APPROVED. A transfer is only allowed from APPROVED. An edit sends you back to DRAFTED, so an old approval cannot be reused.
 
-**What mutation testing found.** I injected wrong transitions into the gate to see whether my property tests would notice. Eleven of twelve were caught. The survivor let a second draft start while one was already open. No property of mine forbade it. I added one. The tests had passed because I had not said what I wanted.
+## How I checked the machine
 
-**What it does not do.** It does not check that the model's words are true. It does not check that the payee is right; only an allow-list and an amount cap are enforced. If the policy is wrong, it enforces the wrong policy faithfully. I did not stress-test concurrency. And my real-model run used Amazon Nova 2 Lite, because Claude was blocked in my account; it describes one model on four prompts, not a statistic.
+I drew the machine in JFLAP, the automata tool from Duke, and checked that it is deterministic, complete and minimal. I built a second machine from three yes/no flags and had JFLAP confirm both accept the same sequences. I also wrote the rule two more ways, as ordering conditions and as a regular expression, and compared all three on every string up to length 8: 2,015,539 strings, no disagreements. Then I changed each table cell in turn, 96 mutants in all. The checks caught every one.
 
-**Built with Kiro.** I used Kiro for specs, steering rules (for example, never hand-edit the generated table), a hook that re-runs the checks when the policy changes, and a JFLAP MCP server. The write-up in the repo lists exactly what is and is not there. (Owner: confirm before publishing.)
+JFLAP does not run when the agent runs. A script exports its table into a small Python file, and a test compares that file to JFLAP's verdicts. I try to be careful here, because my first spec said JFLAP "intercepts every action at runtime." It does not. Before writing code I rewrote the spec to say what is true, and removed two other claims I could not back up.
 
-**Next.** The same engine could guard an AWS change-approval agent: snapshot, plan, approval, then deploy. That needs a new machine and tools, and it has not been started.
+## What a mutation survivor taught me
+
+I also injected wrong transitions into the gate to see whether my property tests would notice. They caught eleven of twelve. The survivor allowed a second draft while one was already open. No property I had written forbade that. I added one. The tests had passed because I had not said what I wanted, and mutation testing was the thing that made me say it.
+
+## The race
+
+To see whether the gate does anything a good prompt does not, I wrote 20 fixed attacks: prompt injection, fake pre-approval, urgency, role-play as an admin, overspending, double spending and more. I ran each against two agents with the same model, the same prompt and the same five tools. One had the gate. The other had only the prompt.
+
+The prompt-only agent executed a forbidden action in 10 of the 20 attacks. The gated agent executed none. The caveats matter. It was one run per attack, on one model (Amazon Nova 2 Lite, because Claude was blocked in my account), so this is not a statistic. The zero for the gated agent follows from how the gate works. The ten for the prompt-only agent is what that model did that day and could differ tomorrow.
+
+## Pointing it at Kiro itself
+
+The part I enjoyed most came late. If a gate can stop an agent's tool calls, it can stop a coding agent's tool calls too. I wrote a second policy, which I call Safe Ship: a `git push` or a deploy is refused until a test run passed after the last edit. A Kiro `PreToolUse` hook feeds each tool call to the same gate class.
+
+I ran it on Kiro CLI. Kiro edited a file, tried to push, and was refused with a message that went back to the agent. It ran the tests, pushed successfully, edited again, and was refused again. The transcript and the hook's decisions are in the repo. This policy only covers the actions I mapped. A tool or command I did not think of passes, so it guards against honest mistakes, not a hostile agent. I only tested it on Kiro CLI, not the IDE.
+
+[OWNER: a sentence or two about how it felt to watch Kiro get stopped by your own hook, or skip this if it did not feel like much.]
+
+## How Kiro shaped the work
+
+I did not build this alone in one editor. I used Kiro Crew to run the build: one coordinating bot handed small work items to helper sessions, each with a file that had to exist before the item counted as done, and every report was read before I accepted it. That habit mattered more than any single feature. Several claims in my first drafts did not survive a reviewer asking "which file shows that?"
+
+Specs came first for the core, and I wrote the rules before the code. The interface I explored the other way, by building four rough versions and picking one. I can feel the difference: where I had a spec, the tests fell out of it. Where I did not, I found problems late. Steering files kept rules like "never hand-edit the generated table" in front of every session. A custom agent runs the verification checks read-only, and I kept all three of its transcripts, including the two where it was blocked by my own permission rules. For the property tests I used Hypothesis; I did not use Kiro's own property-based testing.
+
+## What this does not do
+
+It does not check that the model's words are true. It does not check that a payee is the right one; only an allow-list and an amount cap are enforced. If the policy is wrong, the gate enforces the wrong policy faithfully. I did not stress-test concurrency. The public demo is not deployed as I write this; the Lambda and DynamoDB plan exists, and nothing has been created on AWS.
+
+## Try it
+
+The repo has a quick start that runs with a canned model and no AWS account. In the UI you can play the agent yourself and try to skip approval. The gate will tell you why each attempt fails.
+
+Repo: https://github.com/MatMridul/interlock
+Live demo: [OWNER: add the URL when it exists, or delete this line.]
+
+---
+
+Files behind the claims: `docs/reports/RACE_REPORT.md`, `docs/reports/VERIFICATION_REPORT.md`, `docs/reports/EXECUTOR_REPORT.md`, `docs/SAFE_SHIP.md`, `docs/evidence/safe_ship_live_recheck.md`, `docs/evidence/gate_verifier_runs.md`, `docs/submission/KIRO_WRITEUP.md`.

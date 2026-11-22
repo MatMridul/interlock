@@ -1,53 +1,62 @@
-# Devpost draft (DRAFT, owner to edit)
+# Devpost text (owner pastes; items marked TODO need the owner)
 
-**Project name:** The Chimeric Automaton
+**Project name:** Interlock (subtitle: The Chimeric Automaton)
 
-**Tagline:** An AI agent stitched to a state machine, so a skipped approval step never runs.
+**Category:** Frankenstein
+
+**Tagline:** An AI agent proposes, a small verified state machine decides what runs, and a human holds the only key.
 
 ## Inspiration
-Agents that touch money or production fail in a specific way: they do the right actions in the wrong order. Prompts ask the model to behave; we wanted a check that does not depend on the model's cooperation. A finance transfer needs an ordering rule anyone understands: approval must come after the latest edit and before the transfer.
+Agents that touch money or production fail in a specific way: they do the right actions in the wrong order. A prompt asks the model to behave; we wanted a check that does not depend on the model's cooperation. A transfer needs an ordering rule anyone can read: approval comes after the latest edit and before the transfer. Then we asked a second question: what if the agent being checked is the coding agent itself, and the risky action is `git push` on code nobody tested?
 
 ## What it does
-A Strands agent on Amazon Bedrock proposes tool calls (log in, draft, edit, transfer, cancel). A Gate runs a call only if the state machine allows it in the current state. A rejected proposal runs nothing and leaves the state unchanged. Approval (MFA) is an endpoint a human uses; the model has no tool for it. The playground shows the live automaton, the chat, the gate's executed log, counters and the human approval control.
+- **Finance policy (the live demo).** A Strands agent on Amazon Bedrock proposes tool calls (log in, draft, edit, transfer, cancel). A Gate runs a call only if the state machine allows it in the current state. A rejected proposal runs nothing and the state does not move. Approval (MFA) is an endpoint a human uses; the model has no tool for it. Visitors can play the agent by hand ("you are the agent" mode), with no model and no AWS account, and watch the real gate refuse each attack.
+- **Race.** The same 20 attacks against a prompt-only agent and against Interlock. One run on Amazon Nova 2 Lite: the prompt-only agent executed a forbidden action in 10 of 20 attacks, Interlock in 0 of 20. One run, one model, no statistical claim ([RACE_REPORT.md](../reports/RACE_REPORT.md)).
+- **Safe Ship policy.** The same engine, pointed at Kiro. A Kiro `PreToolUse` hook refuses `git push` until a test run passed after the last edit. In a recorded run on Kiro CLI 3.5.0 Kiro's own push was refused, then allowed after a green test run ([evidence](../evidence/safe_ship_live_recheck.md)). A policy picker in the UI shows the machine and replays that recording; no hook runs in the browser.
+- The UI shows the machine drawn from the generated table, the human key, a trace tape with a replay scrubber, a "why was this blocked" overlay and a what-if box.
 
 ## How we built it
-- **Kiro:** a spec, steering files, a save hook and a JFLAP MCP binding (see `docs/submission/KIRO_WRITEUP.md`).
-- **JFLAP 7.1:** the policy is a 5-state DFA, checked at build time (deterministic, complete, minimal, equal to a second independently built machine).
-- **Generated executor:** a Python table generated from the JFLAP export and tested equal to it.
-- **Strands Agents SDK:** five wrapper tools plus a BeforeToolCall hook that cancels disallowed calls; sequential tool execution.
-- **Amazon Bedrock:** Amazon Nova 2 Lite for the recorded real run (Claude Haiku 4.5 was blocked by the use-case form).
-- FastAPI with SSE, a Vite + React UI.
+- **Kiro, in depth** (details and evidence: [KIRO_WRITEUP.md](KIRO_WRITEUP.md)): specs for two features, three steering files, a save hook, a `PreToolUse` hook that gated Kiro CLI live, a read-only custom agent (`gate-verifier`, three transcripts), a JFLAP MCP server called through that agent, a `jflap` power package (install not run), and Hypothesis property tests. The project was built by a Kiro Crew bot directing helper sessions: one conductor, small work items with acceptance files, every report reviewed.
+- **JFLAP 7.1** at build time: each policy is a small DFA checked for determinism, completeness and equivalence to a second machine.
+- **Generated executor tables** tested equal to the JFLAP models; JFLAP does not run at runtime.
+- **Strands Agents SDK**: five wrapper tools plus a before-tool-call hook that cancels disallowed calls; sequential tool execution.
+- **Amazon Bedrock**: Amazon Nova 2 Lite (Claude Haiku 4.5 was blocked by the Anthropic use-case form).
+- FastAPI with SSE, a Vite and React UI. Hosting on AWS Lambda and DynamoDB with a daily model-call cap is planned and templated, not deployed: [DEPLOY_PLAN.md](../deploy/DEPLOY_PLAN.md).
 
 ## Challenges
-Keeping the claims honest (the first spec overclaimed JFLAP's runtime role); proving the table equals the model; a mutation survivor that exposed a missing property; Bedrock model access.
+Keeping the claims honest: the first spec overclaimed JFLAP's runtime role and was corrected before any code. Proving the table equals the model. A mutation survivor that exposed a missing property. An argument guard that shipped off by default. Headless Chrome defaulting to reduced motion, which hid the animations from our own screenshots. DynamoDB on-demand having no free tier. Bedrock model access for Claude.
 
 ## Accomplishments
-Python and UI test suites (counts: docs/reports/TEST_COUNTS.md); all 2,015,539 strings up to length 8 checked three ways with 0 mismatches; 96 of 96 table mutants caught; two independent enforcement layers each shown to block alone. (Numbers from the repo's reports; re-run before submitting.)
+Finance: all 2,015,539 strings up to length 8 checked three ways with 0 mismatches; 96 of 96 table mutants caught. Safe Ship: 488,281 strings checked, 45 mutants (40 killed, 5 proven equivalent). A forbidden action executed 0 times in 20 attacks for Interlock. A real Kiro tool call blocked by our hook. Test counts: [TEST_COUNTS.md](../reports/TEST_COUNTS.md).
 
 ## What we learned
-Mutation testing finds missing properties, not just missing tests. A default-off safety feature is a trap. Say what the checker cannot see.
+Mutation testing finds missing properties, not only missing tests. A default-off safety feature is a trap. A checker that only guards mapped actions must say so. A spec gate before code is cheap and corrected three claims we would have shipped.
 
 ## What's next
-A second policy for an AWS change-approval agent; a public deployment.
+Deploy the public URL (planned). A third policy for AWS change approval. Signed policy hashes and hash-chained audit logs. Not built.
 
 ## Built with
-Kiro, JFLAP 7.1, jflap-cli, Strands Agents SDK, Amazon Bedrock, Python, FastAPI, Hypothesis, React, TypeScript, Vite, React Flow.
+Kiro (CLI, Crew, specs, steering, hooks, custom agent, MCP), JFLAP 7.1, jflap-cli, Strands Agents SDK, Amazon Bedrock (Amazon Nova 2 Lite), Python, FastAPI, Hypothesis, React, TypeScript, Vite, AWS Lambda and DynamoDB (planned).
 
-**Category:** Frankenstein.
+## Links (fill in)
+- Repo: https://github.com/MatMridul/interlock
+- Live app: **TODO (owner)**
+- Demo video (YouTube, under 3 minutes): **TODO (owner)**
+- Judges' guide: [docs/JUDGES.md](../JUDGES.md)
 
-## Bonus prizes (owner must decide; eligibility details unread)
-- Student: depends on the owner's status and the rule text. Unread.
-- Best Kiro Crew App: unclear what qualifies; unread.
-- Best Demo: needs the video; unread criteria.
-- Blog: outline in `BLOG_OUTLINE.md`; platform, length and tagging rules unread.
-- Social: post requirements unread.
+## Bonus prizes
+- **Best Student Project (Frankenstein):** **TODO (owner):** student details go in the Devpost form, never in the repo.
+- **Bonus Blog:** [BLOG_OUTLINE.md](BLOG_OUTLINE.md) is a publish-ready draft; **TODO (owner):** publish on a third-party platform and add the URL.
+- **Social Blitz:** [SOCIAL_POST.md](SOCIAL_POST.md); **TODO (owner):** post and add the URL.
+- **Best Demo:** [VIDEO_SCRIPT.md](VIDEO_SCRIPT.md), runs with Autoplay and no extra steps.
+
+## Third-party disclosure
+JFLAP 7.1 (Duke) and `jflap-cli` pre-date the hackathon (`jflap-cli` first commit 2026-11-13); this repository's first commit is 2026-11-15. Full list with licenses: [THIRD_PARTY.md](../../THIRD_PARTY.md).
 
 ## Submission checklist
-- [ ] Public GitHub repo, OSS license detectable at root (owner chooses; none added)
-- [ ] `/.kiro` committed (`.gitignore` does not ignore it; checked)
-- [ ] Working app URL (no deployment exists yet)
+- [ ] Public GitHub repo with the MIT license visible in About; `/.kiro` committed and not ignored
+- [ ] Working app URL (**not deployed yet**)
 - [ ] Public YouTube video under 3 minutes
-- [ ] Kiro-usage write-up pasted from `KIRO_WRITEUP.md`
-- [ ] Third-party disclosure: JFLAP 7.1 (Duke), jflap-cli (pre-existing, first commit 2026-11-13), Strands SDK, Bedrock model
-- [ ] No secrets in repo; `.env` ignored; check `scripts/bedrock_calls.log` and raw JSON
-- [ ] **Unverified: the Devpost Rules, Resources and FAQ tabs have never been read.** Check: eligibility and team rules, whether pre-existing work (jflap-cli) is allowed and how to disclose it, license requirement wording, whether a live URL is mandatory, video rules (length, platform, language), required form fields and word limits, what the Kiro-usage write-up must contain, AI-model usage rules, bonus prize criteria, submission and timezone cutoff (believed Fri 2026-12-04 2:00 PM PT)
+- [ ] Kiro-usage write-up pasted from `KIRO_WRITEUP.md` (Kiro IDE lines marked "owner to confirm")
+- [ ] Demo credentials for judges in the Devpost field (never in the repo)
+- [ ] Re-read the Devpost Rules tab against [OPEN_TASKS.md](../OPEN_TASKS.md) H2

@@ -7,7 +7,7 @@ Interlock puts a small verified state machine between an AI agent and its action
 | Time | Path | What to do |
 | :-- | :-- | :-- |
 | 3 min | **Watch the video** | YouTube: **TODO (owner): link.** Script and shot list: [VIDEO_SCRIPT.md](submission/VIDEO_SCRIPT.md). |
-| 3 min | **Use the live app** | URL: **TODO (owner): not deployed yet.** Open it, press **Autoplay**, or switch the agent to **you** and press the attack buttons (skip MFA, edit after approval, a tool that does not exist). Every attack is refused and the state does not move. Switch **Policy** to **safe-ship** to see Kiro's own push refused in the recorded run. Open **Race** for the 20-attack scoreboard. No account or AWS needed. Local run: [README quick start](../README.md#quick-start). |
+| 3 min | **Use the live app** | URL: **TODO (owner): not deployed yet.** Open it and, in **you** mode (the default when the model is off), press the attack buttons (skip MFA, fake approval, call the human-only tool, overspend, double spend). Autoplay needs the model on (it sends real chat messages), so it is not available in you mode. Every attack is refused and the state does not move. Switch **Policy** to **safe-ship** to see Kiro's own push refused in the recorded run. Open **Race** for the 20-attack scoreboard. No account or AWS needed. Local run: [README quick start](../README.md#quick-start). |
 | 3 min | **Read the evidence** | [RACE_REPORT.md](reports/RACE_REPORT.md) (10 of 20 vs 0 of 20, one run), [SAFE_SHIP.md](SAFE_SHIP.md) and the live run in [evidence/](evidence/), [TEST_COUNTS.md](reports/TEST_COUNTS.md), [KIRO_WRITEUP.md](submission/KIRO_WRITEUP.md). |
 
 ## The five criteria, with evidence
