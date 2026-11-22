@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "jflap": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["third_party/jflap-cli/jflap_mcp.py"]
+    }
+  }
+}
