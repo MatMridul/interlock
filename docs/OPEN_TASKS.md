@@ -42,7 +42,7 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| A1 | Merge `ui-instrument` into `main` through a PR (small commits kept, regular merge) | Me opens PR, You merge | P0 | todo | UI is on GitHub `main`; `ui/dist` builds from a clean clone |
+| A1 | Merge `ui-instrument` into `main` through a PR (small commits kept, regular merge) | Me opens PR, You merge | P0 | doing (PR #2 to #5 merged; #3 to #5 landed on ui-instrument, so PR #6 brings them to main) | UI is on GitHub `main`; `ui/dist` builds from a clean clone |
 | A2 | Remove machine-specific paths: vendor `jflap-cli` into `third_party/jflap-cli` (check JFLAP redistribution terms first), make `.kiro/settings/mcp.json`, the save hook and `scripts/*` use relative paths | Me | P0 | done (branch hardening-ci, unmerged) | A fresh clone on another machine runs `gen_executor_table.py --check` and the replay test with only documented installs |
 | A3 | Add cross-platform run instructions (Windows, macOS, Linux) and a one-command setup | Me | P0 | done (branch hardening-ci, unmerged) | README quick start works from a clean clone |
 | A4 | GitHub Actions CI: fast Python tests, UI tests and build, `gen_executor_table.py --check`, secret scan, dependency audit | Me | P0 | done (PR #3: 5 jobs green, slow suites run on push to main only) | Green check on `main` |
@@ -70,12 +70,12 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| C1 | "You are the agent" mode: visitors propose actions by hand with no model, using the real gate; becomes the default on the public URL | Me | P0 | todo | Works with zero Bedrock calls |
+| C1 | "You are the agent" mode: visitors propose actions by hand with no model, using the real gate; becomes the default on the public URL | Me | P0 | doing (branch product-depth) | Works with zero Bedrock calls |
 | C2 | Race mode: the same attack against a prompt-only agent and against Interlock, side by side, with a raw-counts scoreboard (include attacks the prompt-only agent resists) | Me | P0 | todo | A 20-attack run produces honest counts; results saved as a replay |
-| C3 | "Why was this blocked?" overlay: show the shortest allowed path from the current state on the machine | Me | P0 | todo | Appears on every block |
-| C4 | "What if" box: type a symbol sequence, see accept or reject and the step it fails at | Me | P1 | todo | Matches the JFLAP table on all of the 21 documented traces |
-| C5 | Session replay and scrubber, plus shareable replay files | Me | P1 | todo | Any finished session can be replayed step by step |
-| C6 | Audit log export (JSON lines) | Me | P1 | todo | Download button; format documented |
+| C3 | "Why was this blocked?" overlay: show the shortest allowed path from the current state on the machine | Me | P0 | doing (branch product-depth) | Appears on every block |
+| C4 | "What if" box: type a symbol sequence, see accept or reject and the step it fails at | Me | P1 | doing (branch product-depth) | Matches the JFLAP table on all of the 21 documented traces |
+| C5 | Session replay and scrubber, plus shareable replay files | Me | P1 | doing (branch product-depth) | Any finished session can be replayed step by step |
+| C6 | Audit log export (JSON lines) | Me | P1 | doing (branch product-depth) | Download button; format documented |
 | C7 | Second policy behind a policy picker (see D1) | Me | P0 | todo | Picker switches machines; second machine passes the same verification as the first |
 
 ### D. Kiro-usage evidence (P0, this is 20% of the score)
@@ -94,11 +94,11 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| E1 | Choose the host (AgentCore Runtime or one container) after a short spike; list monthly cost before creating anything | Me proposes, **You approve** | P0 | todo | Written cost estimate and your yes |
-| E2 | Deploy so it stays up and free through 2027-01-29 | Me | P0 | todo | Public URL passes the demo script |
-| E3 | Spend and abuse controls: default to "you are the agent" and stub; real-model chat behind a daily cap; AWS budget alarm | Me | P0 | todo | Cap proven by test; alarm exists |
+| E1 | Choose the host (AgentCore Runtime or one container) after a short spike; list monthly cost before creating anything | Me proposes, **You approve** | P0 | doing (design and template on branch deploy-prep; nothing created on AWS) | Written cost estimate and your yes |
+| E2 | Deploy so it stays up and free through 2027-01-29 | Me | P0 | doing (design and template on branch deploy-prep; nothing created on AWS) | Public URL passes the demo script |
+| E3 | Spend and abuse controls: default to "you are the agent" and stub; real-model chat behind a daily cap; AWS budget alarm | Me | P0 | doing (design and template on branch deploy-prep; nothing created on AWS) | Cap proven by test; alarm exists |
 | E4 | Rate limits and a lockout on `/mfa` attempts; session limits | Me | P0 | done (branch hardening-ci, unmerged) | Brute force is blocked by test |
-| E5 | Uptime check and a rollback plan | Me | P1 | todo | Documented |
+| E5 | Uptime check and a rollback plan | Me | P1 | doing (design and template on branch deploy-prep; nothing created on AWS) | Documented |
 | E6 | Claude access (Anthropic use-case form in the Bedrock console) for one real Claude run | **You** | P2 | todo | Haiku answers from the CLI |
 
 ### F. Security and quality (P0 to P1)
