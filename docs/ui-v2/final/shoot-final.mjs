@@ -81,7 +81,7 @@ async function safeShip(w, h, mobile = false) {
   if (!mobile) { /* idle already shot in autoplay() for desktop */ } else { await shot(`${w}-finance-idle.png`); await overflow(`${w} idle`); }
   await click("safe-ship"); await sleep(1200);
   await click("Replay the recorded run");
-  if (mobile) { await sleep(2500); } else {
+  {
     for (let i = 0; i < 80; i++) { if (await ev(`!!document.querySelector('[data-refused]')`)) break; await sleep(150); }
     await sleep(500);
   }

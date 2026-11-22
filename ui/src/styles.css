@@ -514,3 +514,5 @@ dialog h3 { margin: 0 0 4px; font: 600 16px var(--cond); letter-spacing: .16em; 
 @media (max-width: 1700px) { .top { gap: 8px; padding: 0 12px; } .top .tg { padding-left: 8px; padding-right: 8px; } .top .mark small { display: none; } } /* keep Race and Proof on screen at 1440 */
 
 @media (max-width: 900px) { .app[data-ssv] > :not(.top):not(.ssv):not(.drawer):not(.autostart-wrap):not(.modal-wrap):not(.tour):not(.race) { display: none; } .app[data-ssv] { grid-template-rows: auto auto; padding-bottom: 12px; } .ssv { grid-column: 1; grid-row: 2; min-width: 0; overflow: visible; } .ssv-stage { height: 340px; } } /* Safe Ship covers the finance layout: on a narrow screen its grid items would push it into a 0 px column */
+
+.app[data-ssv] .read { display: none; } /* the finance scoreboard is not part of the Safe Ship view */
