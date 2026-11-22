@@ -80,6 +80,27 @@ class Limiter:
             for d in (self._wrong, self._client_wrong, self._locked_until):
                 self._trim(d)
 
+    def export_session(self, sid):
+        """Per-session MFA lockout state as plain data (wall-clock expiry), for the shared store."""
+        with self._lock:
+            until = self._locked_until.get(("s", sid))
+            left = max(0.0, until - self._now()) if until is not None else 0.0
+            return {"wrong": self._wrong.get(sid, 0), "locked_until": time.time() + left if left else 0}
+
+    def import_session(self, sid, d):
+        """Replace this process's view of one session's lockout with the stored one."""
+        d = d or {}
+        with self._lock:
+            if d.get("wrong"):
+                self._wrong[sid] = int(d["wrong"])
+            else:
+                self._wrong.pop(sid, None)
+            left = float(d.get("locked_until", 0)) - time.time()
+            if left > 0:
+                self._locked_until[("s", sid)] = self._now() + left
+            else:
+                self._locked_until.pop(("s", sid), None)
+
     def mfa_succeeded(self, sid):
         with self._lock:
             self._wrong.pop(sid, None)

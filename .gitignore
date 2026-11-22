@@ -15,3 +15,5 @@ docs/ui-v2/round1/*-390-*.png
 
 # local Safe Ship switch (written by scripts/safe_ship.py enable); never commit
 .kiro/hooks/*.local.json
+# Lambda build output
+build/

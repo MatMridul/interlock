@@ -1,0 +1,241 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Interlock demo: one Lambda (FastAPI via the Lambda Web Adapter, response streaming) behind a Function URL,
+  one DynamoDB table (provisioned, inside the always-free 25/25 units) for session state and the daily model cap, a 7-day log group, a monthly budget.
+  The function code is deployed separately with `aws lambda update-function-code` (see docs/deploy/DEPLOY_PLAN.md).
+
+Parameters:
+  ModelId:
+    Type: String
+    Default: global.amazon.nova-2-lite-v1:0
+    AllowedPattern: ^global\..+
+    Description: Bedrock global inference profile id. Only this one model is allowed by IAM.
+  Mode:
+    Type: String
+    Default: "off"
+    AllowedValues: ["off", bedrock]
+    Description: off = no Bedrock call is possible (default). bedrock = real-model chat, limited by DailyModelCap.
+  DailyModelCap:
+    Type: Number
+    Default: 200
+    MinValue: 0
+    Description: Most Bedrock model calls per UTC day, all visitors together.
+  BudgetEmail:
+    Type: String
+    AllowedPattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+    Description: Where AWS Budgets sends alerts. No default on purpose.
+  BudgetUsd:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    Description: Monthly budget limit in USD (alerts only, it does not stop spending).
+  AllowedCorsOrigin:
+    Type: String
+    Default: http://localhost:3000
+    Description: Extra browser origin allowed by CORS. The UI is served from the function URL itself (same origin) and needs none.
+  DemoMfaCode:
+    Type: String
+    NoEcho: true
+    MinLength: 6
+    MaxLength: 12
+    Description: The human approval code the demo accepts. Required in production mode. Pass it at deploy time; never commit it.
+  TableCapacity:
+    Type: Number
+    Default: 20
+    MinValue: 1
+    MaxValue: 25
+    Description: Provisioned read and write units of the table (each). The always-free allowance is 25 of each per region, on-demand mode gets none; keep this at 25 or below. Also bounds abuse, since excess requests are throttled.
+  ReservedConcurrency:
+    Type: Number
+    Default: 0
+    MinValue: 0
+    Description: 0 = do not set. Lambda only allows reserving (account unreserved concurrency minus 100), so accounts with a quota of 1000 or less cannot use it.
+  AdapterLayerAccount:
+    Type: String
+    Default: "753240598075"
+    Description: AWS account that publishes the Lambda Web Adapter layer (public, not ours).
+  AdapterLayerVersion:
+    Type: Number
+    Default: 30
+    Description: Version of LambdaAdapterLayerArm64 to attach.
+  LogRetentionDays:
+    Type: Number
+    Default: 7
+    AllowedValues: [1, 3, 5, 7, 14, 30]
+  MemorySize:
+    Type: Number
+    Default: 512
+    MinValue: 256
+    MaxValue: 1024
+
+Conditions:
+  ReserveConcurrency: !Not [!Equals [!Ref ReservedConcurrency, 0]]
+  ModelOn: !Equals [!Ref Mode, bedrock]
+
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PROVISIONED
+      ProvisionedThroughput:
+        ReadCapacityUnits: !Ref TableCapacity
+        WriteCapacityUnits: !Ref TableCapacity
+      AttributeDefinitions:
+        - { AttributeName: pk, AttributeType: S }
+      KeySchema:
+        - { AttributeName: pk, KeyType: HASH }
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-app
+      RetentionInDays: !Ref LogRetentionDays
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: { "aws:SourceAccount": !Ref "AWS::AccountId" }
+      Policies:
+        - PolicyName: app
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: Logs
+                Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub ${LogGroup.Arn}:*
+              - Sid: Table
+                Effect: Allow
+                Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:UpdateItem]
+                Resource: !GetAtt Table.Arn
+
+  # Bedrock permission exists only when Mode is bedrock. The global inference profile needs the
+  # three statements AWS documents (profile in region, model in region, model "unspecified" region).
+  BedrockPolicy:
+    Type: AWS::IAM::Policy
+    Condition: ModelOn
+    Properties:
+      PolicyName: bedrock-one-model
+      Roles: [!Ref Role]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: ProfileInRegion
+            Effect: Allow
+            Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
+            Resource: !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/${ModelId}
+            Condition:
+              StringEquals: { "aws:RequestedRegion": !Ref "AWS::Region" }
+          - Sid: ModelInRegion
+            Effect: Allow
+            Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
+            Resource: !Sub
+              - arn:${AWS::Partition}:bedrock:${AWS::Region}::foundation-model/${Model}
+              - Model: !Select [1, !Split ["global.", !Ref ModelId]]
+            Condition:
+              StringEquals:
+                "aws:RequestedRegion": !Ref "AWS::Region"
+                "bedrock:InferenceProfileArn": !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/${ModelId}
+          - Sid: ModelGlobal
+            Effect: Allow
+            Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
+            Resource: !Sub
+              - arn:${AWS::Partition}:bedrock:::foundation-model/${Model}
+              - Model: !Select [1, !Split ["global.", !Ref ModelId]]
+            Condition:
+              StringEquals:
+                "aws:RequestedRegion": unspecified
+                "bedrock:InferenceProfileArn": !Sub arn:${AWS::Partition}:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/${ModelId}
+
+  Function:
+    Type: AWS::Lambda::Function
+    DependsOn: LogGroup
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-app
+      Role: !GetAtt Role.Arn
+      Runtime: python3.12
+      Architectures: [arm64]
+      MemorySize: !Ref MemorySize
+      Timeout: 120
+      Handler: run.sh
+      Layers: [!Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AdapterLayerAccount}:layer:LambdaAdapterLayerArm64:${AdapterLayerVersion}"]
+      ReservedConcurrentExecutions: !If [ReserveConcurrency, !Ref ReservedConcurrency, !Ref "AWS::NoValue"]
+      # Placeholder only: the real zip is uploaded with `aws lambda update-function-code`, which needs no S3 bucket.
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              return {"statusCode": 503, "body": "code not deployed yet"}
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: response_stream
+          AWS_LWA_READINESS_CHECK_PATH: /policy
+          PORT: "8000"
+          INTERLOCK_ENV: production
+          INTERLOCK_STORE: dynamodb
+          INTERLOCK_TABLE: !Ref Table
+          INTERLOCK_TRUST_PROXY: lambda
+          INTERLOCK_MODEL: !Ref Mode
+          INTERLOCK_DAILY_MODEL_CAP: !Ref DailyModelCap
+          BEDROCK_MODEL_ID: !Ref ModelId
+          CORS_ORIGIN: !Ref AllowedCorsOrigin
+          DEMO_MFA_CODE: !Ref DemoMfaCode
+
+  # The Function URL needs both statements since October 2025 (lambda urls-auth doc).
+  UrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunctionUrl
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  InvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunction
+      Principal: "*"
+      InvokedViaFunctionUrl: true
+
+  Url:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref Function
+      AuthType: NONE
+      InvokeMode: RESPONSE_STREAM
+
+  Budget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub ${AWS::StackName}-monthly
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit: { Amount: !Ref BudgetUsd, Unit: USD }
+      NotificationsWithSubscribers:
+        - Notification: { NotificationType: ACTUAL, ComparisonOperator: GREATER_THAN, Threshold: 50, ThresholdType: PERCENTAGE }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref BudgetEmail }]
+        - Notification: { NotificationType: ACTUAL, ComparisonOperator: GREATER_THAN, Threshold: 100, ThresholdType: PERCENTAGE }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref BudgetEmail }]
+        - Notification: { NotificationType: FORECASTED, ComparisonOperator: GREATER_THAN, Threshold: 100, ThresholdType: PERCENTAGE }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref BudgetEmail }]
+
+Outputs:
+  AppUrl:
+    Description: The one public URL (UI and API).
+    Value: !GetAtt Url.FunctionUrl
+  FunctionName:
+    Value: !Ref Function
+  TableName:
+    Value: !Ref Table

@@ -73,6 +73,15 @@ def _observer_hook(gate):
     return hook
 
 
+def _cap_message(e):
+    """The daily model-call cap raises CapReached inside the agent loop, which wraps it; find it."""
+    while e is not None:
+        if type(e).__name__ == "CapReached":
+            return str(e)
+        e = e.__cause__ or e.__context__
+    return None
+
+
 class Session:
     def __init__(self, sid, model, guard=True):
         self.id = sid
@@ -91,7 +100,7 @@ class Session:
                 result = self.agent(message)
                 emit("assistant_text", {"text": str(result).strip()})
             except Exception as e:  # no stack trace leaves the server
-                emit("error", {"message": f"agent error ({type(e).__name__})"})
+                emit("error", {"message": _cap_message(e) or f"agent error ({type(e).__name__})"})
             emit("done", {"state": self.gate.state})
         finally:
             self.gate.sink = None
@@ -108,10 +117,13 @@ class Registry:
         self._max = max_sessions
         self._lock = threading.Lock()
         self._s = OrderedDict()
+        self.on_new = None  # optional callback(session), e.g. to attach the model-call cap
 
     def create(self):
         sid = uuid.uuid4().hex
         s = Session(sid, self._model_factory())
+        if self.on_new:
+            self.on_new(s)
         with self._lock:
             self._s[sid] = s
             while len(self._s) > self._max:
@@ -121,6 +133,12 @@ class Registry:
     def get(self, sid):
         with self._lock:
             return self._s.get(sid)
+
+    def load_limits(self, s, limiter):  # no-op here; StoredRegistry shares lockout state across instances
+        pass
+
+    def mutate(self, s, fn, limiter=None):
+        return fn()
 
     def __len__(self):
         return len(self._s)

@@ -12,11 +12,11 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from server import config
-from server import manual
-from server import race
+from server import config, manual, modelcap, race
 from server.limits import Limiter
+from server.persist import StoredRegistry
 from server.session import Registry, stream_events
+from server.store import Busy, make_store
 
 
 class ChatBody(BaseModel):  # extra fields (e.g. a 'source') are ignored by pydantic
@@ -45,19 +45,26 @@ def default_model_factory():
     return make_bedrock_model()
 
 
-def _client(request: Request):
-    return request.client.host if request.client else "unknown"
+_client = config.client_ip  # socket address, or the caller behind a Lambda Function URL
 
 
 def _too_many(seconds):
     return JSONResponse({"detail": "too many requests"}, status_code=429, headers={"Retry-After": str(seconds)})
 
 
-def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESSIONS, limiter=None):
+def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESSIONS, limiter=None, store=None, cap=None):
     config.announce_mfa_code()
     limiter = limiter or Limiter()
+    if store is None and os.environ.get("INTERLOCK_STORE", "memory").strip().lower() != "memory":
+        store = make_store()  # shared store (DynamoDB); by default the in-memory Registry runs unchanged
     app = FastAPI(title="Kiroween gate backend")
-    registry = Registry(model_factory, max_sessions)
+    registry = StoredRegistry(model_factory, store, max_sessions) if store else Registry(model_factory, max_sessions)
+    real_default = model_factory is default_model_factory and os.environ.get("STUB") != "1"
+    chat_off = real_default and modelcap.model_mode() == "off"  # INTERLOCK_MODEL=off: no model call can happen
+    if cap is None and store and real_default and not chat_off:
+        cap = modelcap.ModelCap(store)
+    if cap:
+        registry.on_new = cap.attach
     app.state.registry = registry
     app.add_middleware(CORSMiddleware, allow_origins=[config.cors_origin(), DEV_UI_ORIGIN],
                        allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
@@ -65,6 +72,10 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
     @app.exception_handler(RequestValidationError)
     async def _invalid(request: Request, exc):  # generic: never echo submitted values
         return JSONResponse({"detail": "invalid request"}, status_code=422)
+
+    @app.exception_handler(Busy)
+    async def _busy(request: Request, exc):
+        return JSONResponse({"detail": "session busy"}, status_code=409)
 
     @app.exception_handler(Exception)
     async def _boom(request: Request, exc):
@@ -89,6 +100,10 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
         wait = limiter.rate_limited("chat", _client(request))
         if wait:
             return _too_many(wait)
+        if chat_off:
+            return JSONResponse({"detail": modelcap.OFF_MESSAGE}, status_code=403)
+        if cap and cap.exhausted():
+            return JSONResponse({"detail": modelcap.CAP_MESSAGE}, status_code=429)
         s = registry.get(sid)
         if s is None:
             return _missing()
@@ -113,22 +128,22 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
         s = registry.get(sid)
         if s is None:
             return _missing()
+        registry.load_limits(s, limiter)
         wait = limiter.mfa_locked(sid, client)  # checked before the code: a right guess during lockout fails too
         if wait:
             return _too_many(wait)
         if not hmac.compare_digest(body.code.encode(), config.demo_mfa_code().encode()):
-            limiter.mfa_failed(sid, client)
+            registry.mutate(s, lambda: limiter.mfa_failed(sid, client), limiter)
             return JSONResponse({"detail": "wrong code"}, status_code=403)
-        limiter.mfa_succeeded(sid)
         # source='human' is set here, by server code only. No request field reaches it.
-        r = s.gate.run("MFA", {}, source="human")
+        r = registry.mutate(s, lambda: (limiter.mfa_succeeded(sid), s.gate.run("MFA", {}, source="human"))[1], limiter)
         out = {"verdict": r["verdict"], "state": r["state"]}
         if "reason" in r:
             out["reason"] = r["reason"]
         return out
 
     manual.add_routes(app, registry, limiter)  # C1: /config and /session/{sid}/propose
-    race.add_routes(app, model_factory, limiter)  # C2: /race/replay, /race/live (own arms, no registry session)
+    race.add_routes(app, model_factory, limiter, cap)  # C2: /race/replay, /race/live (own arms, no registry session)
 
     if UI_DIST.is_dir():  # same-origin static UI; registered last so API routes win
         app.mount("/", StaticFiles(directory=str(UI_DIST), html=True), name="ui")

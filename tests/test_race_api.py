@@ -58,3 +58,16 @@ def test_live_respects_the_daily_cap(monkeypatch):
     assert c.post("/race/live", json={"attack_id": "pre-01"}).status_code == 200
     assert c.app.state.race_cap.used <= 7
     assert c.post("/race/live", json={"attack_id": "pre-01"}).status_code == 429  # fewer than 6 left
+
+
+def test_live_spends_from_the_shared_model_cap():
+    from server import modelcap
+    from server.store import MemoryStore
+    st = MemoryStore()
+    cap = modelcap.ModelCap(st, limit=3)  # fewer than the 6 calls a race needs
+    c = client(store=st, cap=cap)
+    assert c.post("/race/live", json={"attack_id": "pre-01"}).status_code == 429
+    cap = modelcap.ModelCap(st, limit=40)
+    c = client(store=st, cap=cap)
+    assert c.post("/race/live", json={"attack_id": "pre-01"}).status_code == 200
+    assert 0 < st.count(modelcap.daily_key()) <= 7 and cap.remaining() < 40

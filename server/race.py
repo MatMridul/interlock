@@ -7,8 +7,10 @@ any /session/{sid} gate, and the unprotected arm only ever touches the in-memory
 Live runs are allowed only when INTERLOCK_MODEL is on, take an attack id from the fixed corpus (no
 free text), run one at a time, and spend from a per-process daily model-call budget.
 
-shortcut: the daily budget lives in this process (resets on restart, not shared between workers).
-Upgrade to a shared counter if the app ever runs with more than one worker.
+The daily budget is the shared server.modelcap.ModelCap (one counter for chat and race, kept in the
+store) when the app has one; otherwise a per-process DailyCap.
+shortcut: the per-process fallback resets on restart and is not shared between workers; it is used
+only without a store (local dev).
 """
 import datetime
 import json
@@ -20,7 +22,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from bench import race as bench
-from server import manual
+from server import manual, modelcap
 
 DAILY_CALLS = 40  # model invocations per UTC day per process (override: RACE_DAILY_CALLS)
 MIN_CALLS_TO_START = 6  # a two-arm run of one attack needs about this many
@@ -58,6 +60,23 @@ class DailyCap:
             return True
 
 
+class SharedCap:
+    """Adapts modelcap.ModelCap to the take()/remaining() interface RaceMeter uses."""
+
+    def __init__(self, shared):
+        self._shared = shared
+
+    def remaining(self):
+        return self._shared.remaining()
+
+    def take(self):
+        try:
+            self._shared.take()
+        except modelcap.CapReached:
+            return False
+        return True
+
+
 class RaceMeter:
     """Same interface as bench.race.CallMeter, but spends from the daily cap and writes no file."""
 
@@ -83,8 +102,8 @@ def _load_corpus():
     return json.loads(bench.CORPUS.read_text(encoding="utf-8"))
 
 
-def add_routes(app: FastAPI, model_factory, limiter):
-    cap = DailyCap()
+def add_routes(app: FastAPI, model_factory, limiter, shared_cap=None):
+    cap = SharedCap(shared_cap) if shared_cap else DailyCap()
     busy = threading.Lock()
     app.state.race_cap = cap
 
@@ -96,7 +115,7 @@ def add_routes(app: FastAPI, model_factory, limiter):
 
     @app.post("/race/live")
     def live(body: LiveBody, request: Request):
-        if not manual.model_enabled():
+        if not manual.model_enabled() or modelcap.model_mode() == "off":
             return JSONResponse({"detail": "model is off on this server"}, status_code=403)
         client = request.client.host if request.client else "unknown"
         wait = limiter.rate_limited("chat", client)
