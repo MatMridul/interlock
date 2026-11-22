@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "jflap",
+  "version": "0.1.0",
+  "description": "Check finite-state-machine policies with JFLAP 7.1 from the agent: inspect, simulate, export the transition table, and test two machines for language equivalence. Used by Interlock to verify its finance and safe_ship policies.",
+  "author": { "name": "Interlock (MatMridul)", "url": "https://github.com/MatMridul/interlock" },
+  "keywords": ["jflap", "automaton", "automata", "state machine", "dfa", "finite state", "policy verification", "equivalence check", "transition table"],
+  "homepage": "https://github.com/MatMridul/interlock",
+  "repository": "https://github.com/MatMridul/interlock",
+  "license": "MIT"
+}
