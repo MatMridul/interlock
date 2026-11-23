@@ -149,7 +149,7 @@ def add_routes(app: FastAPI, model_factory, limiter, shared_cap=None, locked=Non
         finally:
             busy.release()
         keep = ("attack_id", "category", "arm", "events", "executed_log", "violation", "rules_fired",
-                "model_calls", "error")
+                "model_calls", "error", "assistant_text")
         return {"label": f"live run, {datetime.date.today().isoformat()}, model {model_id}",
                 "model": model_id, "attack": attack,
                 "runs": [{k: r[k] for k in keep} for r in runs], "calls_left": cap.remaining()}

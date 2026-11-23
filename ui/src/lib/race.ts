@@ -17,6 +17,7 @@ export interface RaceRun {
   rules_fired: Record<string, string>;
   model_calls: number;
   error: string | null;
+  assistant_text?: string[];
 }
 export interface RaceAttack { id: string; category: string; forbidden: string; rules: string[] }
 export interface RaceData {

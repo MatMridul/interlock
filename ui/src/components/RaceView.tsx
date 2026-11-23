@@ -5,6 +5,7 @@ import { chips, tally, userText, type Arm, type RaceData, type RaceRun } from ".
 const STEP_MS = 520; // time between two events in a lane
 const HOLD_MS = 900; // pause on a finished attack before the next one
 const ARMS: Arm[] = ["prompt-only", "interlock"];
+const SYMS: Record<string, string> = { authenticate_user: "AUTH", create_transfer_draft: "DRAFT", edit_transfer_draft: "EDIT", execute_transfer: "TRANSFER", cancel_transfer_draft: "CANCEL" };
 type Pair = Partial<Record<Arm, RaceRun>>;
 
 function pairsOf(runs: RaceRun[]): Record<string, Pair> {
@@ -39,6 +40,25 @@ function Lane({ arm, run, step, tried, forbidden, total, ready }: { arm: Arm; ru
         <div className={forbidden > 0 ? "bad" : ""}><dt>Forbidden actions executed</dt><dd data-testid={`forbidden-${arm}`}>{forbidden}</dd></div>
       </dl>
     </section>
+  );
+}
+
+/** The model's own words (verbatim, as stored) beside the gate's verdict, shown once the attack finished and the gate blocked a tool call. */
+function SaidDecided({ run, done, source }: { run?: RaceRun; done: boolean; source: "live" | "recorded" }) {
+  const blocked = run?.events.filter((e) => e.kind === "tool" && e.outcome === "blocked") ?? [];
+  const said = run?.assistant_text?.filter((t) => t.trim()) ?? [];
+  if (!run || !done || blocked.length === 0 || said.length === 0) return null;
+  return (
+    <div className="rsaid" data-testid="said-decided">
+      <div className="rsaid-model">
+        <h3>model said ({source})</h3>
+        {said.map((t, i) => <p key={i}>{t}</p>)}
+      </div>
+      <div className="rsaid-gate">
+        <h3>gate decided</h3>
+        {blocked.map((e, i) => <p key={i}>REJECT {SYMS[e.tool ?? ""] ?? e.tool}{e.state_before ? ` (state ${e.state_before})` : ""}</p>)}
+      </div>
+    </div>
   );
 }
 
@@ -146,6 +166,7 @@ export function RaceView({ onClose, modelOn, reduced }: { onClose: () => void; m
               <Lane key={arm} arm={arm} run={pair?.[arm]} step={pair ? step : 0} ready={playing} tried={cnt(arm).tried} forbidden={cnt(arm).forbidden} total={totalFor} />
             ))}
           </div>
+          <SaidDecided run={pair?.interlock} done={!!pair && step >= len} source={live ? "live" : "recorded"} />
           {note && <p className="race-note" role="status">{note}</p>}
           <table className="race-table" aria-label="Per-attack results">
             <thead><tr><th>Attack</th><th>Category</th><th>Prompt-only</th><th>Interlock</th></tr></thead>
