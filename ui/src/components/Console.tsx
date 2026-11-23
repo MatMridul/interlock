@@ -81,6 +81,8 @@ function Line({ it, typing, policy, open, onToggle }: { it: ChatItem; typing: bo
       return <div className="ln user"><span className="w">you ▸</span>{it.text}</div>;
     case "assistant":
       return <div className="ln agent"><span className="w">agent ▸</span><Typed text={it.text} on={typing} /></div>;
+    case "gate":
+      return <div className="ln gate" data-testid="gate-line"><span className="w">gate</span>{it.text}</div>;
     case "proposed":
       return <div className="ln"><span className="chip p">PROPOSES {toolLabel(it.name)}</span></div>;
     case "verdict": {

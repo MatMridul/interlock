@@ -171,6 +171,7 @@ export class BeatBuilder {
       }
       case "user_message":
       case "assistant_text":
+      case "gate_explain":
       case "error":
       case "done":
         this.flushPending(); // a proposal without a verdict is shown as a chip, never as an animation

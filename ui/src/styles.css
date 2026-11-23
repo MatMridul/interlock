@@ -522,3 +522,6 @@ dialog h3 { margin: 0 0 4px; font: 600 16px var(--cond); letter-spacing: .16em; 
 .rsaid p { margin: 0 0 4px; font-size: 13px; }
 .rsaid-model, .rsaid-gate { border: 1px solid var(--muted); border-radius: 6px; padding: 8px 10px; }
 .rsaid-gate p { font-weight: 600; }
+
+.ln.gate { color: var(--ink); border-left: 2px solid var(--muted); padding-left: 6px; }
+.ln.gate .w { color: var(--ink); font-weight: 600; }
