@@ -2,6 +2,7 @@
 import json
 
 from strands import Agent
+from strands.agent.conversation_manager import SlidingWindowConversationManager
 from strands.hooks import BeforeToolCallEvent
 from strands.tools.executors import SequentialToolExecutor
 
@@ -33,9 +34,11 @@ def make_checker_hook(gate):
     return checker_hook
 
 
-def build_agent(gate, model, with_hook=True, system_prompt=SYSTEM_PROMPT):
+def build_agent(gate, model, with_hook=True, system_prompt=SYSTEM_PROMPT, history=None):
+    """history: keep only the last N chat messages (what the model is sent); None keeps Strands' default."""
+    extra = {} if history is None else {"conversation_manager": SlidingWindowConversationManager(window_size=history)}
     agent = Agent(model=model, tools=make_tools(gate), system_prompt=system_prompt,
-                  tool_executor=SequentialToolExecutor(), callback_handler=None)
+                  tool_executor=SequentialToolExecutor(), callback_handler=None, **extra)
     if with_hook:
         agent.add_hook(make_checker_hook(gate), BeforeToolCallEvent)
     return agent

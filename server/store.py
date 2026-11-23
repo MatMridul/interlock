@@ -186,3 +186,7 @@ def end_turn(store, pk, item, data):
 
 def daily_key(prefix="cap", now=time.time):
     return f"{prefix}#{time.strftime('%Y-%m-%d', time.gmtime(now()))}"
+
+
+def month_key(prefix="capm", now=time.time):
+    return f"{prefix}#{time.strftime('%Y-%m', time.gmtime(now()))}"

@@ -57,10 +57,10 @@ def run_actions(session, actions):
         session.lock.release()
     return [_frame(name, data) for name, data in events]
 
-def add_routes(app: FastAPI, registry, limiter):
+def add_routes(app: FastAPI, registry, limiter, judge_required=False):
     @app.get("/config")
     def get_config():
-        return {"model": "on" if model_enabled() else "off"}
+        return {"model": "on" if model_enabled() else "off", **({"judge_code": True} if judge_required else {})}  # judge_code: model features need the access code
 
     @app.post("/session/{sid}/propose")
     def propose(sid: str, body: ProposeBody, request: Request):
