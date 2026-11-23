@@ -118,11 +118,11 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
             <g aria-hidden="true">
               {ledger.map((r, i) => {
                 const on = lastTaken?.from === r.from && lastTaken.symbol === r.symbol;
-                return <text key={`${r.key}${on ? lastTakenN : ""}`} x="24" y={96 + i * 16} className={`row${on ? " on" : ""}`} data-row={r.key}>{on ? "› " : "  "}{r.text}</text>;
+                return <text key={`${r.key}${on ? lastTakenN : ""}`} x="24" y={(replayLabel ? 108 : 96) + i * 16} className={`row${on ? " on" : ""}`} data-row={r.key}>{on ? "› " : "  "}{r.text}</text>;
               })}
-              {why && <text x="24" y={96 + ledger.length * 16 + 6} className="row undef" data-row="undefined">{"› "}δ({why.from}, {why.symbol}) = undefined</text>}
+              {why && <text x="24" y={(replayLabel ? 108 : 96) + ledger.length * 16 + 6} className="row undef" data-row="undefined">{"› "}δ({why.from}, {why.symbol}) = undefined</text>}
             </g>
-            {replayLabel && <text x="24" y="86" className="silk replay-tag" data-testid="replay-tag">{replayLabel}</text>}
+            {replayLabel && <text x="24" y="84" className="silk replay-tag" data-testid="replay-tag">{replayLabel}</text>}
             {why && <text x="24" y={VIEW.h - 16} className="why-cap" data-testid="why-cap">{why.sentence}</text>}
 
             {edges.map((e) => {

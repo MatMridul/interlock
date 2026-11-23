@@ -36,7 +36,7 @@ $env:STUB = "1"; .venv\Scripts\python -m uvicorn server.app:app --host 127.0.0.1
 
 Open `http://127.0.0.1:8000`. In the UI:
 
-- **You are the agent** (no model, no AWS): press the attack buttons. The real gate decides. **Autoplay** (a scripted run of real chat messages) needs the model on; locally `STUB=1` is enough.
+- **You are the agent** (no model, no AWS): press the attack buttons. The real gate decides. **Autoplay** works here too: a fixed 70 to 80 second script of proposals through the real gate, with no model. It asks you to type the demo code once for the human key step, or to skip that step (then the transfer is refused). With the model on, Autoplay sends real chat messages instead.
 - **Policy: finance | safe-ship** in the header. safe-ship shows the second machine, a what-if box, and a replay of the recorded Kiro CLI run where Kiro's own push is refused.
 - **Race** replays the recorded 20-attack benchmark. **Proof** shows the receipt for each verdict.
 
