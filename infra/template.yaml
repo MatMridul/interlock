@@ -12,14 +12,35 @@ Parameters:
     Description: Bedrock global inference profile id. Only this one model is allowed by IAM.
   Mode:
     Type: String
-    Default: "off"
+    Default: bedrock
     AllowedValues: ["off", bedrock]
-    Description: off = no Bedrock call is possible (default). bedrock = real-model chat, limited by DailyModelCap.
+    Description: bedrock = real-model features, locked behind JudgeAccessCode and limited by the caps below. off = no Bedrock call is possible and no Bedrock permission is attached.
+  JudgeAccessCode:
+    Type: String
+    NoEcho: true
+    Default: ""
+    MaxLength: 64
+    Description: The judge access code that unlocks the real model. Empty means the model stays locked for everyone (fail closed). Pass it at deploy time; never commit it.
   DailyModelCap:
     Type: Number
-    Default: 200
+    Default: 100
     MinValue: 0
     Description: Most Bedrock model calls per UTC day, all visitors together.
+  MonthlyModelCap:
+    Type: Number
+    Default: 1500
+    MinValue: 0
+    Description: Most Bedrock model calls per UTC month, all visitors together.
+  PerIpDailyModelCap:
+    Type: Number
+    Default: 40
+    MinValue: 0
+    Description: Most Bedrock model calls per client address per UTC day.
+  PerSessionModelCap:
+    Type: Number
+    Default: 25
+    MinValue: 0
+    Description: Most Bedrock model calls per chat session.
   BudgetEmail:
     Type: String
     AllowedPattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
@@ -187,6 +208,10 @@ Resources:
           INTERLOCK_TRUST_PROXY: lambda
           INTERLOCK_MODEL: !Ref Mode
           INTERLOCK_DAILY_MODEL_CAP: !Ref DailyModelCap
+          INTERLOCK_MONTHLY_MODEL_CAP: !Ref MonthlyModelCap
+          INTERLOCK_IP_DAILY_MODEL_CAP: !Ref PerIpDailyModelCap
+          INTERLOCK_SESSION_MODEL_CAP: !Ref PerSessionModelCap
+          JUDGE_ACCESS_CODE: !Ref JudgeAccessCode
           BEDROCK_MODEL_ID: !Ref ModelId
           CORS_ORIGIN: !Ref AllowedCorsOrigin
           DEMO_MFA_CODE: !Ref DemoMfaCode

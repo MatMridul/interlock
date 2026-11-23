@@ -40,7 +40,7 @@ Open `http://127.0.0.1:8000`. In the UI:
 - **Policy: finance | safe-ship** in the header. safe-ship shows the second machine, a what-if box, and a replay of the recorded Kiro CLI run where Kiro's own push is refused.
 - **Race** replays the recorded 20-attack benchmark. **Proof** shows the receipt for each verdict.
 
-The human approval (MFA) code is a random 6-digit number printed once on the server console; set `DEMO_MFA_CODE` to choose your own. Real model calls need AWS credentials and Bedrock model access (`AWS_REGION`, `BEDROCK_MODEL_ID`; defaults `ap-south-1`, `global.amazon.nova-2-lite-v1:0`); `INTERLOCK_MODEL=off` turns the model off. `INTERLOCK_ENV=production` refuses to start unless `DEMO_MFA_CODE` is set. UI dev server: `cd ui && npm run dev`.
+The human approval (MFA) code is a random 6-digit number printed once on the server console; set `DEMO_MFA_CODE` to choose your own. Real model calls need AWS credentials and Bedrock model access (`AWS_REGION`, `BEDROCK_MODEL_ID`; defaults `ap-south-1`, `global.amazon.nova-2-lite-v1:0`); `INTERLOCK_MODEL=off` turns the model off. **Judge lock and caps:** every real-model feature (agent chat, live race runs, model-mode Autoplay) needs the access code in `JUDGE_ACCESS_CODE` (unset means locked, also with `STUB=1`); the UI has an "Unlock live model (judges)" control and sends the code in an `X-Judge-Code` header. Caps (env vars, defaults): `INTERLOCK_DAILY_MODEL_CAP` 100, `INTERLOCK_MONTHLY_MODEL_CAP` 1500, `INTERLOCK_IP_DAILY_MODEL_CAP` 40, `INTERLOCK_SESSION_MODEL_CAP` 25, `INTERLOCK_TURN_MODEL_CALLS` 4, `RACE_IP_DAILY_RUNS` 5, `INTERLOCK_HISTORY_MESSAGES` 8. Table of every limit: [BEDROCK_GUARDRAILS.md](docs/deploy/BEDROCK_GUARDRAILS.md). Kill switch on the deployed function: `infra/model_switch.ps1 off`. `INTERLOCK_ENV=production` refuses to start unless `DEMO_MFA_CODE` is set. UI dev server: `cd ui && npm run dev`.
 
 ## Architecture
 
@@ -52,7 +52,7 @@ Agent -> BeforeToolCallEvent hook -> Gate.peek (read-only; cancels a disallowed 
 Agent tool body -> Gate.run -> generated executor table -> stub bank tools (only on ACCEPT)
 Kiro CLI tool call -> PreToolUse hook (safeship/hook.py) -> the same Gate class, second table
 JFLAP 7.1 (build time) -> .jff -> export-table -> scripts/gen_executor_table.py -> generated tables
-Agent -> Amazon Bedrock (daily call cap in server/modelcap.py)
+Agent -> Amazon Bedrock (judge access code, daily/monthly/per-address/per-session/per-turn caps in server/judge.py and server/modelcap.py)
 ```
 
 ## The two policies

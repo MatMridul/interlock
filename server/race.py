@@ -22,7 +22,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from bench import race as bench
-from server import manual, modelcap
+from server import config, manual, modelcap
+from server.store import daily_key
 
 DAILY_CALLS = 40  # model invocations per UTC day per process (override: RACE_DAILY_CALLS)
 MIN_CALLS_TO_START = 6  # a two-arm run of one attack needs about this many
@@ -63,15 +64,15 @@ class DailyCap:
 class SharedCap:
     """Adapts modelcap.ModelCap to the take()/remaining() interface RaceMeter uses."""
 
-    def __init__(self, shared):
-        self._shared = shared
+    def __init__(self, shared, ip=None):
+        self._shared, self._ip = shared, ip
 
     def remaining(self):
         return self._shared.remaining()
 
     def take(self):
         try:
-            self._shared.take()
+            self._shared.take(ip=self._ip)
         except modelcap.CapReached:
             return False
         return True
@@ -102,7 +103,7 @@ def _load_corpus():
     return json.loads(bench.CORPUS.read_text(encoding="utf-8"))
 
 
-def add_routes(app: FastAPI, model_factory, limiter, shared_cap=None):
+def add_routes(app: FastAPI, model_factory, limiter, shared_cap=None, locked=None, store=None):
     cap = SharedCap(shared_cap) if shared_cap else DailyCap()
     busy = threading.Lock()
     app.state.race_cap = cap
@@ -117,7 +118,10 @@ def add_routes(app: FastAPI, model_factory, limiter, shared_cap=None):
     def live(body: LiveBody, request: Request):
         if not manual.model_enabled() or modelcap.model_mode() == "off":
             return JSONResponse({"detail": "model is off on this server"}, status_code=403)
-        client = request.client.host if request.client else "unknown"
+        client = config.client_ip(request)
+        denied = locked(request, client) if locked else None
+        if denied:
+            return denied
         wait = limiter.rate_limited("chat", client)
         if wait:
             return JSONResponse({"detail": "too many requests"}, status_code=429, headers={"Retry-After": str(wait)})
@@ -130,11 +134,17 @@ def add_routes(app: FastAPI, model_factory, limiter, shared_cap=None):
         if not busy.acquire(blocking=False):
             return JSONResponse({"detail": "a race is already running"}, status_code=409)
         try:
+            n = modelcap.race_runs_cap()
+            if store is not None and not store.incr_if_below(daily_key(f"racerun#{client}"), n):
+                return JSONResponse({"detail": f"Live race limit reached: {n} live runs per address per UTC day. "
+                                               "It resets at 00:00 UTC. The recorded replay is still open."},
+                                    status_code=429)
+            run_cap = SharedCap(shared_cap, client) if shared_cap else cap
             model = model_factory()
             if model is None:
                 return JSONResponse({"detail": "model is off on this server"}, status_code=403)
             model_id = (model.get_config() or {}).get("model_id", "unknown")
-            meter = RaceMeter(cap)
+            meter = RaceMeter(run_cap)
             runs = [bench.run_attack(attack, arm, model, meter) for arm in bench.ARMS]
         finally:
             busy.release()

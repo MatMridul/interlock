@@ -73,3 +73,11 @@ def client_ip(request):
         except Exception:
             pass
     return request.client.host if request.client else "unknown"
+
+
+def history_messages():
+    """Chat messages kept in the agent's history, so at most this many go to the model (INTERLOCK_HISTORY_MESSAGES, default 8)."""
+    try:
+        return max(2, int(os.environ.get("INTERLOCK_HISTORY_MESSAGES", 8)))
+    except ValueError:
+        return 8

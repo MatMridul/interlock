@@ -21,7 +21,7 @@ Agents that touch money or production fail in a specific way: they do the right 
 - **Generated executor tables** tested equal to the JFLAP models; JFLAP does not run at runtime.
 - **Strands Agents SDK**: five wrapper tools plus a before-tool-call hook that cancels disallowed calls; sequential tool execution.
 - **Amazon Bedrock**: Amazon Nova 2 Lite (Claude Haiku 4.5 was blocked by the Anthropic use-case form).
-- FastAPI with SSE, a Vite and React UI. Hosting on AWS Lambda and DynamoDB with a daily model-call cap is planned and templated, not deployed: [DEPLOY_PLAN.md](../deploy/DEPLOY_PLAN.md).
+- FastAPI with SSE, a Vite and React UI. Hosting on AWS Lambda and DynamoDB with a judge access code and small model-call caps is planned and templated, not deployed: [DEPLOY_PLAN.md](../deploy/DEPLOY_PLAN.md).
 
 ## Challenges
 Keeping the claims honest: the first spec overclaimed JFLAP's runtime role and was corrected before any code. Proving the table equals the model. A mutation survivor that exposed a missing property. An argument guard that shipped off by default. Headless Chrome defaulting to reduced motion, which hid the animations from our own screenshots. DynamoDB on-demand having no free tier. Bedrock model access for Claude.
@@ -41,6 +41,7 @@ Kiro (CLI, Crew, specs, steering, hooks, custom agent, MCP), JFLAP 7.1, jflap-cl
 ## Links (fill in)
 - Repo: https://github.com/MatMridul/interlock
 - Live app: **TODO (owner)**
+- Judges-only testing field (owner: put the judge access code here, never in the public text): the code unlocks the live model in the app via "Unlock live model (judges)". Everything else, including "you are the agent" mode, scripted attacks, the Race replay and Safe Ship, needs no code. Model use is capped at 100 calls per day for everyone; when a cap is hit the app says so and falls back to "you" mode.
 - Demo video (YouTube, under 3 minutes): **TODO (owner)**
 - Judges' guide: [docs/JUDGES.md](../JUDGES.md)
 
