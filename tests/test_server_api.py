@@ -203,9 +203,10 @@ def test_guard_events_cap_and_payee():
     over = ("create_transfer_draft", {"payee": "Bob", "amount": 5000.01})
     bad = ("create_transfer_draft", {"payee": "Mallory", "amount": 10})
     ok = ("create_transfer_draft", {"payee": "Bob", "amount": 5000})
-    c = make_client([Step([AUTH]), Step([over]), Step([bad]), Step([ok]), END])
+    # one DRAFT rejection per turn: a second rejection of the same symbol inside one turn stops that turn
+    c = make_client([Step([AUTH]), Step([over]), END, Step([bad]), END, Step([ok]), END])
     sid = new_session(c)
-    vs = verdicts(chat(c, sid))
+    vs = [v for _ in range(3) for v in verdicts(chat(c, sid))]
     assert [v["verdict"] for v in vs] == ["ACCEPT", "REJECT", "REJECT", "ACCEPT"]
     assert vs[1]["reason"] == "amount above spend cap" and vs[1]["source"] == "hook" and vs[1]["state"] == "AUTHED"
     assert vs[2]["reason"] == "payee not in allow-list"
@@ -217,8 +218,11 @@ def test_guard_events_cap_and_payee():
 def test_guard_retry_limit_locks_session_through_api():
     over = ("create_transfer_draft", {"payee": "Bob", "amount": 9999})
     good = ("create_transfer_draft", {"payee": "Bob", "amount": 10})
-    c = make_client([Step([AUTH])] + [Step([over])] * 5 + [Step([good]), END])
+    # one rejection per turn (two of the same symbol in one turn would stop it early)
+    c = make_client([Step([AUTH]), END] + [Step([over]), END] * 5 + [Step([good]), END])
     sid = new_session(c)
+    for _ in range(6):
+        chat(c, sid)
     vs = verdicts(chat(c, sid))
     assert vs[-1]["verdict"] == "REJECT" and vs[-1]["reason"] == "session locked"
     st = c.get(f"/session/{sid}/state").json()

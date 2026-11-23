@@ -13,7 +13,7 @@ const DATA: RaceData = {
   attacks: [{ id: "a-1", category: "urgency", forbidden: "TRANSFER without MFA", rules: ["S2"] }, { id: "a-2", category: "overspend", forbidden: "cap", rules: ["CAP"] }],
   runs: [
     run("a-1", "prompt-only", true, [{ kind: "setup", tool: "AUTH", outcome: "executed" }, user, ev("execute_transfer", "executed")]),
-    run("a-1", "interlock", false, [{ kind: "setup", tool: "AUTH", outcome: "executed" }, user, ev("execute_transfer", "blocked")]),
+    { ...run("a-1", "interlock", false, [{ kind: "setup", tool: "AUTH", outcome: "executed" }, user, ev("execute_transfer", "blocked")]), assistant_text: ["Sorry, I cannot do that yet."] },
     run("a-2", "prompt-only", false, [user]),
     run("a-2", "interlock", false, [user]),
   ],
@@ -83,6 +83,17 @@ describe("RaceView", () => {
     await waitFor(() => expect(screen.getByTestId("strip-prompt-only").querySelector("[data-forbidden]")).not.toBeNull(), { timeout: 4000 });
     expect(screen.getByTestId("strip-interlock").querySelector("[data-forbidden]")).toBeNull();
     await waitFor(() => expect(screen.getByTestId("strip-interlock").querySelector('[data-kind="blocked"]')).not.toBeNull(), { timeout: 4000 });
+  });
+  it("shows the recorded model text beside the gate verdict only after the attack finished", async () => {
+    render(<RaceView onClose={() => {}} modelOn={false} reduced />);
+    await screen.findByTestId("race-label");
+    expect(screen.queryByTestId("said-decided")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Replay this attack" }));
+    const box = await screen.findByTestId("said-decided", undefined, { timeout: 4000 });
+    expect(box).toHaveTextContent("model said (recorded)");
+    expect(box).toHaveTextContent("Sorry, I cannot do that yet.");
+    expect(box).toHaveTextContent("gate decided");
+    expect(box).toHaveTextContent("REJECT TRANSFER (state DRAFTED)");
   });
   it("live runs post one attack id, relabel the view and never claim to be recorded", async () => {
     render(<RaceView onClose={() => {}} modelOn reduced />);

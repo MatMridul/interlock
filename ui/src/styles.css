@@ -516,3 +516,12 @@ dialog h3 { margin: 0 0 4px; font: 600 16px var(--cond); letter-spacing: .16em; 
 @media (max-width: 900px) { .app[data-ssv] > :not(.top):not(.ssv):not(.drawer):not(.autostart-wrap):not(.modal-wrap):not(.tour):not(.race) { display: none; } .app[data-ssv] { grid-template-rows: auto auto; padding-bottom: 12px; } .ssv { grid-column: 1; grid-row: 2; min-width: 0; overflow: visible; } .ssv-stage { height: 340px; } } /* Safe Ship covers the finance layout: on a narrow screen its grid items would push it into a 0 px column */
 
 .app[data-ssv] .read { display: none; } /* the finance scoreboard is not part of the Safe Ship view */
+
+.rsaid { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin: 8px 0; }
+.rsaid h3 { margin: 0 0 4px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.rsaid p { margin: 0 0 4px; font-size: 13px; }
+.rsaid-model, .rsaid-gate { border: 1px solid var(--muted); border-radius: 6px; padding: 8px 10px; }
+.rsaid-gate p { font-weight: 600; }
+
+.ln.gate { color: var(--ink); border-left: 2px solid var(--muted); padding-left: 6px; }
+.ln.gate .w { color: var(--ink); font-weight: 600; }

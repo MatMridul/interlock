@@ -7,11 +7,12 @@ import time
 import uuid
 from collections import OrderedDict
 
-from strands.hooks import BeforeToolCallEvent
+from strands.hooks import BeforeModelCallEvent, BeforeToolCallEvent
 
 from agent.factory import build_agent
 from bank.gate import Gate
 from server import config
+from server.explain import explain
 
 
 def verdict_event(r, layer, latency_ms, actor="llm"):
@@ -32,12 +33,28 @@ class ObservedGate(Gate):
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
         self.sink = None  # callable(name, data) or None
+        self.explains, self.rejected, self.stop = [], {}, False  # per chat turn, see begin_turn
         self._tl = threading.local()
 
     def emit(self, name, data):
         sink = self.sink
         if sink:
             sink(name, data)
+
+    def begin_turn(self):
+        self.explains, self.rejected, self.stop = [], {}, False
+
+    def note_explain(self, info):
+        """Remember the server-built 'gate says' line for a rejection; a second REJECT of the same symbol stops the turn."""
+        if self.sink is None:  # only during a chat turn
+            return
+        line = explain(info)
+        if line and line not in self.explains:
+            self.explains.append(line)
+        sym = info.get("symbol") if isinstance(info, dict) else None
+        self.rejected[sym] = self.rejected.get(sym, 0) + 1
+        if self.rejected[sym] >= 2:
+            self.stop = True
 
     def last_peek_ms(self):
         return getattr(self._tl, "peek_ms", None)
@@ -54,6 +71,8 @@ class ObservedGate(Gate):
         r = super().run(symbol, args, source)
         ms = (time.perf_counter() - t0) * 1000
         self.emit("gate_verdict", verdict_event(r, "gate", ms, source))
+        if r["verdict"] == "REJECT" and source == "llm":
+            self.note_explain(r)
         if self.state != before:
             self.emit("state_change", {"from": before, "to": self.state})
         return r
@@ -70,7 +89,29 @@ def _observer_hook(gate):
             except Exception:
                 info = {"verdict": "REJECT", "reason": "rejected by hook"}
             gate.emit("gate_verdict", verdict_event(info, "hook", gate.last_peek_ms()))
+            gate.note_explain(info)
     return hook
+
+
+class TurnStopped(Exception):
+    """Raised before a model call when the same symbol was rejected twice in this turn."""
+
+
+def _stop_hook(gate):
+    """The same symbol rejected twice in one turn: no further model call. This only shortens the existing
+    per-turn call allowance (modelcap); it is not a new budget."""
+    def hook(event: BeforeModelCallEvent) -> None:
+        if gate.stop:
+            raise TurnStopped("same symbol rejected twice in one turn")
+    return hook
+
+
+def _is_stop(e):
+    while e is not None:
+        if isinstance(e, TurnStopped):
+            return True
+        e = e.__cause__ or e.__context__
+    return False
 
 
 def _cap_message(e):
@@ -89,19 +130,24 @@ class Session:
         self.agent = build_agent(self.gate, model, history=config.history_messages()) if model is not None else None  # None: model off, driven by hand
         if self.agent is not None:
             self.agent.add_hook(_observer_hook(self.gate), BeforeToolCallEvent)
+            self.agent.add_hook(_stop_hook(self.gate), BeforeModelCallEvent)  # added before the cap hook: a stopped call spends nothing
         self.lock = threading.Lock()  # one chat turn at a time
 
     def run_chat(self, message, emit):
         """Runs one agent turn in the calling thread, emitting events through `emit`."""
         self.gate.sink = emit
         self.turn_calls = 0  # the per-turn model-call cap counts from here
+        self.gate.begin_turn()
         try:
             emit("user_message", {"text": message})
             try:
                 result = self.agent(message)
                 emit("assistant_text", {"text": str(result).strip()})
             except Exception as e:  # no stack trace leaves the server
-                emit("error", {"message": _cap_message(e) or f"agent error ({type(e).__name__})"})
+                if not (self.gate.stop and _is_stop(e)):  # an early stop is not an error: the gate line below is the last word
+                    emit("error", {"message": _cap_message(e) or f"agent error ({type(e).__name__})"})
+            for line in self.gate.explains:  # built from the rejection fields only, after the model text, labelled gate
+                emit("gate_explain", {"text": line})
             emit("done", {"state": self.gate.state})
         finally:
             self.gate.sink = None

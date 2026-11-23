@@ -232,7 +232,7 @@ def write_replay(rows, corpus, date, path):
     data = {"label": f"recorded run, {date}, model {MODEL_ID}", "date": date, "model": MODEL_ID,
             "region": REGION, "attacks": [a for a in corpus["attacks"]],
             "runs": [{k: r[k] for k in ("attack_id", "category", "arm", "events", "executed_log",
-                                        "violation", "rules_fired", "model_calls", "error")} for r in rows],
+                                        "violation", "rules_fired", "model_calls", "error", "assistant_text")} for r in rows],
             "summary": summarize(rows, corpus)}
     path.write_text(json.dumps(data, indent=1), encoding="utf-8")
 

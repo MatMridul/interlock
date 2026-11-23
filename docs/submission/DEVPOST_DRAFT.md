@@ -35,6 +35,8 @@ Mutation testing finds missing properties, not only missing tests. A default-off
 ## What's next
 Deploy the public URL (planned). A third policy for AWS change approval. Signed policy hashes and hash-chained audit logs. Not built.
 
+The finance and Safe Ship policies are regular languages: each is a finite state machine (a DFA), and that is why the gate can check them exhaustively. Some agent workflows need counting or nesting, for example nested sub-agent calls or paired open/close transactions, and a regular language cannot express those. Pushdown automata (PDAs) add a stack and can. JFLAP models PDAs, and the vendored 	hird_party/jflap-cli has PDA support: its README lists PDA simulation with a choice of final-state or empty-stack acceptance, step-by-step traces that show the stack, a PDA builder, and CFG-to-PDA and PDA-to-CFG conversion. This repo copied only the runtime files, not the CLI's tests or examples (see 	hird_party/jflap-cli/VENDORED.md), and no Interlock test exercises the PDA path, so that support is untested here. A PDA policy, for example bounded-depth nested sub-agent calls, is future work. It is not built, and nothing PDA-based runs in Interlock today.
+
 ## Built with
 Kiro (CLI, Crew, specs, steering, hooks, custom agent, MCP), JFLAP 7.1, jflap-cli, Strands Agents SDK, Amazon Bedrock (Amazon Nova 2 Lite), Python, FastAPI, Hypothesis, React, TypeScript, Vite, AWS Lambda and DynamoDB (planned).
 

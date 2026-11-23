@@ -8,6 +8,7 @@ export type ChatItem =
   | { id: number; kind: "assistant"; text: string }
   | { id: number; kind: "proposed"; name: string }
   | { id: number; kind: "verdict"; v: Verdict; from: string; at: number }
+  | { id: number; kind: "gate"; text: string } // the server-built 'gate says' line, not model text
   | { id: number; kind: "error"; text: string };
 
 export interface BeatRecord {
@@ -108,6 +109,8 @@ function onSse(s: UiState, name: string, d: unknown): UiState {
       return push(s, { kind: "user", text: str(d.text) ?? "" });
     case "assistant_text":
       return push(s, { kind: "assistant", text: str(d.text) ?? "" });
+    case "gate_explain":
+      return push(s, { kind: "gate", text: str(d.text) ?? "" });
     case "tool_proposed":
       return push(s, { kind: "proposed", name: str(d.name) ?? "unknown" });
     case "error":

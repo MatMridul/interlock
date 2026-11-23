@@ -111,6 +111,8 @@ Every dependency, bundled asset (JFLAP 7.1, `jflap-cli`, fonts), model and servi
 
 Not built: deployment of a public URL (plan and template only), a third policy (AWS change approval), and the post-hackathon ideas in [docs/OPEN_TASKS.md](docs/OPEN_TASKS.md) section 7.
 
+The finance and Safe Ship policies are regular languages: each is a finite state machine (a DFA), and that is why the gate can check them exhaustively. Some agent workflows need counting or nesting, for example nested sub-agent calls or paired open/close transactions, and a regular language cannot express those. Pushdown automata (PDAs) add a stack and can. JFLAP models PDAs, and the vendored 	hird_party/jflap-cli has PDA support: its README lists PDA simulation with a choice of final-state or empty-stack acceptance, step-by-step traces that show the stack, a PDA builder, and CFG-to-PDA and PDA-to-CFG conversion. This repo copied only the runtime files, not the CLI's tests or examples (see 	hird_party/jflap-cli/VENDORED.md), and no Interlock test exercises the PDA path, so that support is untested here. A PDA policy, for example bounded-depth nested sub-agent calls, is future work. It is not built, and nothing PDA-based runs in Interlock today.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
