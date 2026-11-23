@@ -1,0 +1,2 @@
+infra/*.sh text eol=lf
+infra/run.sh text eol=lf

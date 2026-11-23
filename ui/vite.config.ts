@@ -9,7 +9,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: "127.0.0.1",
-    proxy: { "/policy": api, "/session": api },
+    fs: { allow: [".."] }, // tests read policy/ and docs/reports/ as the single source
+    proxy: { "/policy": api, "/session": api, "/config": api },
   },
   test: {
     environment: "jsdom",

@@ -1,9 +1,11 @@
+> **Superseded.** This is an early planning document. The current design is `SPEC_GATE_v2.md` and `.kiro/specs/gate/`. Where this file differs from the repo, the repo is right (for example the UI is React with Vite).
+
 # FRANKENSTEIN TRACK: The Chimeric Automaton (JFLAP 7.1 Formal CS Theory ⇄ Stochastic Generative AI)
 **Track:** Frankenstein (Stitching Fundamentally Incompatible Technologies)  
 **Target Category:** Best Frankenstein ($5,000) + Overall 1st Place ($30,000)  
 **Author:** Mridul Mathur  
-**Repository Working Directory:** `C:\Mridul\Programs\Kiroween`  
-**Core Technologies:** JFLAP 7.1 (Formal Automata Engine), Model Context Protocol (MCP), Kiro Agentic IDE & CLI, Next.js / React Flow
+**Repository Working Directory:** `<repo root>`  
+**Core Technologies:** JFLAP 7.1 (Formal Automata Engine), Model Context Protocol (MCP), Kiro Agentic IDE & CLI, React (Vite) / React Flow
 
 ---
 
@@ -48,7 +50,7 @@ By utilizing **JFLAP 7.1 via MCP**, agent guardrails transform from unreliable "
 
 ## 3. Concrete JFLAP MCP Integration Architecture
 
-The Chimeric Automaton directly connects Kiro to your existing local JFLAP MCP server (`C:\Users\mridu\jflap-cli\jflap_mcp.py`), leveraging its core tool definitions:
+The Chimeric Automaton directly connects Kiro to your existing local JFLAP MCP server (`third_party/jflap-cli/jflap_mcp.py`), leveraging its core tool definitions:
 
 ```mermaid
 sequenceDiagram
@@ -122,7 +124,7 @@ Chimeric-Automaton/
 
 ## 5. Live Visual Playground Architecture
 
-A high-polish Next.js + React Flow application providing real-time visibility into the hybrid system:
+A high-polish React (Vite) + React Flow application providing real-time visibility into the hybrid system:
 
 1. **Left Panel (The Formal Automaton):** Renders the `.jff` state machine. As the user chats, the active node ($q_t$) pulses in green; attempted invalid transitions flash in red.
 2. **Center Panel (The Agent Chat):** Conversational interface where the user can test legitimate workflows or attempt adversarial jailbreaks.

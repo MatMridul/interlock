@@ -1,0 +1,33 @@
+$ fsa minimize
+Minimized DFA from 4 to 3 states (15 transitions). Saved to: C:\Users\mridu\.kiro\crew\scratch\e6fecbb3\min.jff
+
+=======================================================
+ JFLAP Model Inspection: min.jff
+=======================================================
+Category : AUTOMATON
+Type     : FA
+Deterministic : YES
+Complete      : YES
+Alphabet      : C, D, E, P, T
+Unreachable   : None (all reachable)
+Dead States   : q0
+Initial State : q1
+Final States  : q1, q2
+
+States:
+State | Name | Coordinates | Flags         
+------+------+-------------+---------------
+q0    | q0   | (8, 334)    | -             
+q1    | q1   | (394, 499)  | INITIAL, FINAL
+q2    | q2   | (196, 59)   | FINAL         
+
+Transitions:
+From |    | To | Transition Rule
+-----+----+----+----------------
+$ equivalence-check original vs itself-minimized
+Result: The two automata ARE EQUIVALENT (accept the exact same language).
+$ equivalence-check original vs mutant (EDIT after TEST no longer invalidates)
+Result: The two automata ARE NOT EQUIVALENT.
+Shortest distinguishing string: 'TED'
+  Model A (safe_ship.jff): REJECTED
+  Model B (mut_no_invalidate.jff): ACCEPTED

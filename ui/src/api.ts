@@ -35,6 +35,24 @@ export const postMfa = (sid: string, code: string) =>
     body: JSON.stringify({ code }),
   }).then((r) => json<{ verdict: string; state: string; reason?: string }>(r));
 
+export type ProposeAction = { tool: string; payee?: string; amount?: number };
+export const getConfig = () =>
+  fetch(`${BASE}/config`).then((r) => json<{ model: "on" | "off" }>(r)).catch((): { model: "on" | "off" } => ({ model: "on" }));
+
+/** C1: propose actions by hand. Same SSE events as chat; the server runs each through the real gate. */
+export async function* propose(sid: string, actions: ProposeAction[]): AsyncGenerator<SseEvent> {
+  const r = await fetch(`${BASE}/session/${sid}/propose`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ actions }),
+  });
+  if (!r.ok || !r.body) {
+    await json(r);
+    throw new ApiError(r.status, "no response body");
+  }
+  yield* readSse(r.body);
+}
+
 /** POST a chat message and yield SSE events. Throws ApiError for 404/409/422 before streaming. */
 export async function* chat(sid: string, message: string): AsyncGenerator<SseEvent> {
   const r = await fetch(`${BASE}/session/${sid}/chat`, {
@@ -48,3 +66,12 @@ export async function* chat(sid: string, message: string): AsyncGenerator<SseEve
   }
   yield* readSse(r.body);
 }
+
+/** C2 race mode. Replay is a plain GET of the recorded run (no model). Live needs the model on. */
+export const getRaceReplay = () => fetch(`${BASE}/race/replay`).then((r) => json<import("./lib/race").RaceData>(r));
+export const postRaceLive = (attack_id: string) =>
+  fetch(`${BASE}/race/live`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ attack_id }) })
+    .then((r) => json<import("./lib/race").RaceLive>(r));
+
+/** C7: read-only machine table for a named policy; safe_ship also carries the recorded Kiro CLI run. */
+export const getPolicyData = (name: "finance" | "safe_ship") => fetch(`${BASE}/policies/${name}`).then((r) => json<{ policy: Policy; recorded?: unknown }>(r));

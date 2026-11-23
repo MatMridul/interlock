@@ -2,39 +2,42 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "The Chimeric Automaton: gate architecture",
+    "title": "Interlock: final architecture (hosting planned, not deployed)",
     "output": "architecture.html",
     "quality_profile": "showcase"
   },
   "components": [
-    { "id": "browser", "type": "frontend", "label": "Browser UI", "sublabel": "Vite + React, ui/", "pos": [40, 260], "size": [140, 64] },
-    { "id": "api", "type": "backend", "label": "FastAPI server", "sublabel": "SSE chat, POST /mfa", "pos": [260, 260], "size": [150, 64], "tag": "server/" },
-    { "id": "agent", "type": "backend", "label": "Strands Agent", "sublabel": "5 wrapper tools, sequential", "pos": [500, 420], "size": [160, 64], "tag": "agent/" },
-    { "id": "hook", "type": "security", "label": "BeforeToolCall hook", "sublabel": "peek, cancel_tool", "pos": [760, 420], "size": [160, 64], "tag": "layer 2" },
-    { "id": "gate", "type": "security", "label": "Gate", "sublabel": "run / peek, argument guard", "pos": [760, 260], "size": [160, 64], "tag": "layer 1" },
-    { "id": "tools", "type": "backend", "label": "Stub real tools", "sublabel": "no network, no money", "pos": [1000, 260], "size": [150, 64], "tag": "bank/real_tools.py" },
-    { "id": "table", "type": "backend", "label": "Executor table", "sublabel": "generated, never hand-edited", "pos": [1000, 420], "size": [160, 64], "tag": "bank/" },
-    { "id": "bedrock", "type": "cloud", "label": "Amazon Bedrock", "sublabel": "Nova 2 Lite (fallback in use)", "pos": [500, 560], "size": [160, 64] },
-    { "id": "jflap", "type": "external", "label": "JFLAP 7.1 (build time)", "sublabel": "via jflap-cli, finance.jff", "pos": [1000, 560], "size": [170, 64] }
+    { "id": "browser", "type": "frontend", "label": "Browser UI", "sublabel": "policy picker", "pos": [30, 250], "size": [150, 64] },
+    { "id": "furl", "type": "cloud", "label": "Function URL", "sublabel": "PLANNED, not deployed", "pos": [280, 250], "size": [150, 64] },
+    { "id": "api", "type": "backend", "label": "FastAPI app", "sublabel": "SSE, /mfa, /race", "pos": [530, 250], "size": [150, 64], "tag": "server/" },
+    { "id": "store", "type": "database", "label": "Session store", "sublabel": "memory or DynamoDB", "pos": [530, 80], "size": [150, 64], "tag": "store.py" },
+    { "id": "gate", "type": "security", "label": "Gate + guard", "sublabel": "2 policies, 1 engine", "pos": [780, 250], "size": [150, 64], "tag": "layer 1" },
+    { "id": "kirohook", "type": "security", "label": "Kiro hook", "sublabel": "Safe Ship PreToolUse", "pos": [780, 80], "size": [150, 64], "tag": "hook.py" },
+    { "id": "agent", "type": "backend", "label": "Strands agent", "sublabel": "5 wrapper tools", "pos": [280, 420], "size": [150, 64], "tag": "agent/" },
+    { "id": "hook", "type": "security", "label": "Agent hook", "sublabel": "peek, cancel", "pos": [530, 420], "size": [150, 64], "tag": "layer 2" },
+    { "id": "table", "type": "backend", "label": "Generated tables", "sublabel": "finance, safe_ship", "pos": [780, 420], "size": [150, 64], "tag": "gen script" },
+    { "id": "bedrock", "type": "cloud", "label": "Amazon Bedrock", "sublabel": "daily call cap", "pos": [280, 590], "size": [150, 64] },
+    { "id": "jflap", "type": "external", "label": "JFLAP 7.1", "sublabel": "build time only", "pos": [780, 590], "size": [150, 64] }
   ],
   "boundaries": [
-    { "kind": "security-group", "label": "Python process, bound to 127.0.0.1", "wraps": ["api", "agent", "hook", "gate", "table", "tools"] }
+    { "kind": "security-group", "label": "One Python app (local today)", "wraps": ["api", "store", "agent", "hook", "gate", "table"] }
   ],
   "connections": [
-    { "id": "ui-to-api", "from": "browser", "to": "api", "label": "HTTP + SSE", "variant": "emphasis" },
-    { "id": "api-to-agent", "from": "api", "to": "agent", "label": "chat turn", "fromSide": "bottom", "toSide": "left", "via": [[335, 452]] },
-    { "id": "agent-to-bedrock", "from": "agent", "to": "bedrock", "label": "model calls", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "ui-to-furl", "from": "browser", "to": "furl", "label": "HTTPS", "variant": "dashed" },
+    { "id": "furl-to-api", "from": "furl", "to": "api", "label": "request", "variant": "dashed" },
+    { "id": "api-to-store", "from": "api", "to": "store", "label": "state", "fromSide": "top", "toSide": "bottom" },
+    { "id": "api-to-agent", "from": "api", "to": "agent", "label": "chat", "fromSide": "bottom", "toSide": "top" },
+    { "id": "agent-to-bedrock", "from": "agent", "to": "bedrock", "label": "model", "labelAt": [355, 498], "fromSide": "bottom", "toSide": "top" },
     { "id": "agent-to-hook", "from": "agent", "to": "hook", "label": "tool call", "fromSide": "right", "toSide": "left" },
-    { "id": "hook-to-gate", "from": "hook", "to": "gate", "label": "peek (read-only)", "variant": "security", "fromSide": "top", "toSide": "bottom" },
-    { "id": "agent-to-gate", "from": "agent", "to": "gate", "label": "gate.run", "variant": "emphasis", "fromSide": "top", "toSide": "left", "via": [[580, 292]] },
-    { "id": "api-mfa", "from": "api", "to": "gate", "label": "MFA, source=human", "variant": "security", "fromSide": "top", "toSide": "top", "via": [[335, 160], [840, 160]] },
-    { "id": "gate-to-tools", "from": "gate", "to": "tools", "label": "only on ACCEPT" },
-    { "id": "gate-to-table", "from": "gate", "to": "table", "label": "lookup", "fromSide": "right", "toSide": "left", "via": [[960, 292], [960, 452]] },
-    { "id": "jflap-to-table", "from": "jflap", "to": "table", "label": "export-table, gen script", "variant": "dashed", "fromSide": "top", "toSide": "bottom" }
+    { "id": "hook-to-gate", "from": "hook", "to": "gate", "label": "peek", "variant": "security", "fromSide": "right", "toSide": "bottom" },
+    { "id": "api-to-gate", "from": "api", "to": "gate", "label": "run, MFA", "variant": "emphasis" },
+    { "id": "gate-to-table", "from": "gate", "to": "table", "label": "lookup", "labelAt": [948, 370], "fromSide": "right", "toSide": "right", "via": [[948, 282], [948, 452]] },
+    { "id": "jflap-to-table", "from": "jflap", "to": "table", "label": "export", "variant": "dashed", "fromSide": "top", "toSide": "bottom" },
+    { "id": "kirohook-to-gate", "from": "kirohook", "to": "gate", "label": "same Gate", "labelAt": [855, 158], "variant": "security", "fromSide": "bottom", "toSide": "top" }
   ],
   "cards": [
-    { "dot": "emerald", "title": "Enforcement", "items": ["Only bank/gate.py imports bank/real_tools.py", "Table is generated from the JFLAP model", "A rejected proposal changes no state"] },
+    { "dot": "emerald", "title": "Enforcement", "items": ["Only bank/gate.py imports bank/real_tools.py", "Tables are generated from the JFLAP models", "A rejected proposal changes no state"] },
     { "dot": "rose", "title": "Human only", "items": ["No MFA tool exists for the model", "POST /mfa sets source=human in server code"] },
-    { "dot": "cyan", "title": "Not drawn", "items": ["Deployment: none exists yet", "JFLAP does not run at runtime"] }
+    { "dot": "cyan", "title": "Not built or not run", "items": ["Lambda and DynamoDB hosting: planned, nothing deployed", "JFLAP does not run at runtime", "Safe Ship hook: live on Kiro CLI only"] }
   ]
 }

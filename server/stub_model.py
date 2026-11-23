@@ -5,10 +5,28 @@ Per user message: if the text contains "log in" or "login" it proposes AUTH; oth
 proposes DRAFT then TRANSFER in one reply (so from START both are rejected by the gate).
 After tool results come back it answers with a fixed sentence and ends the turn.
 """
+import asyncio
 import json
+import os
 import re
 
 from strands.models import Model
+
+
+def delay_seconds():
+    """Dev-only pacing. STUB_DELAY_MS (default 0 = off) spaces the stub's events out so the UI
+    animations can be seen. Read at call time; a bad or negative value means off."""
+    try:
+        return max(0, int(os.environ.get("STUB_DELAY_MS", "0"))) / 1000
+    except ValueError:
+        return 0
+
+
+async def _pause():
+    d = delay_seconds()
+    if d:
+        await asyncio.sleep(d)
+
 
 _PAYEES = ("alice", "bob", "carol", "electric co")
 
@@ -75,12 +93,14 @@ class StubModel(Model):
         else:
             calls = stub_calls(_last_user_text(messages))
         if not calls:
+            await _pause()
             yield {"contentBlockStart": {"start": {}}}
             yield {"contentBlockDelta": {"delta": {"text": "[stub model] I tried the steps; see the gate verdicts."}}}
             yield {"contentBlockStop": {}}
             stop = "end_turn"
         else:
             for k, (name, args) in enumerate(calls):
+                await _pause()
                 yield {"contentBlockStart": {"start": {"toolUse": {"toolUseId": f"stub{self.n}_{k}", "name": name}}}}
                 yield {"contentBlockDelta": {"delta": {"toolUse": {"input": json.dumps(args)}}}}
                 yield {"contentBlockStop": {}}

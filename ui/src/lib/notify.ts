@@ -23,7 +23,7 @@ export const FADE_MS = 4200;
 export const initialNotify: NotifyState = { toasts: [], nextId: 1, live: { text: "", priority: "polite", n: 0 } };
 
 export type NotifyAction =
-  | { type: "push"; kind: ToastKind; text: string; label?: string }
+  | { type: "push"; kind: ToastKind; text: string; label?: string; live?: string }
   | { type: "say"; text: string }
   | { type: "dismiss"; id: number }
   | { type: "dismiss_kind"; kinds: ToastKind[] }
@@ -52,7 +52,7 @@ export function notifyReducer(s: NotifyState, a: NotifyAction): NotifyState {
         const i = toasts.findIndex((t) => !t.persist);
         toasts = toasts.filter((_, k) => k !== (i === -1 ? 0 : i));
       }
-      return { toasts, nextId: s.nextId + 1, live: { text: a.text, priority: PRIORITY[a.kind], n: s.live.n + 1 } };
+      return { toasts, nextId: s.nextId + 1, live: { text: a.live ?? a.text, priority: PRIORITY[a.kind], n: s.live.n + 1 } };
     }
   }
 }

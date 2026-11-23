@@ -1,0 +1,8 @@
+EXHAUSTIVE total=488281 accepted=93241 mismatches=0
+EQUIVALENT MUTANT (same language, not a gap) CLEAN -E-> CLEAN
+EQUIVALENT MUTANT (same language, not a gap) CLEAN -C-> EDITED
+EQUIVALENT MUTANT (same language, not a gap) EDITED -E-> CLEAN
+EQUIVALENT MUTANT (same language, not a gap) EDITED -C-> CLEAN
+EQUIVALENT MUTANT (same language, not a gap) TESTED -E-> CLEAN
+MUTANTS killed=40 equivalent=5 survivors=0
+RESULT PASS

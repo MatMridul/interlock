@@ -42,7 +42,7 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| A1 | Merge `ui-instrument` into `main` through a PR (small commits kept, regular merge) | Me opens PR, You merge | P0 | todo | UI is on GitHub `main`; `ui/dist` builds from a clean clone |
+| A1 | Merge `ui-instrument` into `main` through a PR (small commits kept, regular merge) | Me opens PR, You merge | P0 | doing (PR #2 to #5 merged; #3 to #5 landed on ui-instrument, so PR #6 brings them to main) | UI is on GitHub `main`; `ui/dist` builds from a clean clone |
 | A2 | Remove machine-specific paths: vendor `jflap-cli` into `third_party/jflap-cli` (check JFLAP redistribution terms first), make `.kiro/settings/mcp.json`, the save hook and `scripts/*` use relative paths | Me | P0 | done (branch hardening-ci, unmerged) | A fresh clone on another machine runs `gen_executor_table.py --check` and the replay test with only documented installs |
 | A3 | Add cross-platform run instructions (Windows, macOS, Linux) and a one-command setup | Me | P0 | done (branch hardening-ci, unmerged) | README quick start works from a clean clone |
 | A4 | GitHub Actions CI: fast Python tests, UI tests and build, `gen_executor_table.py --check`, secret scan, dependency audit | Me | P0 | done (PR #3: 5 jobs green, slow suites run on push to main only) | Green check on `main` |
@@ -70,35 +70,35 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| C1 | "You are the agent" mode: visitors propose actions by hand with no model, using the real gate; becomes the default on the public URL | Me | P0 | todo | Works with zero Bedrock calls |
-| C2 | Race mode: the same attack against a prompt-only agent and against Interlock, side by side, with a raw-counts scoreboard (include attacks the prompt-only agent resists) | Me | P0 | todo | A 20-attack run produces honest counts; results saved as a replay |
-| C3 | "Why was this blocked?" overlay: show the shortest allowed path from the current state on the machine | Me | P0 | todo | Appears on every block |
-| C4 | "What if" box: type a symbol sequence, see accept or reject and the step it fails at | Me | P1 | todo | Matches the JFLAP table on all of the 21 documented traces |
-| C5 | Session replay and scrubber, plus shareable replay files | Me | P1 | todo | Any finished session can be replayed step by step |
-| C6 | Audit log export (JSON lines) | Me | P1 | todo | Download button; format documented |
-| C7 | Second policy behind a policy picker (see D1) | Me | P0 | todo | Picker switches machines; second machine passes the same verification as the first |
+| C1 | "You are the agent" mode: visitors propose actions by hand with no model, using the real gate; becomes the default on the public URL | Me | P0 | done (branch product-depth, PR #8) | Works with zero Bedrock calls |
+| C2 | Race mode: the same attack against a prompt-only agent and against Interlock, side by side, with a raw-counts scoreboard (include attacks the prompt-only agent resists) | Me | P0 | done (PR #10: prompt-only 10 of 20 forbidden executed, Interlock 0 of 20; 91 Nova calls) | A 20-attack run produces honest counts; results saved as a replay |
+| C3 | "Why was this blocked?" overlay: show the shortest allowed path from the current state on the machine | Me | P0 | done (branch product-depth, PR #8) | Appears on every block |
+| C4 | "What if" box: type a symbol sequence, see accept or reject and the step it fails at | Me | P1 | done (branch product-depth, PR #8) | Matches the JFLAP table on all of the 21 documented traces |
+| C5 | Session replay and scrubber, plus shareable replay files | Me | P1 | done (branch product-depth, PR #8) | Any finished session can be replayed step by step |
+| C6 | Audit log export (JSON lines) | Me | P1 | done (branch product-depth, PR #8) | Download button; format documented |
+| C7 | Second policy behind a policy picker (see D1) | Me | P0 | doing (branch release, integrates PRs #6 to #10) | Picker switches machines; second machine passes the same verification as the first |
 
 ### D. Kiro-usage evidence (P0, this is 20% of the score)
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| D1 | **Safe Ship policy:** a Kiro `PreToolUse` hook runs the gate on the coding agent's own tool calls (no push or deploy until tests ran after the last edit). **Spike done 2026-11-21: GO** (live on Kiro CLI 3.5.0, branch `safe-ship-spike`, report `docs/spikes/SAFE_SHIP_SPIKE.md`). Remaining: production integration (about 1.5 to 2 days), IDE and Crew live test (D6). **Fallback:** AWS change-approval policy | Me | P0 | doing | Hook blocks a real Kiro tool call in a recorded run, wired into the policy picker (C7) |
-| D2 | Custom agent in `.kiro/agents/` (a verifier agent that runs the policy checks) used during the build | Me | P0 | todo | File committed and used in at least one logged task |
-| D3 | A Kiro power or documented MCP integration for the JFLAP checks | Me | P1 | todo | Installable from the repo; documented |
-| D4 | Specs: keep `.kiro/specs/gate` in sync; add one spec per new feature (race mode, Safe Ship) and work them through tasks | Me | P0 | todo | Every shipped feature maps to a spec task ticked off |
+| D1 | **Safe Ship policy:** a Kiro `PreToolUse` hook runs the gate on the coding agent's own tool calls (no push or deploy until tests ran after the last edit). **Spike done 2026-11-21: GO** (live on Kiro CLI 3.5.0, branch `safe-ship-spike`, report `docs/spikes/SAFE_SHIP_SPIKE.md`). Remaining: production integration (about 1.5 to 2 days), IDE and Crew live test (D6). **Fallback:** AWS change-approval policy | Me | P0 | done (branch safe-ship, PR #9; live CLI re-check passed; IDE and Crew untested; UI picker C7 open) | Hook blocks a real Kiro tool call in a recorded run, wired into the policy picker (C7) |
+| D2 | Custom agent in `.kiro/agents/` (a verifier agent that runs the policy checks) used during the build | Me | P0 | done (gate-verifier agent validated and run 3 times, PR #9) | File committed and used in at least one logged task |
+| D3 | A Kiro power or documented MCP integration for the JFLAP checks | Me | P1 | doing (powers/jflap written per docs; install not run) | Installable from the repo; documented |
+| D4 | Specs: keep `.kiro/specs/gate` in sync; add one spec per new feature (race mode, Safe Ship) and work them through tasks | Me | P0 | done (safe-ship spec added, gate spec updated, PR #9) | Every shipped feature maps to a spec task ticked off |
 | D5 | Steering: keep the product, tech and security files current | Me | P1 | todo | Reviewed before submit |
 | D6 | Open the repo once in Kiro IDE and Kiro CLI, confirm the MCP loads and the hook fires, take screenshots | **You** | P0 | todo | Screenshots stored in `docs/evidence/`; write-up can truthfully compare IDE, CLI and Crew |
-| D7 | Property-based testing section stated honestly: Hypothesis tests we wrote, plus Kiro PBT if used in D4 | Me | P1 | todo | Write-up matches the repo |
+| D7 | Property-based testing section stated honestly: Hypothesis tests we wrote, plus Kiro PBT if used in D4 | Me | P1 | done (Hypothesis only; Kiro PBT not used, stated) | Write-up matches the repo |
 
 ### E. Deploy and operations (P0, needs your approval first)
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| E1 | Choose the host (AgentCore Runtime or one container) after a short spike; list monthly cost before creating anything | Me proposes, **You approve** | P0 | todo | Written cost estimate and your yes |
-| E2 | Deploy so it stays up and free through 2027-01-29 | Me | P0 | todo | Public URL passes the demo script |
-| E3 | Spend and abuse controls: default to "you are the agent" and stub; real-model chat behind a daily cap; AWS budget alarm | Me | P0 | todo | Cap proven by test; alarm exists |
+| E1 | Choose the host (AgentCore Runtime or one container) after a short spike; list monthly cost before creating anything | Me proposes, **You approve** | P0 | done as plan and template (PR #7); waits on owner approval to deploy | Written cost estimate and your yes |
+| E2 | Deploy so it stays up and free through 2027-01-29 | Me | P0 | doing (design and template on branch deploy-prep; nothing created on AWS) | Public URL passes the demo script |
+| E3 | Spend and abuse controls: default to "you are the agent" and stub; real-model chat behind a daily cap; AWS budget alarm | Me | P0 | done as plan and template (PR #7); waits on owner approval to deploy | Cap proven by test; alarm exists |
 | E4 | Rate limits and a lockout on `/mfa` attempts; session limits | Me | P0 | done (branch hardening-ci, unmerged) | Brute force is blocked by test |
-| E5 | Uptime check and a rollback plan | Me | P1 | todo | Documented |
+| E5 | Uptime check and a rollback plan | Me | P1 | done as plan and template (PR #7); waits on owner approval to deploy | Documented |
 | E6 | Claude access (Anthropic use-case form in the Bedrock console) for one real Claude run | **You** | P2 | todo | Haiku answers from the CLI |
 
 ### F. Security and quality (P0 to P1)
@@ -114,16 +114,16 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
-| G1 | README rewrite: 5-line pitch, 10-second GIF, quick start, architecture, honest limits, links to evidence | Me | P0 | todo | A stranger runs it in under 10 minutes |
-| G2 | `docs/JUDGES.md`: how to evaluate in 3 minutes, mapped to the five criteria with evidence links (also readable by automated analysis) | Me | P0 | todo | One page |
-| G3 | Kiro write-up covering IDE/CLI/Web/Crew, custom agents, hooks, specs, steering, MCP, PBT, powers, with real moments | Me | P0 | todo | Every claim traceable to a repo file or a log |
+| G1 | README rewrite: 5-line pitch, 10-second GIF, quick start, architecture, honest limits, links to evidence | Me | P0 | doing (branch release, integrates PRs #6 to #10) | A stranger runs it in under 10 minutes |
+| G2 | `docs/JUDGES.md`: how to evaluate in 3 minutes, mapped to the five criteria with evidence links (also readable by automated analysis) | Me | P0 | doing (branch release, integrates PRs #6 to #10) | One page |
+| G3 | Kiro write-up covering IDE/CLI/Web/Crew, custom agents, hooks, specs, steering, MCP, PBT, powers, with real moments | Me | P0 | doing (branch release, integrates PRs #6 to #10) | Every claim traceable to a repo file or a log |
 | G4 | Video script (under 3:00, open on the blocked transfer next to the human key), shot list, pre-flight checklist | Me | P0 | draft exists | Updated to the final UI |
 | G5 | **Record, edit and upload the video** to YouTube (public). No third-party trademarks or copyrighted music. | **You** | P0 | todo | Public link |
-| G6 | Devpost text: tagline, description, how built, challenges, what's next | Me drafts, You paste | P0 | draft exists | Final copy ready |
-| G7 | Blog post for the Bonus Blog Prize: must be published on a third-party platform during the submission period and say it is written for Kiroween 2026 | Me drafts, **You publish** | P1 | draft exists | Public URL |
-| G8 | Social post for Social Blitz: must **start** with `#KiroweenHackathon26`, share your favorite thing about Kiro and how it changed your approach, original voice | Me drafts, **You post** | P1 | todo | Public URL |
+| G6 | Devpost text: tagline, description, how built, challenges, what's next | Me drafts, You paste | P0 | doing (branch release, integrates PRs #6 to #10) | Final copy ready |
+| G7 | Blog post for the Bonus Blog Prize: must be published on a third-party platform during the submission period and say it is written for Kiroween 2026 | Me drafts, **You publish** | P1 | doing (branch release, integrates PRs #6 to #10) | Public URL |
+| G8 | Social post for Social Blitz: must **start** with `#KiroweenHackathon26`, share your favorite thing about Kiro and how it changed your approach, original voice | Me drafts, **You post** | P1 | doing (branch release, integrates PRs #6 to #10) | Public URL |
 | G9 | Best Student details for the form: LinkedIn, student email, year and degree, school name; be ready to show proof of enrollment | **You** | P0 | todo | Details ready in a private note, never in the repo |
-| G10 | Architecture diagram refresh (Archify) for the final system | Me | P1 | draft exists | Matches the deployed design |
+| G10 | Architecture diagram refresh (Archify) for the final system | Me | P1 | doing (branch release, integrates PRs #6 to #10) | Matches the deployed design |
 
 ### H. Final gate (Dec 2 to 3)
 

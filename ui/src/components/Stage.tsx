@@ -2,6 +2,15 @@ import { useEffect, useMemo, useRef, useState, type MutableRefObject, type React
 import { Fx } from "../lib/fx";
 import { AGENT_PORT, AIRLOCK, ORB_R, SINK, VIEW, buildEdges, ledgerRows, orbPositions } from "../lib/geometry";
 import type { Policy } from "../types";
+import type { WhyStep } from "../lib/why";
+
+/** Why the last proposal was blocked: drawn as a ghost path and as the undefined delta cell. */
+export interface StageWhy {
+  from: string;
+  symbol: string;
+  path: WhyStep[] | null;
+  sentence: string;
+}
 
 /** Symbols only a human can produce (the table has no agent tool for them): their conduit is drawn amber. */
 export const HUMAN_SYMBOLS = ["MFA"];
@@ -16,10 +25,16 @@ interface Props {
   wordLength: number;
   lastDecision: string;
   dim?: boolean;
+  why?: StageWhy | null;
+  /** edge id "FROM>TO" re-traced while a tape cell is hovered */
+  traceEdge?: string | null;
+  /** shown on the stage while a past state is displayed instead of the live one */
+  replayLabel?: string | null;
   children?: (m: { s: number; ox: number; oy: number }) => ReactNode;
 }
 
-export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, lastDecision, dim, children }: Props) {
+export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, lastDecision, dim, why, traceEdge, replayLabel, children }: Props) {
+  const [hover, setHover] = useState<string | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -33,6 +48,9 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
   const ledger = useMemo(() => ledgerRows(policy), [policy]);
   const live = policy.states.filter((s) => s !== "SINK");
   const humanEdge = (symbols: string[]) => symbols.every((s) => HUMAN_SYMBOLS.includes(s));
+  const ghostEdges = useMemo(() => new Set((why?.path ?? []).map((p) => `${p.from}>${p.to}`)), [why]);
+  const ghostStates = useMemo(() => new Set((why?.path ?? []).flatMap((p) => [p.from, p.to])), [why]);
+  const allowedFrom = (s: string) => policy.symbols.filter((y) => { const n = policy.transitions[s]?.[y]; return !!n && n !== "SINK"; });
 
   useEffect(() => {
     const cv = canvas.current;
@@ -81,9 +99,10 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
 
   const arrow = (human: boolean) => `url(#${human ? "ahh" : "ah"})`;
   const nSym = policy.symbols.length;
+  const lastTakenN = lastTaken ? `@${wordLength}` : "";
 
   return (
-    <section className="stage" ref={wrap} data-locked={locked || undefined} data-dim={dim || undefined} aria-label="The state machine">
+    <section className="stage" data-tour="machine" ref={wrap} data-locked={locked || undefined} data-dim={dim || undefined} aria-label="The state machine" style={{ "--s": map.s } as React.CSSProperties}>
       <div className="stage-scroll" ref={scroller}>
         <div className="stage-inner">
           <svg className="stage-svg" viewBox={`0 0 ${VIEW.w} ${VIEW.h}`} preserveAspectRatio="xMidYMid meet" role="img"
@@ -99,15 +118,19 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
             <g aria-hidden="true">
               {ledger.map((r, i) => {
                 const on = lastTaken?.from === r.from && lastTaken.symbol === r.symbol;
-                return <text key={r.key} x="24" y={96 + i * 16} className={`row${on ? " on" : ""}`} data-row={r.key}>{on ? "› " : "  "}{r.text}</text>;
+                return <text key={`${r.key}${on ? lastTakenN : ""}`} x="24" y={96 + i * 16} className={`row${on ? " on" : ""}`} data-row={r.key}>{on ? "› " : "  "}{r.text}</text>;
               })}
+              {why && <text x="24" y={96 + ledger.length * 16 + 6} className="row undef" data-row="undefined">{"› "}δ({why.from}, {why.symbol}) = undefined</text>}
             </g>
+            {replayLabel && <text x="24" y="86" className="silk replay-tag" data-testid="replay-tag">{replayLabel}</text>}
+            {why && <text x="24" y={VIEW.h - 16} className="why-cap" data-testid="why-cap">{why.sentence}</text>}
 
             {edges.map((e) => {
               const human = humanEdge(e.symbols);
               return (
                 <g key={e.id} data-edge={e.id}>
-                  <path d={e.d} className={`wire${human ? " human" : ""}`} markerEnd={arrow(human)} />
+                  <path d={e.d} className={`wire${human ? " human" : ""}${hover && e.from === hover ? " hl" : ""}${traceEdge === e.id ? " trace" : ""}`} markerEnd={arrow(human)} />
+                  {ghostEdges.has(e.id) && <path d={e.d} className="ghost-path" data-ghost={e.id} />}
                   <path d={e.d} className={`glow${glow?.id === e.id ? " on" : ""}`} key={glow?.id === e.id ? glow.n : "off"} />
                   <text x={e.label.x} y={e.label.y} className={`elab${human ? " human" : ""}`}>{e.symbols.join(" / ")}{human ? "  (human)" : ""}</text>
                 </g>
@@ -123,7 +146,9 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
               const fl = flash?.state === s ? `flash-${flash.kind} f${flash.n % 2}` : "";
               return (
                 <g key={s} transform={`translate(${p.x} ${p.y})`} data-state={s}>
-                  <g ref={(el) => { orbEls.current[s] = el; }} className={`orb${on ? " on" : ""} ${fl}`} aria-current={on ? "true" : undefined}>
+                  <g ref={(el) => { orbEls.current[s] = el; }} className={`orb${on ? " on" : ""}${ghostStates.has(s) ? " ghost-node" : ""} ${fl}`} aria-current={on ? "true" : undefined}
+                    tabIndex={0} role="img" aria-label={`State ${s}${on ? ", current" : ""}. Allowed next: ${allowedFrom(s).join(", ") || "nothing"}.`}
+                    onMouseEnter={() => setHover(s)} onMouseLeave={() => setHover((h) => (h === s ? null : h))} onFocus={() => setHover(s)} onBlur={() => setHover((h) => (h === s ? null : h))}>
                     <circle r={ORB_R} className="orb-bloom" />
                     <circle r={ORB_R} className="orb-ring" />
                     <circle r={ORB_R - 7} className="orb-acc" />
@@ -131,6 +156,7 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
                     <text y="4" className="orb-name">{s}</text>
                     <text y={ORB_R + 20} className="orb-q">q{i}</text>
                     <text y={-ORB_R - 10} className="orb-cur">CURRENT</text>
+                    {hover === s && <text y={ORB_R + 38} className="orb-allow" data-testid="allowed-hint">allowed: {allowedFrom(s).map((y) => (HUMAN_SYMBOLS.includes(y) ? `${y} (human)` : y)).join(" · ") || "none"}</text>}
                   </g>
                 </g>
               );
@@ -147,6 +173,7 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
             <text x={AGENT_PORT.x - 22} y={AGENT_PORT.y - 2} className="port-t">AGENT PORT</text>
             <text x={AGENT_PORT.x - 22} y={AGENT_PORT.y + 13} className="port-s">proposes, never decides</text>
             <circle cx={AIRLOCK.x} cy={AIRLOCK.y} r="4" fill="none" stroke="#7a5c26" />
+            <text x={AIRLOCK.x - 10} y={AIRLOCK.y + 4} className="port-s">human port</text>
           </svg>
           <canvas className="stage-cv" ref={canvas} aria-hidden="true" />
           {children?.(map)}

@@ -1,3 +1,5 @@
+> **Superseded.** This is an early planning document. The current design is `SPEC_GATE_v2.md` and `.kiro/specs/gate/`. Where this file differs from the repo, the repo is right (for example the UI is React with Vite).
+
 # SKELETON CREW TRACK: ATLAS-Kiro (The Bounded Agentic Kernel)
 **Track:** Skeleton Crew  
 **Target Category:** Best Skeleton Crew ($5,000) + Overall Placement ($10,000 - $30,000)  
