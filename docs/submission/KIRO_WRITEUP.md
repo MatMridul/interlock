@@ -73,3 +73,5 @@ Hypothesis properties we wrote: `tests/test_gate_properties.py` (S1 to S7 and X1
 ## What we did not do
 
 No Kiro PBT, no Kiro Web, no IDE run (owner to confirm), no power install, no live test of the Safe Ship hook in the IDE or in Crew's own agent, no deployment (the Lambda and DynamoDB plan is written; nothing was created on AWS).
+
+One limit worth naming: both policies are regular languages (DFAs). Policies that need counting or nesting would need a pushdown automaton; JFLAP supports those and we vendored its CLI, but we built no PDA policy.
