@@ -75,15 +75,17 @@ No prices are quoted: I did not read a price I could cite. "Allowance" is the al
 | DynamoDB storage | a few KB of 25 GB free | under 100 MB of 25 GB free | sessions cap out as items expire after 24 h; far under 25 GB |
 | CloudWatch Logs | tiny; 7-day retention (free allowance: see pricing page) | small | Log volume grows with requests; the only service whose abuse cost is not hard-bounded. `--log-level warning` keeps it low. |
 | Data transfer out | UI is 0.4 MB (the final UI may differ) so about 1 GB | about 20 GB | Bounded by concurrency 10 and per-request size. See pricing page for the free monthly amount. |
-| Bedrock | **0** (mode off, no permission attached) | **0** | **0** in off mode. In bedrock mode: at most `DailyModelCap` calls per day (default 200) x about 300 output tokens each; price per token: see pricing page. |
+| Bedrock | **0** until a judge unlocks the model | at most the caps below | **0** in off mode, or while the model is locked. In bedrock mode: at most `MonthlyModelCap` calls per month (default 1,500, and 100 per day) x about 300 output tokens each plus the input tokens; price per token: read it on the Bedrock pricing page. |
 | AWS Budgets | one budget; see pricing page for the free count | same | same |
 
-Items that can cost money: Bedrock (only in bedrock mode, capped per day), Lambda compute under sustained abuse, CloudWatch Logs under sustained abuse, data transfer under sustained abuse. DynamoDB stays inside the free 25/25 units by design.
+Bedrock worst case at the default caps: 1,500 model calls in a month, each at most about 300 output tokens plus its input (system prompt, up to 8 history messages, tool results). So the bill is at most 1,500 x (input tokens x input price + 300 x output price); the token prices are not quoted here and must be read on the Bedrock pricing page for Nova 2 Lite in ap-south-1. Reaching it needs the judge code, since the model is locked without it.
+
+Items that can cost money: Bedrock (only when unlocked with the judge code, capped per day and per month), Lambda compute under sustained abuse, CloudWatch Logs under sustained abuse, data transfer under sustained abuse. DynamoDB stays inside the free 25/25 units by design.
 
 ## 4. Controls
 
-- Mode `off` is the template default; the Bedrock IAM policy exists only when `Mode=bedrock`.
-- Daily model cap: DynamoDB conditional counter per UTC day, default 200, parameter `DailyModelCap`. Tested (`tests/test_store.py`: atomic under 20 threads, cap stops calls, clear message).
+- Mode `bedrock` is the template default; the real model is locked behind the judge access code (`JudgeAccessCode`, empty = locked for everyone) and capped at judge scale: 100 calls per UTC day, 1,500 per month, 40 per address per day, 25 per session, 4 per chat turn, 300 output tokens, 8 history messages, 5 live race runs per address per day. Every value, where it is enforced and its test: `docs/deploy/BEDROCK_GUARDRAILS.md`. The Bedrock IAM policy exists only when `Mode=bedrock`.
+- Model caps: DynamoDB conditional counters (daily, monthly, per address, per session), parameters `DailyModelCap`, `MonthlyModelCap`, `PerIpDailyModelCap`, `PerSessionModelCap`. Tested (`tests/test_store.py`, `tests/test_judge_limits.py`).
 - Concurrency: the account quota is 10 and cannot be reduced by reservation on this account (assumption 7).
 - Per-caller rate limits, MFA lockout (5 wrong codes per session, 20 per client), now shared for the per-session part across instances.
 - Budget: monthly USD limit (parameter, default 5), emails at 50% actual, 100% actual and 100% forecast to `BudgetEmail`. A budget only alerts; it does not stop spending. Kill switch: section 6.
@@ -91,7 +93,7 @@ Items that can cost money: Bedrock (only in bedrock mode, capped per day), Lambd
 
 ## 5. Deploy commands (conductor, after the owner approves)
 
-Needs: AWS CLI signed in to the account, Python 3.12+, Node. Run from the repo root on the `deploy-prep` branch. The two values in angle brackets come from the owner and must not be committed.
+Needs: AWS CLI signed in to the account, Python 3.12+, Node. Run from the repo root on the release branch. The three values in angle brackets come from the owner and must not be committed. `Mode=off` deploys with no model at all.
 
 ```powershell
 # 1. Build the zip (builds the UI if ui/dist is missing; use -RebuildUi after UI changes)
@@ -101,7 +103,7 @@ Needs: AWS CLI signed in to the account, Python 3.12+, Node. Run from the repo r
 # 2. Create the stack (function with a placeholder, table, role, log group, URL, budget)
 aws cloudformation deploy --region ap-south-1 --stack-name interlock `
   --template-file infra/template.yaml --capabilities CAPABILITY_IAM `
-  --parameter-overrides BudgetEmail=<owner-email> DemoMfaCode=<6-digit-code> Mode=off
+  --parameter-overrides BudgetEmail=<owner-email> DemoMfaCode=<6-digit-code> JudgeAccessCode=<judge-code> Mode=bedrock
 
 # 3. Upload the real code (no S3 bucket needed)
 aws lambda update-function-code --region ap-south-1 --function-name interlock-app `
@@ -117,7 +119,7 @@ curl.exe -s -X POST "$($url)session"                                   # {"sessi
 
 The CloudFormation role used for step 2 needs permission to create Lambda, IAM role, DynamoDB, Logs and Budgets resources (`budgets:*` is the one often missing). The first request after idle takes longer (cold start).
 
-To turn real-model chat on later (optional, costs Bedrock tokens): re-run step 2 with `Mode=bedrock DailyModelCap=<n>`. Model access for the Nova model was reported working by the conductor.
+Real-model features (agent chat, live race runs, model-mode Autoplay) are on by default (`Mode=bedrock`) but only for a visitor who enters `JudgeAccessCode`. Without it, or with `JudgeAccessCode` empty, they stay locked and cost nothing. Optional overrides: `DailyModelCap`, `MonthlyModelCap`, `PerIpDailyModelCap`, `PerSessionModelCap`. Changing a parameter means re-running step 2; to flip only the model on or off use the kill switch below.
 
 Updating the app later: rebuild, then repeat step 3 only.
 
@@ -126,7 +128,7 @@ Updating the app later: rebuild, then repeat step 3 only.
 ```powershell
 # Roll back code: rebuild the previous commit's zip (git checkout <commit>; .\infra\build.ps1) and repeat step 3.
 
-# Kill switch (stops all public traffic at once, keeps data): remove the public URL
+# Model kill switch (no Bedrock call is possible after the update; the rest of the app keeps working).\n# update-function-configuration REPLACES the whole environment, so the script reads it first and changes only INTERLOCK_MODEL.\n.\infra\model_switch.ps1 off       # Linux/macOS: ./infra/model_switch.sh off   (needs jq)\n.\infra\model_switch.ps1 on        # back to bedrock; add -DryRun to preview\n# Raw form, only if the scripts are unavailable: fetch the environment with\n#   aws lambda get-function-configuration --function-name interlock-app --query Environment.Variables\n# then send ALL variables back with INTERLOCK_MODEL changed:\n#   aws lambda update-function-configuration --function-name interlock-app --environment file://env.json\n# (env.json = {"Variables": {...every variable...}}; delete it afterwards, it holds the codes).\n# A later stack deploy resets INTERLOCK_MODEL to the Mode parameter.\n\n# Kill switch for everything (stops all public traffic at once, keeps data): remove the public URL
 aws lambda delete-function-url-config --region ap-south-1 --function-name interlock-app
 # Bring it back: re-run step 2 (CloudFormation recreates the URL) 
 
