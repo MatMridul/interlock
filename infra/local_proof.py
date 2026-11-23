@@ -13,7 +13,7 @@ CODE = "".join(secrets.choice("0123456789") for _ in range(6))  # random per run
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 os.environ.update(AWS_ACCESS_KEY_ID="x", AWS_SECRET_ACCESS_KEY="x", AWS_DEFAULT_REGION="ap-south-1",
                   INTERLOCK_ENV="production", DEMO_MFA_CODE=CODE, INTERLOCK_STORE="dynamodb",
-                  INTERLOCK_TABLE="t", INTERLOCK_TRUST_PROXY="lambda", INTERLOCK_MODEL="off")
+                  INTERLOCK_TABLE="t", INTERLOCK_TRUST_PROXY="lambda", INTERLOCK_MODEL="off", JUDGE_ACCESS_CODE=CODE + "j")
 import boto3, httpx, moto, uvicorn  # noqa: E402
 
 with moto.mock_aws():
@@ -44,6 +44,9 @@ with moto.mock_aws():
     n = [httpx.post(base + "/session", headers=ctx("198.51.100.7")).status_code for _ in range(32)]
     r.append(ok("rate limit is per caller IP (32nd call 429)", n[-1] == 429 and n[0] == 200))
     r.append(ok("other caller IP unaffected", httpx.post(base + "/session", headers=ctx("198.51.100.8")).status_code == 200))
+    r.append(ok("judge code: right unlocks, wrong refused", httpx.post(base + "/judge/unlock", headers={"x-judge-code": CODE + "j"}).status_code == 200
+                and httpx.post(base + "/judge/unlock", headers={"x-judge-code": "nope"}).status_code == 403
+                and httpx.post(base + "/judge/unlock").status_code == 403))
     items = boto3.client("dynamodb").scan(TableName="t")["Count"]
     r.append(ok("sessions are items in the table", items >= 1))
     srv.should_exit = True
