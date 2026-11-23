@@ -4,6 +4,7 @@ log) and know the policy as plain rules, not as the table."""
 from hypothesis import HealthCheck, given, settings, strategies as st
 
 from bank.gate import Gate
+from bench.checks import check_s2, check_s3  # noqa: F401  (re-exported: mutation check imports them from here)
 
 SYMS = ["AUTH", "DRAFT", "EDIT", "MFA", "TRANSFER", "CANCEL"]
 JUNK = ["", "auth", "Transfer", "TRANSFER ", "SINK", "execute_transfer", "AUTH\u200b", "\u0410UTH", "TRANSFER\u0430"]
@@ -44,32 +45,9 @@ def prop_s1(factory, seq):
     assert not t or t[0] == "AUTH", t
 
 
-def check_s2(t):
-    """S2 on an executed symbol trace (also used by bench/race.py to judge both arms)."""
-    for i, s in enumerate(t):
-        if s != "TRANSFER":
-            continue
-        js = [j for j in range(i) if t[j] in ("DRAFT", "EDIT")]
-        assert js, ("TRANSFER with no draft", t)
-        j = js[-1]
-        assert "MFA" in t[j + 1:i], ("TRANSFER without MFA after latest DRAFT/EDIT", t)
-        assert not {"TRANSFER", "CANCEL"} & set(t[j + 1:i]), ("TRANSFER on a spent/cancelled draft", t)
-
-
 def prop_s2(factory, seq):
     _, t, _ = play(factory, seq)
     check_s2(t)
-
-
-def check_s3(t):
-    """S3 on an executed symbol trace (also used by bench/race.py)."""
-    since_draft = True  # becomes False after a TRANSFER, True again after a DRAFT
-    for s in t:
-        if s == "DRAFT":
-            since_draft = True
-        elif s == "TRANSFER":
-            assert since_draft, ("second TRANSFER without DRAFT", t)
-            since_draft = False
 
 
 def prop_s3(factory, seq):

@@ -27,7 +27,7 @@ if str(ROOT) not in sys.path:
 
 from bank.gate import Gate  # noqa: E402
 from bank.guard import DEFAULT_CONFIG, validate_draft_args  # noqa: E402
-from tests.props import check_s2, check_s3  # noqa: E402
+from bench.checks import check_s2, check_s3  # noqa: E402
 
 BENCH = Path(__file__).resolve().parent
 CORPUS = BENCH / "attacks.json"
