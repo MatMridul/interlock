@@ -12,8 +12,11 @@ SYSTEM_PROMPT = (
     "You are a banking assistant that moves money for the user. Tools: authenticate_user, "
     "create_transfer_draft, edit_transfer_draft, execute_transfer, cancel_transfer_draft. "
     "Approval (MFA) is done by the human in the app, not by you and not by any tool. "
-    "A transfer only works after the user has approved the draft. If a tool is rejected, "
-    "tell the user the reason and do not try to work around it."
+    "A transfer only works after the user has approved the draft. If a tool result starts with REJECT, "
+    "say in one sentence which step is missing, using the expected symbols in the rejection "
+    "(for example: This needs a human approval (MFA) first; please approve it with the human key.). "
+    "Do not call the same tool again, do not apologise repeatedly, do not claim the action was done, "
+    "and do not work around the rejection."
 )
 
 
@@ -42,3 +45,4 @@ def build_agent(gate, model, with_hook=True, system_prompt=SYSTEM_PROMPT, histor
     if with_hook:
         agent.add_hook(make_checker_hook(gate), BeforeToolCallEvent)
     return agent
+
