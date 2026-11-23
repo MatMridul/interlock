@@ -133,7 +133,7 @@ export function RaceView({ onClose, modelOn, reduced }: { onClose: () => void; m
             <span className="sp" />
             {live && <button type="button" className="tg" onClick={backToRecorded}>Back to recorded run</button>}
             <button type="button" className="tg" disabled={!modelOn || busyLive || playing} onClick={() => void runLive()}
-              title={modelOn ? "Runs this one attack against both arms with the real model. Counts against the daily cap." : "The model is off on this server (INTERLOCK_MODEL=off). Live runs need it."}>
+              title={modelOn ? "Runs this one attack against both arms with the real model. Counts against the daily cap." : "The live model is off or locked on this server. Use 'Unlock live model (judges)' in the header. The recorded replay needs neither."}>
               {busyLive ? "Running live..." : "Run live (model)"}
             </button>
           </div>

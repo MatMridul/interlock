@@ -1,5 +1,6 @@
 import type { Policy, StateView } from "./types";
 import { readSse, type SseEvent } from "./sse";
+import { judgeHeaders, setJudgeCode } from "./lib/judge";
 
 // Same origin in production (FastAPI serves ui/dist). In dev, Vite proxies to 127.0.0.1:8000.
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "";
@@ -37,7 +38,13 @@ export const postMfa = (sid: string, code: string) =>
 
 export type ProposeAction = { tool: string; payee?: string; amount?: number };
 export const getConfig = () =>
-  fetch(`${BASE}/config`).then((r) => json<{ model: "on" | "off" }>(r)).catch((): { model: "on" | "off" } => ({ model: "on" }));
+  fetch(`${BASE}/config`).then((r) => json<{ model: "on" | "off"; judge_code?: boolean }>(r)).catch((): { model: "on" | "off"; judge_code?: boolean } => ({ model: "on" }));
+
+/** Check the judge access code with the server (wrong codes count toward a lockout). Keeps it for this tab only when right. */
+export async function unlock(code: string): Promise<void> {
+  await json(await fetch(`${BASE}/judge/unlock`, { method: "POST", headers: { "X-Judge-Code": code } }));
+  setJudgeCode(code);
+}
 
 /** C1: propose actions by hand. Same SSE events as chat; the server runs each through the real gate. */
 export async function* propose(sid: string, actions: ProposeAction[]): AsyncGenerator<SseEvent> {
@@ -57,7 +64,7 @@ export async function* propose(sid: string, actions: ProposeAction[]): AsyncGene
 export async function* chat(sid: string, message: string): AsyncGenerator<SseEvent> {
   const r = await fetch(`${BASE}/session/${sid}/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...judgeHeaders() },
     body: JSON.stringify({ message }),
   });
   if (!r.ok || !r.body) {
@@ -70,7 +77,7 @@ export async function* chat(sid: string, message: string): AsyncGenerator<SseEve
 /** C2 race mode. Replay is a plain GET of the recorded run (no model). Live needs the model on. */
 export const getRaceReplay = () => fetch(`${BASE}/race/replay`).then((r) => json<import("./lib/race").RaceData>(r));
 export const postRaceLive = (attack_id: string) =>
-  fetch(`${BASE}/race/live`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ attack_id }) })
+  fetch(`${BASE}/race/live`, { method: "POST", headers: { "Content-Type": "application/json", ...judgeHeaders() }, body: JSON.stringify({ attack_id }) })
     .then((r) => json<import("./lib/race").RaceLive>(r));
 
 /** C7: read-only machine table for a named policy; safe_ship also carries the recorded Kiro CLI run. */

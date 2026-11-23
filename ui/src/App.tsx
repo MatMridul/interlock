@@ -27,6 +27,8 @@ import { HelpOverlay } from "./components/HelpOverlay";
 import { Palette } from "./components/Palette";
 import { Tour } from "./components/Tour";
 import { RaceView } from "./components/RaceView";
+import { Unlock } from "./components/Unlock";
+import { clearJudgeCode, getJudgeCode } from "./lib/judge";
 import { SafeShipView } from "./components/SafeShipView";
 import { initialNotify, notifyReducer } from "./lib/notify";
 import { replayLog, scoreboard } from "./lib/score";
@@ -34,8 +36,9 @@ import { initialUi, reducer } from "./state";
 import { KEY_ZONE } from "./lib/geometry";
 import type { Policy } from "./types";
 
-export function describe(e: unknown): { text: string; kind: "lost" | "busy" | "invalid" | "server" | "down" } {
+export function describe(e: unknown): { text: string; kind: "lost" | "busy" | "invalid" | "server" | "down" | "limit" } {
   if (e instanceof api.ApiError) {
+    if (e.status === 403 || e.status === 429) return { kind: "limit", text: `${e.message} Switched to 'you' mode: no model runs there.` };
     if (e.status === 404) return { kind: "lost", text: "Session lost: the server no longer knows this session. Start a new one." };
     if (e.status === 409) return { kind: "busy", text: "A turn is already running for this session. Wait for it to finish." };
     if (e.status === 422) return { kind: "invalid", text: "The server rejected that message (empty or over 2000 characters)." };
@@ -92,6 +95,8 @@ export function App() {
   const [dragging, setDragging] = useState(false);
   const [mode, setMode] = useState<AgentMode>("model");
   const [modelOff, setModelOff] = useState(false);
+  const [modelLocked, setModelLocked] = useState(false); // the server wants the judge access code and this tab has none
+  const [unlockOpen, setUnlockOpen] = useState(false);
   const [why, setWhy] = useState<StageWhy | null>(null);
   const [scrub, setScrub] = useState<number | null>(null);
   const [tapeCollapsed, setTapeCollapsed] = useState(false);
@@ -188,6 +193,7 @@ export function App() {
         configRead.current = true;
         const cfg = await api.getConfig();
         if (cfg.model === "off") { setModelOff(true); setMode("you"); }
+        else if (cfg.judge_code && !getJudgeCode()) { setModelLocked(true); setMode("you"); }
         const frag = typeof location !== "undefined" ? location.hash : "";
         if (frag.startsWith("#replay=")) {
           const r = decodeReplay(p, frag);
@@ -252,12 +258,17 @@ export function App() {
         let data: unknown = null;
         try { data = JSON.parse(ev.data); } catch { continue; } // a malformed frame is skipped, never fatal
         q.builder.handle(ev.event, data);
+        if (ev.event === "error" && String((data as { message?: string })?.message ?? "").includes("'you' mode")) setMode("you"); // a cap hit mid-turn
       }
     } catch (e) {
       const d = describe(e);
       dispatch({ type: "notice", text: d.text });
       toast("error", d.text);
       cue("error");
+      if (d.kind === "limit") {  // a lock or a cap: fall back to 'you' mode, which needs no model
+        setMode("you");
+        if (e instanceof api.ApiError && e.status === 403) { clearJudgeCode(); setModelLocked(true); }
+      }
       if (d.kind === "lost" || d.kind === "down") setFault({ text: d.text, kind: d.kind });
     } finally {
       await q.director.idle();
@@ -479,9 +490,10 @@ export function App() {
         <div className="sp" />
         <div className="seg" role="group" aria-label="Who proposes actions">
           <span className="seg-l">Agent:</span>
-          <button type="button" className="tg" aria-pressed={mode === "model"} disabled={modelOff || replayOnly} onClick={() => setMode("model")}
-            title={modelOff ? "The model is off on this server (INTERLOCK_MODEL=off)" : "A model proposes actions"}>model</button>
+          <button type="button" className="tg" aria-pressed={mode === "model"} disabled={modelOff || modelLocked || replayOnly} onClick={() => setMode("model")}
+            title={modelOff ? "The model is off on this server (INTERLOCK_MODEL=off)" : modelLocked ? "Locked: use 'Unlock live model (judges)'" : "A model proposes actions"}>model</button>
           <button type="button" className="tg" aria-pressed={mode === "you"} onClick={() => setMode("you")} title="You propose actions by hand; the real gate decides; no model runs">you</button>
+          {modelLocked && !modelOff && <button type="button" className="tg" data-testid="unlock-open" onClick={() => setUnlockOpen(true)} title="Enter the judge access code to use the live model">Unlock live model (judges)</button>}
         </div>
         <div className="seg" role="group" aria-label="Policy">
           <span className="seg-l">Policy:</span>
@@ -549,7 +561,8 @@ export function App() {
           {...lay.bounds("console")} onChange={(v) => lay.set("console", v)} onReset={() => lay.reset("console")} onDragging={setDragging} />
       )}
       {safeShip && <SafeShipView reduced={reduced} />}
-      {race && <RaceView onClose={() => setRace(false)} modelOn={!modelOff} reduced={reduced} />}
+      {race && <RaceView onClose={() => setRace(false)} modelOn={!modelOff && !modelLocked} reduced={reduced} />}
+      {unlockOpen && <Unlock onCancel={() => setUnlockOpen(false)} onUnlocked={() => { setUnlockOpen(false); setModelLocked(false); setMode("model"); toast("info", "Live model unlocked for this tab.", "Judges"); }} />}
       {cold && <ColdOpen onDone={() => setCold(false)} />}
       {palette && <Palette items={paletteItems} onRun={runAction} onClose={() => setPalette(false)} />}
       {help && <HelpOverlay onClose={() => setHelp(false)} />}
