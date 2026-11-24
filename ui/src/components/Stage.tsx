@@ -133,7 +133,17 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
                   <path d={e.d} className={`wire${human ? " human" : ""}${hover && e.from === hover ? " hl" : ""}${traceEdge === e.id ? " trace" : ""}`} markerEnd={arrow(human)} />
                   {ghostEdges.has(e.id) && <path d={e.d} className="ghost-path" data-ghost={e.id} />}
                   <path d={e.d} className={`glow${glow?.id === e.id ? " on" : ""}`} key={glow?.id === e.id ? glow.n : "off"} />
-                  <text x={e.label.x} y={e.label.y} className={`elab${human ? " human" : ""}`}>{e.symbols.join(" / ")}{human ? "  (human)" : ""}</text>
+                  {(() => {
+                    // a label of 3+ symbols is split in two lines so neighbours (e.g. the Safe Ship loops) never run into each other
+                    const half = Math.ceil(e.symbols.length / 2);
+                    const lines = e.symbols.length >= 3 ? [e.symbols.slice(0, half).join(" / ") + " /", e.symbols.slice(half).join(" / ")] : [e.symbols.join(" / ")];
+                    const tail = human ? "  (human)" : "";
+                    return (
+                      <text x={e.label.x} y={e.label.y - (lines.length - 1) * 14 * d.k} className={`elab${human ? " human" : ""}`}>
+                        {lines.map((ln, i) => <tspan key={i} x={e.label.x} dy={i === 0 ? 0 : 14 * d.k}>{ln}{i === lines.length - 1 ? tail : ""}</tspan>)}
+                      </text>
+                    );
+                  })()}
                 </g>
               );
             })}
