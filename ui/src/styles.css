@@ -13,7 +13,7 @@
   --red: #ff6b5e; --amber: #ffb347; --amber-dim: #7a5c26;
   --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-io: cubic-bezier(.65, 0, .35, 1);
   --cond: "Barlow Condensed", "Arial Narrow", sans-serif; --mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
-  --console-w: clamp(300px, 22vw, 420px); --tape-h: 250px; --drawer-w: 460px; --rail-h: 112px;
+  --console-w: clamp(300px, 22vw, 420px); --tape-h: 250px; --drawer-w: 460px; --rail-h: clamp(44px, 9dvh, 112px);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
