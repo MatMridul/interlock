@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from bank.gate import TOOL_TO_SYMBOL
+from server import config, modelcap
 
 MAX_ACTIONS = 8  # one request may carry a short scripted sequence (attack vectors), no more
 
@@ -60,11 +61,14 @@ def run_actions(session, actions):
 def add_routes(app: FastAPI, registry, limiter, judge_required=False):
     @app.get("/config")
     def get_config():
-        return {"model": "on" if model_enabled() else "off", **({"judge_code": True} if judge_required else {})}  # judge_code: model features need the access code
+        on = model_enabled()
+        # judge_code: the model is locked behind a code; public_model: visitors without a code may use it too (shared daily pool)
+        return {"model": "on" if on else "off", **({"judge_code": True} if judge_required else {}),
+                **({"public_model": True} if judge_required and on and modelcap.model_mode() != "off" and modelcap.public_cap() > 0 else {})}
 
     @app.post("/session/{sid}/propose")
     def propose(sid: str, body: ProposeBody, request: Request):
-        client = request.client.host if request.client else "unknown"
+        client = config.client_ip(request)
         wait = limiter.rate_limited("chat", client)
         if wait:
             return JSONResponse({"detail": "too many requests"}, status_code=429, headers={"Retry-After": str(wait)})

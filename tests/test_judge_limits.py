@@ -27,6 +27,7 @@ def _env(monkeypatch):
     monkeypatch.setenv("INTERLOCK_MODEL", "bedrock")
     monkeypatch.setenv("INTERLOCK_TRUST_PROXY", "lambda")
     monkeypatch.setenv("JUDGE_ACCESS_CODE", JC)
+    monkeypatch.setenv("INTERLOCK_PUBLIC_DAILY_MODEL_CAP", "0")  # these tests cover the code-only lock; test_public_access.py covers the public pool
 
 
 def ip(addr):

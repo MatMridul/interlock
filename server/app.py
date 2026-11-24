@@ -88,12 +88,14 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
     def _missing():
         return JSONResponse({"detail": "unknown session"}, status_code=404)
 
-    def _locked(request, client):
-        """The judge-code lock on real-model features. None when open (or no lock is configured)."""
+    def _locked(request, client, public=False):
+        """The judge-code lock on real-model features. None when open (or no lock is configured).
+        Sets request.state.public: True when the caller has no code and uses the public pool (only if `public`)."""
+        request.state.public = False
         if judge is None:
             return None
         try:
-            judge.check_request(request, client)
+            request.state.public = judge.check_request(request, client, allow_public=public) == "public"
         except judgemod.Denied as d:
             return JSONResponse({"detail": d.message}, status_code=d.status,
                                 headers={"Retry-After": str(d.retry_after)} if d.retry_after else None)
@@ -122,10 +124,11 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
         if chat_off:
             return JSONResponse({"detail": modelcap.OFF_MESSAGE}, status_code=403)
         client = _client(request)
-        denied = _locked(request, client)
+        denied = _locked(request, client, public=True)
         if denied:
             return denied
-        blocked = cap.blocked(client, sid) if cap else None
+        public = request.state.public
+        blocked = cap.blocked(client, sid, public) if cap else None
         if blocked:
             return JSONResponse({"detail": blocked}, status_code=429)
         s = registry.get(sid)
@@ -136,6 +139,7 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
         if not s.lock.acquire(blocking=False):
             return JSONResponse({"detail": "session busy"}, status_code=409)
         s.client = client  # the per-address model cap counts against it
+        s.public = public  # no judge code: calls also spend the public pool
         return StreamingResponse(stream_events(s, body.message), media_type="text/event-stream",
                                  headers={"Cache-Control": "no-cache"})
 

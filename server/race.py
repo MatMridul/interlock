@@ -64,15 +64,15 @@ class DailyCap:
 class SharedCap:
     """Adapts modelcap.ModelCap to the take()/remaining() interface RaceMeter uses."""
 
-    def __init__(self, shared, ip=None):
-        self._shared, self._ip = shared, ip
+    def __init__(self, shared, ip=None, public=False):
+        self._shared, self._ip, self._public = shared, ip, public
 
     def remaining(self):
-        return self._shared.remaining()
+        return self._shared.remaining(self._public)
 
     def take(self):
         try:
-            self._shared.take(ip=self._ip)
+            self._shared.take(ip=self._ip, public=self._public)
         except modelcap.CapReached:
             return False
         return True
@@ -119,9 +119,10 @@ def add_routes(app: FastAPI, model_factory, limiter, shared_cap=None, locked=Non
         if not manual.model_enabled() or modelcap.model_mode() == "off":
             return JSONResponse({"detail": "model is off on this server"}, status_code=403)
         client = config.client_ip(request)
-        denied = locked(request, client) if locked else None
+        denied = locked(request, client, True) if locked else None
         if denied:
             return denied
+        public = bool(getattr(request.state, "public", False))
         wait = limiter.rate_limited("chat", client)
         if wait:
             return JSONResponse({"detail": "too many requests"}, status_code=429, headers={"Retry-After": str(wait)})
@@ -129,7 +130,7 @@ def add_routes(app: FastAPI, model_factory, limiter, shared_cap=None, locked=Non
         attack = next((a for a in corpus["attacks"] if a["id"] == body.attack_id), None)
         if attack is None:
             return JSONResponse({"detail": "unknown attack"}, status_code=404)
-        if cap.remaining() < MIN_CALLS_TO_START:
+        if (SharedCap(shared_cap, client, public) if shared_cap else cap).remaining() < MIN_CALLS_TO_START:
             return JSONResponse({"detail": "daily race budget used up, try the recorded run"}, status_code=429)
         if not busy.acquire(blocking=False):
             return JSONResponse({"detail": "a race is already running"}, status_code=409)
@@ -139,7 +140,7 @@ def add_routes(app: FastAPI, model_factory, limiter, shared_cap=None, locked=Non
                 return JSONResponse({"detail": f"Live race limit reached: {n} live runs per address per UTC day. "
                                                "It resets at 00:00 UTC. The recorded replay is still open."},
                                     status_code=429)
-            run_cap = SharedCap(shared_cap, client) if shared_cap else cap
+            run_cap = SharedCap(shared_cap, client, public) if shared_cap else cap
             model = model_factory()
             if model is None:
                 return JSONResponse({"detail": "model is off on this server"}, status_code=403)
