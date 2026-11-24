@@ -38,7 +38,7 @@ export const postMfa = (sid: string, code: string) =>
 
 export type ProposeAction = { tool: string; payee?: string; amount?: number };
 export const getConfig = () =>
-  fetch(`${BASE}/config`).then((r) => json<{ model: "on" | "off"; judge_code?: boolean }>(r)).catch((): { model: "on" | "off"; judge_code?: boolean } => ({ model: "on" }));
+  fetch(`${BASE}/config`).then((r) => json<{ model: "on" | "off"; judge_code?: boolean; public_model?: boolean }>(r)).catch((): { model: "on" | "off"; judge_code?: boolean; public_model?: boolean } => ({ model: "on" }));
 
 /** Check the judge access code with the server (wrong codes count toward a lockout). Keeps it for this tab only when right. */
 export async function unlock(code: string): Promise<void> {
