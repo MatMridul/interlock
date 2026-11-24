@@ -33,16 +33,16 @@ Finance: all 2,015,539 strings up to length 8 checked three ways with 0 mismatch
 Mutation testing finds missing properties, not only missing tests. A default-off safety feature is a trap. A checker that only guards mapped actions must say so. A spec gate before code is cheap and corrected three claims we would have shipped.
 
 ## What's next
-Deploy the public URL (planned). A third policy for AWS change approval. Signed policy hashes and hash-chained audit logs. Not built.
+Deployed on 2026-11-23 (see Live app below). Planned next: a third policy for AWS change approval, signed policy hashes, and hash-chained audit logs. None of these is built.
 
-The finance and Safe Ship policies are regular languages: each is a finite state machine (a DFA), and that is why the gate can check them exhaustively. Some agent workflows need counting or nesting, for example nested sub-agent calls or paired open/close transactions, and a regular language cannot express those. Pushdown automata (PDAs) add a stack and can. JFLAP models PDAs, and the vendored 	hird_party/jflap-cli has PDA support: its README lists PDA simulation with a choice of final-state or empty-stack acceptance, step-by-step traces that show the stack, a PDA builder, and CFG-to-PDA and PDA-to-CFG conversion. This repo copied only the runtime files, not the CLI's tests or examples (see 	hird_party/jflap-cli/VENDORED.md), and no Interlock test exercises the PDA path, so that support is untested here. A PDA policy, for example bounded-depth nested sub-agent calls, is future work. It is not built, and nothing PDA-based runs in Interlock today.
+The finance and Safe Ship policies are regular languages: each is a finite state machine (a DFA), and that is why the gate can check them exhaustively. Some agent workflows need counting or nesting, for example nested sub-agent calls or paired open/close transactions, and a regular language cannot express those. Pushdown automata (PDAs) add a stack and can. JFLAP models PDAs, and the vendored `third_party/jflap-cli` has PDA support: its README lists PDA simulation with a choice of final-state or empty-stack acceptance, step-by-step traces that show the stack, a PDA builder, and CFG-to-PDA and PDA-to-CFG conversion. This repo copied only the runtime files, not the CLI's tests or examples (see `third_party/jflap-cli/VENDORED.md`), and no Interlock test exercises the PDA path, so that support is untested here. A PDA policy, for example bounded-depth nested sub-agent calls, is future work. It is not built, and nothing PDA-based runs in Interlock today.
 
 ## Built with
 Kiro (CLI, Crew, specs, steering, hooks, custom agent, MCP), JFLAP 7.1, jflap-cli, Strands Agents SDK, Amazon Bedrock (Amazon Nova 2 Lite), Python, FastAPI, Hypothesis, React, TypeScript, Vite, AWS Lambda and DynamoDB (planned).
 
 ## Links (fill in)
 - Repo: https://github.com/MatMridul/interlock
-- Live app: **TODO (owner)**
+- Live app: https://7mjrrbknt7psv5xud3jtxdi7de0umxfb.lambda-url.ap-south-1.on.aws/
 - Judges-only testing field (owner: put the judge access code here, never in the public text): the code unlocks the live model in the app via "Unlock live model (judges)". Everything else, including "you are the agent" mode, scripted attacks, the Race replay and Safe Ship, needs no code. Model use is capped at 100 calls per day for everyone; when a cap is hit the app says so and falls back to "you" mode.
 - Demo video (YouTube, under 3 minutes): **TODO (owner)**
 - Judges' guide: [docs/JUDGES.md](../JUDGES.md)
@@ -58,7 +58,7 @@ JFLAP 7.1 (Duke) and `jflap-cli` pre-date the hackathon (`jflap-cli` first commi
 
 ## Submission checklist
 - [ ] Public GitHub repo with the MIT license visible in About; `/.kiro` committed and not ignored
-- [ ] Working app URL (**not deployed yet**)
+- [x] Working app URL (deployed 2026-11-23)
 - [ ] Public YouTube video under 3 minutes
 - [ ] Kiro-usage write-up pasted from `KIRO_WRITEUP.md` (Kiro IDE lines marked "owner to confirm")
 - [ ] Demo credentials for judges in the Devpost field (never in the repo)

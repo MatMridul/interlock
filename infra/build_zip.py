@@ -12,7 +12,8 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-APP_DIRS = ["server", "bank", "agent", "policy", "ui/dist"]  # ui/dist = the built UI
+APP_DIRS = ["server", "bank", "agent", "bench", "policy", "ui/dist"]  # ui/dist = the built UI
+APP_FILES = ["docs/evidence/safe_ship_live_decisions.jsonl"]  # read by server/policies.py (Safe Ship replay)
 SKIP_DIRS = {"__pycache__", ".pytest_cache"}
 LIMIT_UNZIPPED = 262144000  # Lambda: 250 MB unzipped, including layers (the Web Adapter layer counts too)
 LIMIT_ZIPPED = 52428800     # Lambda: 50 MB zipped when uploaded directly
@@ -54,6 +55,8 @@ def main():
         for d in APP_DIRS:
             for p, arc in files(ROOT / d, d):
                 add(z, p, arc, 0o644)
+        for f in APP_FILES:
+            add(z, ROOT / f, f, 0o644)
         total = sum(i.file_size for i in z.infolist())
     zipped = out.stat().st_size
     print(f"{out}: {zipped / 1e6:.1f} MB zipped, {total / 1e6:.1f} MB unzipped "

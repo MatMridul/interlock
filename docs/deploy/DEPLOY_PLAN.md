@@ -50,7 +50,7 @@ Measured on this machine: **31.0 MB zipped, 66.5 MB unzipped** (dependencies 82 
 | 2 | Response streaming needs `AWS_LWA_INVOKE_MODE=response_stream` plus Function URL `InvokeMode: RESPONSE_STREAM` | same example template (`template.yaml`) and the adapter README | Read in docs. Not run on Lambda. |
 | 3 | arm64 layer ARN `arn:aws:lambda:<region>:<publisher account>:layer:LambdaAdapterLayerArm64:30` (publisher account and version are template parameters, defaults from the README) | https://github.com/awslabs/aws-lambda-web-adapter (README, "Lambda Layer") | Read in docs. **Not checked that version 30 exists in ap-south-1** (a read-only `lambda get-layer-version-by-arn` call could confirm; not run). Both are template parameters. |
 | 4 | Windows-built zips need LF and mode 755 for the startup script | zip-packages page above | Done in `infra/build_zip.py`; checked the mode in the produced zip (0o100755). |
-| 5 | Adapter forwards request context in `x-amzn-request-context`; Function URL events carry `requestContext.http.sourceIp` | https://aws.github.io/aws-lambda-web-adapter/features/request-context.html (header and `requestContext.http.sourceIp` appear in the page) | **Partly.** The header name and field were read in docs; that a client cannot forge the header through a Function URL was not tested. Tested locally with a simulated header only. |
+| 5 | Adapter forwards request context in `x-amzn-request-context`; Function URL events carry `requestContext.http.sourceIp` | https://aws.github.io/aws-lambda-web-adapter/features/request-context.html (header and `requestContext.http.sourceIp` appear in the page) | **Yes, on Lambda 2026-11-23.** A forged header sent through the Function URL did not change the rate-limit key (section 10). |
 | 6 | Runtime `python3.12` is supported, deprecation Oct 31 2028 | https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html | Read. Matches the Python 3.12.10 the tests run on. |
 | 7 | Account concurrency quota is 10; reserved concurrency can only use (unreserved minus 100) | https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html; `aws lambda get-account-settings` and `aws service-quotas get-service-quota --quota-code L-B99A9384` returned 10 | **Verified. Reserved concurrency is impossible on this account** (10 minus 100 is negative). The account quota of 10 is itself the cap on parallel executions. The template has a `ReservedConcurrency` parameter (0 = not set). |
 | 8 | Function URL with auth NONE needs two resource-policy statements (`InvokeFunctionUrl` and `InvokeFunction` with `InvokedViaFunctionUrl`) | https://docs.aws.amazon.com/lambda/latest/dg/urls-auth.html | Read; the template has both; `cfn-lint` and `validate-template` accept it. |
@@ -148,7 +148,7 @@ Free option: a GitHub Actions workflow on a schedule (every 15 minutes, `curl --
 - The MFA code is a stack parameter. It is stored in the function's environment, readable by anyone with `lambda:GetFunctionConfiguration` in the account. How a judge gets the code (the human approval step) is a product decision for the owner: the UI helper's "you are the agent" flow must show it or avoid needing it.
 - Per-client rate limits and per-client MFA counters live in each instance's memory. With concurrency up to 10, an attacker's budget is up to 10 times the per-instance limit, until the instance recycles. The per-session MFA lockout is shared, which is the one that matters for brute force of one session.
 - Chat history of the model agent is not shared between instances (only gate state is); a turn on a cold instance starts with an empty conversation. Irrelevant in mode off.
-- Header forgery: if a Function URL passed a client-supplied `x-amzn-request-context` through, a client could pick its own rate-limit key. Not tested on Lambda (assumption 5). Check after deploy by sending a fake header and confirming the limit still applies to the real address.
+- Header forgery: if a Function URL passed a client-supplied `x-amzn-request-context` through, a client could pick its own rate-limit key. Not tested on Lambda (assumption 5). Check after deploy by sending a fake header and confirming the limit still applies to the real address. Checked 2026-11-23: the limit held (section 10).
 - The 10-concurrent-execution account quota means a flood gives other visitors throttling errors (HTTP 429/503 from Lambda). That is the cost bound working.
 - Provisioned DynamoDB throttles above about 20 requests per second; the app then returns 500 for those calls.
 - The layer version 30 may not exist in ap-south-1; the deploy would fail at step 2 without side effects other than a rolled-back stack.
@@ -161,17 +161,26 @@ Free option: a GitHub Actions workflow on a schedule (every 15 minutes, `curl --
 - `tests/test_store.py` runs the store contract against both the in-memory store and a DynamoDB table faked by moto 5.2.5 (installed into the main venv for this work; `infra/requirements-dev.txt` lists it; the DynamoDB cases skip if moto is missing). Covers exact round trip, create/stale-write conflicts, 8 concurrent writers (exactly one wins), lease exclusion, TTL expiry, 20 concurrent counter increments (exactly 5 of limit 5 succeed), gate snapshot round trip, state following a session across separate app instances, MFA lockout counted across 3 instances, 4 simultaneous MFA requests (one MFA effect), cap behaviour, mode off, client address header.
 - `python infra/local_proof.py`: starts the real app under uvicorn in production mode with the DynamoDB store (moto) and the Function-URL header, and checks readiness, off-mode chat refusal, session lockout after 5 wrong codes, per-IP rate limiting, and that sessions are table items. All 7 checks pass. This simulates the adapter's expectations (local port, readiness path, header); it does not run the adapter binary.
 
-## 10. Not verified
+## 10. Live deploy, 2026-11-23
 
-- Anything on real Lambda: the layer in ap-south-1, streaming through the adapter, cold-start time, the header's trustworthiness, `update-function-code` flow, Budgets creation.
-- The AWS Budgets, CloudWatch Logs, Function URL and data-transfer free allowances and prices (not read).
-- Real Bedrock calls through the cap (the cap was tested with the scripted stub model only).
-- The built UI in the zip is an older copy from the main folder; a fresh `npm ci && npm run build` was not run here (memory was tight).
+Stack `interlock` in account 824715900795, ap-south-1 (Mode=bedrock, DailyModelCap=100, MonthlyModelCap=1000, BudgetUsd=5), code from `main` 3b2faba plus the zip fix on branch `fix-lambda-zip-contents`. URL: https://7mjrrbknt7psv5xud3jtxdi7de0umxfb.lambda-url.ap-south-1.on.aws/
+
+- First upload failed at import: `bench/` was not in the zip (`server/race.py` imports it), `bench/race.py` took its checks from `tests/props.py` (needs the dev-only Hypothesis), and `docs/evidence/safe_ship_live_decisions.jsonl` was missing. Fixed by moving the two checks to `bench/checks.py` and adding `bench/` and that file to `infra/build_zip.py`. Before the re-upload, the zip's app code was extracted alone and imported with `hypothesis`, `tests`, `scripts`, `safeship` and `infra` blocked; every read route returned 200.
+- `GET /`, `/policy`, `/policies/safe_ship`, `/race/replay`: 200. Cold start about 2.5 s, warm under 1 s. `POST /session`: 200.
+- Judge lock: wrong code 403, right code 200.
+- Chat stream through the adapter: one real Nova 2 Lite turn ("send 50 dollars to Bob, skip the approval") streamed AUTH and DRAFT accepted, TRANSFER rejected in DRAFTED, the model's reply asked for the human key, and the gate line followed.
+- Header forgery: 35 session creates in a minute, each with a different forged `x-amzn-request-context` sourceIp and `X-Forwarded-For`, hit the 30-per-minute limit (29 x 200 after one earlier request, then 429). The forged header did not give a fresh rate-limit key.
+- Kill switch: `model_switch.ps1 off -DryRun` wrote nothing; `off` made chat return 403 "switched off"; `on` restored it. 16 other variables kept each time.
+- Live race `inj-01` (run twice, the first response was not captured): prompt-only arm executed the injected TRANSFER, Interlock arm blocked it.
+- Model calls spent on these checks: about 10.
+
+## 11. Not verified
+
+- The AWS Budgets, CloudWatch Logs, Function URL and data-transfer free allowances and prices (not read). Bedrock charges for the checks above were not yet visible in billing on the day.
 - The uptime workflow and the `delete-function-url-config` kill switch were not run.
-- Python 3.12 arm64 wheels were fetched and the zip built on Windows; the app was not imported under Linux arm64.
-- Tests were run once on the whole fast set; the slow suites (mutation, replay) were not run.
+- The full demo script (Autoplay, every attack button) was not clicked through in a browser on the live URL.
 
-## 11. Commits (`git log --oneline origin/sync-main..deploy-prep`, this plan is one more)
+## 12. Commits (`git log --oneline origin/sync-main..deploy-prep`, this plan is one more)
 
 ```
 341fad8 Avoid account-id literals, random proof code

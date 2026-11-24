@@ -10,7 +10,7 @@
 
 **Race result (one run, one model, no statistical claim).** Against 20 fixed attacks, a prompt-only agent executed a forbidden action in **10 of 20**; Interlock in **0 of 20**. Model: Amazon Nova 2 Lite, one run per attack. The Interlock 0 follows from the gate; the 10 is what this model did on this run and can change. Details and every raw row: [RACE_REPORT.md](docs/reports/RACE_REPORT.md).
 
-- Live demo: **TODO (owner): URL not deployed yet.** Hosting is planned, not built: [DEPLOY_PLAN.md](docs/deploy/DEPLOY_PLAN.md).
+- Live demo: https://7mjrrbknt7psv5xud3jtxdi7de0umxfb.lambda-url.ap-south-1.on.aws/ (one AWS Lambda in ap-south-1, up through 2027-01-29; the live model is locked behind a judge code, see [JUDGES.md](docs/JUDGES.md)). Hosting details: [DEPLOY_PLAN.md](docs/deploy/DEPLOY_PLAN.md).
 - Demo video: **TODO (owner): YouTube link.**
 - Judges: start at [docs/JUDGES.md](docs/JUDGES.md) (3-minute path, criteria mapped to files).
 
@@ -111,7 +111,7 @@ Every dependency, bundled asset (JFLAP 7.1, `jflap-cli`, fonts), model and servi
 
 Not built: deployment of a public URL (plan and template only), a third policy (AWS change approval), and the post-hackathon ideas in [docs/OPEN_TASKS.md](docs/OPEN_TASKS.md) section 7.
 
-The finance and Safe Ship policies are regular languages: each is a finite state machine (a DFA), and that is why the gate can check them exhaustively. Some agent workflows need counting or nesting, for example nested sub-agent calls or paired open/close transactions, and a regular language cannot express those. Pushdown automata (PDAs) add a stack and can. JFLAP models PDAs, and the vendored 	hird_party/jflap-cli has PDA support: its README lists PDA simulation with a choice of final-state or empty-stack acceptance, step-by-step traces that show the stack, a PDA builder, and CFG-to-PDA and PDA-to-CFG conversion. This repo copied only the runtime files, not the CLI's tests or examples (see 	hird_party/jflap-cli/VENDORED.md), and no Interlock test exercises the PDA path, so that support is untested here. A PDA policy, for example bounded-depth nested sub-agent calls, is future work. It is not built, and nothing PDA-based runs in Interlock today.
+The finance and Safe Ship policies are regular languages: each is a finite state machine (a DFA), and that is why the gate can check them exhaustively. Some agent workflows need counting or nesting, for example nested sub-agent calls or paired open/close transactions, and a regular language cannot express those. Pushdown automata (PDAs) add a stack and can. JFLAP models PDAs, and the vendored `third_party/jflap-cli` has PDA support: its README lists PDA simulation with a choice of final-state or empty-stack acceptance, step-by-step traces that show the stack, a PDA builder, and CFG-to-PDA and PDA-to-CFG conversion. This repo copied only the runtime files, not the CLI's tests or examples (see `third_party/jflap-cli/VENDORED.md`), and no Interlock test exercises the PDA path, so that support is untested here. A PDA policy, for example bounded-depth nested sub-agent calls, is future work. It is not built, and nothing PDA-based runs in Interlock today.
 
 ## License
 
