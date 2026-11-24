@@ -33,6 +33,8 @@ POLICY_PATH = ROOT / "policy" / "finance_table.json"
 UI_DIST = ROOT / "ui" / "dist"
 DEV_UI_ORIGIN = "http://localhost:5173"  # Vite dev server
 log = logging.getLogger("server")
+THROTTLE_CODES = {"ProvisionedThroughputExceededException", "ThrottlingException", "RequestLimitExceeded",
+                  "ThrottledException", "TooManyRequestsException"}
 
 
 def default_model_factory():
@@ -70,8 +72,10 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
     if cap:
         registry.on_new = cap.attach
     app.state.registry = registry
-    app.add_middleware(CORSMiddleware, allow_origins=[config.cors_origin(), DEV_UI_ORIGIN],
+    origins = [config.cors_origin()] + ([] if config.is_production() else [DEV_UI_ORIGIN])  # the Vite dev origin only outside production
+    app.add_middleware(CORSMiddleware, allow_origins=origins,
                        allow_methods=["GET", "POST"], allow_headers=["Content-Type", "X-Judge-Code"])
+    app.add_middleware(sechead.BodyLimit)
     app.add_middleware(sechead.SecurityHeaders)  # added last = outermost: every response carries the security headers
 
     @app.exception_handler(RequestValidationError)
@@ -84,6 +88,11 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
 
     @app.exception_handler(Exception)
     async def _boom(request: Request, exc):
+        code = getattr(exc, "response", {}).get("Error", {}).get("Code") if isinstance(getattr(exc, "response", None), dict) else None
+        if code in THROTTLE_CODES:  # DynamoDB (or another AWS service) is throttling: ask the caller to retry, not a 500
+            log.warning("throttled by AWS (%s) on %s", code, request.url.path)
+            return sechead.apply(JSONResponse({"detail": "the service is busy, try again in a few seconds"}, status_code=503,
+                                              headers={"Retry-After": "5"}))
         log.error("unhandled %s on %s", type(exc).__name__, request.url.path)  # type and path only: no message, no input
         return sechead.apply(JSONResponse({"detail": "internal error"}, status_code=500))  # runs outside the middleware
 
@@ -103,12 +112,22 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
                                 headers={"Retry-After": str(d.retry_after)} if d.retry_after else None)
         return None
 
+    def _read_limited(request):
+        wait = limiter.rate_limited("read", _client(request))
+        return _too_many(wait) if wait else None
+
     @app.post("/judge/unlock")
     def unlock(request: Request):  # checks the X-Judge-Code header; wrong codes count toward the lockout
+        wait = limiter.rate_limited("chat", _client(request))
+        if wait:
+            return _too_many(wait)
         return _locked(request, _client(request)) or {"ok": True}
 
     @app.get("/policy")
-    def policy():  # the machine the gate was generated from; the UI draws it, never hand-copies it
+    def policy(request: Request):
+        limited = _read_limited(request)
+        if limited:
+            return limited  # the machine the gate was generated from; the UI draws it, never hand-copies it
         return json.loads(POLICY_PATH.read_text(encoding="utf-8"))
 
     @app.post("/session")
@@ -146,7 +165,10 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
                                  headers={"Cache-Control": "no-cache"})
 
     @app.get("/session/{sid}/state")
-    def state(sid: str):
+    def state(sid: str, request: Request):
+        limited = _read_limited(request)
+        if limited:
+            return limited
         s = registry.get(sid)
         return _missing() if s is None else s.state_view()
 
@@ -177,9 +199,9 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
             out["reason"] = r["reason"]
         return out
 
-    policies.add_routes(app)  # C7: read-only /policies/{name} for the UI policy picker
+    policies.add_routes(app, _read_limited)  # C7: read-only /policies/{name} for the UI policy picker
     manual.add_routes(app, registry, limiter, judge_required=judge is not None)  # C1: /config and /session/{sid}/propose
-    race.add_routes(app, model_factory, limiter, cap, locked=_locked, store=shared)  # C2: /race/replay, /race/live (own arms, no registry session)
+    race.add_routes(app, model_factory, limiter, cap, locked=_locked, store=shared, read_limited=_read_limited)  # C2: /race/replay, /race/live (own arms, no registry session)
 
     if UI_DIST.is_dir():  # same-origin static UI; registered last so API routes win
         app.mount("/", StaticFiles(directory=str(UI_DIST), html=True), name="ui")

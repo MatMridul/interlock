@@ -103,13 +103,16 @@ def _load_corpus():
     return json.loads(bench.CORPUS.read_text(encoding="utf-8"))
 
 
-def add_routes(app: FastAPI, model_factory, limiter, shared_cap=None, locked=None, store=None):
+def add_routes(app: FastAPI, model_factory, limiter, shared_cap=None, locked=None, store=None, read_limited=lambda request: None):
     cap = SharedCap(shared_cap) if shared_cap else DailyCap()
     busy = threading.Lock()
     app.state.race_cap = cap
 
     @app.get("/race/replay")
-    def replay():
+    def replay(request: Request):
+        limited = read_limited(request)
+        if limited:
+            return limited
         if not LATEST.exists():
             return JSONResponse({"detail": "no recorded run"}, status_code=404)
         return json.loads(LATEST.read_text(encoding="utf-8"))
@@ -119,13 +122,13 @@ def add_routes(app: FastAPI, model_factory, limiter, shared_cap=None, locked=Non
         if not manual.model_enabled() or modelcap.model_mode() == "off":
             return JSONResponse({"detail": "model is off on this server"}, status_code=403)
         client = config.client_ip(request)
+        wait = limiter.rate_limited("chat", client)  # before the judge check, which reads the store
+        if wait:
+            return JSONResponse({"detail": "too many requests"}, status_code=429, headers={"Retry-After": str(wait)})
         denied = locked(request, client, True) if locked else None
         if denied:
             return denied
         public = bool(getattr(request.state, "public", False))
-        wait = limiter.rate_limited("chat", client)
-        if wait:
-            return JSONResponse({"detail": "too many requests"}, status_code=429, headers={"Retry-After": str(wait)})
         corpus = _load_corpus()
         attack = next((a for a in corpus["attacks"] if a["id"] == body.attack_id), None)
         if attack is None:

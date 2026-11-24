@@ -7,7 +7,7 @@ Kiro's own push being refused. Nothing runs here: no hook, no model, no session.
 import json
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -46,9 +46,12 @@ def recorded_run(table):
     return {"label": RECORDED_LABEL, "source": "docs/evidence/safe_ship_live_decisions.jsonl", "steps": out}
 
 
-def add_routes(app: FastAPI):
+def add_routes(app: FastAPI, read_limited=lambda request: None):
     @app.get("/policies/{name}")
-    def policy_by_name(name: str):
+    def policy_by_name(name: str, request: Request):
+        limited = read_limited(request)
+        if limited:
+            return limited
         path = TABLES.get(name)
         if path is None:
             return JSONResponse({"detail": "unknown policy"}, status_code=404)

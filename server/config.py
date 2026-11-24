@@ -12,6 +12,7 @@ ENGINE = "executor-table"  # INV-10: which engine produced the measured decision
 # Abuse limits (E4). (max requests, window in seconds) per client address.
 RATE_SESSION = (30, 60)
 RATE_CHAT = (30, 60)
+RATE_READ = (120, 60)           # cheap GETs that touch the store or disk (state, policies, replay), so they cannot drain DynamoDB capacity
 RATE_MFA = (30, 60)            # every attempt to POST /session/{id}/mfa, right or wrong
 MFA_MAX_WRONG = 5              # wrong codes per session, then the session is locked out
 MFA_LOCKOUT_S = 300
