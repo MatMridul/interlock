@@ -204,7 +204,12 @@ dialog h3 { margin: 0 0 4px; font: 600 16px var(--cond); letter-spacing: .16em; 
 .head-pen { position: absolute; width: 2px; background: var(--ph); box-shadow: 0 0 8px var(--ph); }
 
 /* console */
-.console { grid-column: 2; grid-row: 2 / 6; border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; min-width: 0; position: relative; overflow: hidden; }
+.console { grid-column: 2; grid-row: 2 / 6; border-left: 1px solid var(--line); background: var(--panel); display: flex; flex-direction: column; min-height: 0; min-width: 0; position: relative; overflow-x: hidden; overflow-y: auto; container-type: inline-size; container-name: console; }
+.console > *, #console-body > * { flex-shrink: 0; } /* when the column is too short it scrolls as a whole; only the transcript (.tr) gives up height */
+#console-body > .tr { flex-shrink: 1; }
+@container console (max-width: 360px) { /* a console dragged narrow: attack names wrap instead of being cut off */
+  .console .vrow b { white-space: normal; overflow: visible; }
+}
 .console h2, .console h3 { margin: 0; }
 .ch { padding: 8px 12px 6px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; gap: 8px; }
 .ch h2 { font: 600 15px var(--cond); letter-spacing: .2em; text-transform: uppercase; }
@@ -417,7 +422,7 @@ dialog h3 { margin: 0 0 4px; font: 600 16px var(--cond); letter-spacing: .16em; 
 /* empty rail collapses; stage keeps readable labels (the panels are clamped, not the text) */
 .app[data-rail="empty"] { --rail-h: 0px; }
 .app[data-rail="empty"] .rail { padding: 0; border: 0; overflow: hidden; }
-.stage { min-height: 300px; }
+.stage { min-height: 200px; } /* matches STAGE_MIN_H in lib/layout.ts */
 .stage .elab, .stage .silk, .stage .row, .stage .orb-q, .stage .orb-allow, .stage .why-cap, .stage .port-s, .stage .port-t, .stage .sink-n { font-size: max(12px, calc(10px / var(--s, 1))); }
 .stage .orb-name { font-size: max(15px, calc(11px / var(--s, 1))); }
 
@@ -525,3 +530,15 @@ dialog h3 { margin: 0 0 4px; font: 600 16px var(--cond); letter-spacing: .16em; 
 
 .ln.gate { color: var(--ink); border-left: 2px solid var(--muted); padding-left: 6px; }
 .ln.gate .w { color: var(--ink); font-weight: 600; }
+
+/* Fit any window. The top bar first drops buttons that are also in Commands (Ctrl+K), then shortens labels, and as a
+   last resort scrolls sideways, so no button is ever out of reach. */
+.top { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.top > * { flex-shrink: 0; }
+.top > .sub { flex-shrink: 1; }
+@media (max-width: 1560px) { .top .wide-only, .top .sub { display: none; } }
+@media (max-width: 1200px) { .top .mid-only, .top .tg-long, .top .seg-l { display: none; } .top { gap: 6px; } }
+/* A window shorter or narrower than the panels' minimums scrolls instead of cutting them off
+   (stage 200 px tall and 640 px wide, console 280 px wide: see lib/layout.ts). */
+body { overflow: auto; }
+@media (min-width: 901px) { .app { min-height: 560px; min-width: 920px; } }
