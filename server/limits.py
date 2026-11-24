@@ -12,13 +12,14 @@ from server import config
 
 
 class Limiter:
-    def __init__(self, clock=time.monotonic, rate_session=None, rate_chat=None, rate_mfa=None,
+    def __init__(self, clock=time.monotonic, rate_session=None, rate_chat=None, rate_mfa=None, rate_read=None,
                  mfa_max_wrong=None, mfa_lockout_s=None, client_max_wrong=None, client_window_s=None):
         self._now = clock
         self._lock = threading.Lock()
         self.rates = {"session": rate_session or config.RATE_SESSION,
                       "chat": rate_chat or config.RATE_CHAT,
-                      "mfa": rate_mfa or config.RATE_MFA}
+                      "mfa": rate_mfa or config.RATE_MFA,
+                      "read": rate_read or config.RATE_READ}
         self.max_wrong = mfa_max_wrong or config.MFA_MAX_WRONG
         self.lockout_s = mfa_lockout_s or config.MFA_LOCKOUT_S
         self.client_max_wrong = client_max_wrong or config.MFA_CLIENT_MAX_WRONG

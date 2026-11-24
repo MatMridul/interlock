@@ -43,7 +43,7 @@ Kiro (CLI, Crew, specs, steering, hooks, custom agent, MCP), JFLAP 7.1, jflap-cl
 ## Links (fill in)
 - Repo: https://github.com/MatMridul/interlock
 - Live app: https://7mjrrbknt7psv5xud3jtxdi7de0umxfb.lambda-url.ap-south-1.on.aws/
-- Judges-only testing field (owner: put the judge access code here, never in the public text): the code unlocks the live model in the app via "Unlock live model (judges)". Everything else, including "you are the agent" mode, scripted attacks, the Race replay and Safe Ship, needs no code. Model use is capped at 100 calls per day for everyone; when a cap is hit the app says so and falls back to "you" mode.
+- Judges-only testing field (owner: put the judge access code here, never in the public text): the code, entered with the "Judge code" button, uses a reserved share of the live model. The live model is also open to everyone without a code, from a public daily pool of 60 calls (the whole app has 100 calls per day, so about 40 stay reserved for judges). Everything else, including "you are the agent" mode, scripted attacks, the Race replay and Safe Ship, needs no code. When a cap is hit the app says which one and when it resets (00:00 UTC), and falls back to "you" mode.
 - Demo video (YouTube, under 3 minutes): **TODO (owner)**
 - Judges' guide: [docs/JUDGES.md](../JUDGES.md)
 

@@ -96,7 +96,7 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 |---|---|---|---|---|---|
 | E1 | Choose the host (AgentCore Runtime or one container) after a short spike; list monthly cost before creating anything | Me proposes, **You approve** | P0 | done: one Lambda + Function URL + DynamoDB 20/20, approved and deployed 2026-11-23 (account 824715900795, ap-south-1) | Written cost estimate and your yes |
 | E2 | Deploy so it stays up and free through 2027-01-29 | Me | P0 | done 2026-11-23: https://7mjrrbknt7psv5xud3jtxdi7de0umxfb.lambda-url.ap-south-1.on.aws/ passed the smoke checks in [DEPLOY_PLAN.md](deploy/DEPLOY_PLAN.md) section 10 | Public URL passes the demo script |
-| E3 | Spend and abuse controls: default to "you are the agent" and stub; real-model chat behind a daily cap; AWS budget alarm | Me | P0 | done: judge code lock, caps 100/day and 1000/month, $5 budget alert to the owner's email; kill switch tested live | Cap proven by test; alarm exists |
+| E3 | Spend and abuse controls: default to "you are the agent" and stub; real-model chat behind a daily cap; AWS budget alarm | Me | P0 | done: public pool of 60 calls/day plus a reserved judge share behind the code (branch access-and-hardening), caps 100/day and 1000/month, $5 budget alert to the owner's email; kill switch tested live | Cap proven by test; alarm exists |
 | E4 | Rate limits and a lockout on `/mfa` attempts; session limits | Me | P0 | done; on Lambda a forged `x-amzn-request-context` header did not change the rate-limit key | Brute force is blocked by test |
 | E5 | Uptime check and a rollback plan | Me | P1 | rollback and teardown documented in DEPLOY_PLAN; the scheduled uptime check is not added (optional) | Documented |
 | E6 | Claude access (Anthropic use-case form in the Bedrock console) for one real Claude run | **You** | P2 | todo | Haiku answers from the CLI |
@@ -106,8 +106,8 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
 | F1 | Replace the demo MFA code with an env-only secret in the deployed app; document the demo credentials in the Devpost field (judges only) | Me | P0 | done: the codes are set only as stack parameters and kept in a private file outside the repo; the owner pastes them into the Devpost judges-only field | No code in the repo or video |
-| F2 | Security headers and a content security policy; dependency and secret scanning in CI | Me | P1 | todo | CI scan clean |
-| F3 | Error handling: no stack traces to users; SSE reconnect behavior | Me | P1 | todo | Tested |
+| F2 | Security headers and a content security policy; dependency and secret scanning in CI | Me | P1 | headers, CSP and a dependency audit done (branch access-and-hardening, docs/reports/SECURITY_REVIEW.md); scanning in CI not added | CI scan clean |
+| F3 | Error handling: no stack traces to users; SSE reconnect behavior | Me | P1 | server side done and tested (friendly model errors, 503 on throttling, lock release); UI SSE reconnect not changed | Tested |
 | F4 | Final full test pass with the real counts | Me | P0 | todo | Recorded in `docs/reports/` |
 
 ### G. Submission assets

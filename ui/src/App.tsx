@@ -97,6 +97,7 @@ export function App() {
   const [modelOff, setModelOff] = useState(false);
   const [modelLocked, setModelLocked] = useState(false); // the server wants the judge access code and this tab has none
   const [unlockOpen, setUnlockOpen] = useState(false);
+  const [publicOpen, setPublicOpen] = useState(false); // the server lets visitors without a code use the live model (shared daily pool)
   const [why, setWhy] = useState<StageWhy | null>(null);
   const [scrub, setScrub] = useState<number | null>(null);
   const [tapeCollapsed, setTapeCollapsed] = useState(false);
@@ -193,6 +194,7 @@ export function App() {
         configRead.current = true;
         const cfg = await api.getConfig();
         if (cfg.model === "off") { setModelOff(true); setMode("you"); }
+        else if (cfg.public_model) setPublicOpen(true);
         else if (cfg.judge_code && !getJudgeCode()) { setModelLocked(true); setMode("you"); }
         const frag = typeof location !== "undefined" ? location.hash : "";
         if (frag.startsWith("#replay=")) {
@@ -267,7 +269,7 @@ export function App() {
       cue("error");
       if (d.kind === "limit") {  // a lock or a cap: fall back to 'you' mode, which needs no model
         setMode("you");
-        if (e instanceof api.ApiError && e.status === 403) { clearJudgeCode(); setModelLocked(true); }
+        if (e instanceof api.ApiError && e.status === 403) { clearJudgeCode(); if (!publicOpen) setModelLocked(true); }
       }
       if (d.kind === "lost" || d.kind === "down") setFault({ text: d.text, kind: d.kind });
     } finally {
@@ -493,7 +495,7 @@ export function App() {
           <button type="button" className="tg" aria-pressed={mode === "model"} disabled={modelOff || modelLocked || replayOnly} onClick={() => setMode("model")}
             title={modelOff ? "The model is off on this server (INTERLOCK_MODEL=off)" : modelLocked ? "Locked: use 'Unlock live model (judges)'" : "A model proposes actions"}>model</button>
           <button type="button" className="tg" aria-pressed={mode === "you"} onClick={() => setMode("you")} title="You propose actions by hand; the real gate decides; no model runs">you</button>
-          {modelLocked && !modelOff && <button type="button" className="tg" data-testid="unlock-open" onClick={() => setUnlockOpen(true)} title="Enter the judge access code to use the live model">Unlock<span className="tg-long"> live model</span> (judges)</button>}
+          {(modelLocked || (publicOpen && !getJudgeCode())) && !modelOff && <button type="button" className="tg" data-testid="unlock-open" onClick={() => setUnlockOpen(true)} title={modelLocked ? "Enter the judge access code to use the live model" : "Judges: enter the access code to use the reserved share of the live model"}>{modelLocked ? <>Unlock<span className="tg-long"> live model</span> (judges)</> : "Judge code"}</button>}
         </div>
         <div className="seg" role="group" aria-label="Policy">
           <span className="seg-l">Policy:</span>

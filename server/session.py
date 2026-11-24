@@ -145,7 +145,7 @@ class Session:
                 emit("assistant_text", {"text": str(result).strip()})
             except Exception as e:  # no stack trace leaves the server
                 if not (self.gate.stop and _is_stop(e)):  # an early stop is not an error: the gate line below is the last word
-                    emit("error", {"message": _cap_message(e) or f"agent error ({type(e).__name__})"})
+                    emit("error", {"message": _cap_message(e) or _friendly(e) or f"agent error ({type(e).__name__})"})
             for line in self.gate.explains:  # built from the rejection fields only, after the model text, labelled gate
                 emit("gate_explain", {"text": line})
             emit("done", {"state": self.gate.state})
@@ -191,8 +191,29 @@ class Registry:
         return len(self._s)
 
 
+def _friendly(e):
+    """A plain message for a model-side failure, found by exception name anywhere in the chain. None if unknown."""
+    names = set()
+    while e is not None:
+        names.add(type(e).__name__)
+        code = getattr(e, "response", {}).get("Error", {}).get("Code") if isinstance(getattr(e, "response", None), dict) else None
+        if code:
+            names.add(code)
+        e = e.__cause__ or e.__context__
+    if names & {"ThrottlingException", "ModelThrottledException", "TooManyRequestsException", "ServiceQuotaExceededException"}:
+        return "The model service is busy right now (throttled). Wait a minute and try again, or use 'you' mode."
+    if names & {"AccessDeniedException", "UnrecognizedClientException", "ExpiredTokenException", "NoCredentialsError"}:
+        return "The live model is not available to this deployment right now. Use 'you' mode."
+    if names & {"ReadTimeoutError", "ConnectTimeoutError", "EndpointConnectionError", "ModelTimeoutException", "ReadTimeout", "TimeoutError"}:
+        return "The model took too long to answer. Try again, or use 'you' mode."
+    if names & {"ModelNotReadyException", "ServiceUnavailableException", "InternalServerException"}:
+        return "The model service is unavailable right now. Try again in a minute, or use 'you' mode."
+    return None
+
+
 def stream_events(session, message):
-    """Generator of SSE frames. The agent runs in a worker thread; this drains its queue.
+    """SSE frames for one chat turn. The agent runs in a worker thread, started HERE, not on first iteration:
+    if the client disconnects before the stream is read, the worker still runs and still releases the lock.
     The caller must already hold session.lock; the worker releases it."""
     q = queue.Queue()
 
@@ -207,9 +228,13 @@ def stream_events(session, message):
             session.lock.release()
 
     threading.Thread(target=worker, daemon=True).start()
-    while True:
-        item = q.get()
-        if item is None:
-            return
-        name, data = item
-        yield f"event: {name}\ndata: {json.dumps(data, default=str)}\n\n"
+
+    def frames():
+        while True:
+            item = q.get()
+            if item is None:
+                return
+            name, data = item
+            yield f"event: {name}\ndata: {json.dumps(data, default=str)}\n\n"
+
+    return frames()

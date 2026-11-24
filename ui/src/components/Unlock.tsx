@@ -29,10 +29,10 @@ export function Unlock({ onUnlocked, onCancel }: Props) {
     <div className="autostart-wrap" onKeyDown={(e) => { if (e.key === "Escape") onCancel(); }}>
       <form className="autostart" role="dialog" aria-modal="true" aria-labelledby="ul-h" data-testid="unlock"
         onSubmit={(e) => { e.preventDefault(); void submit(); }}>
-        <h3 id="ul-h">Unlock live model (judges)</h3>
+        <h3 id="ul-h">Enter the judge code</h3>
         <p>
-          The live model, live race runs and model-mode Autoplay need the judge access code from the Devpost testing field.
-          Everything else works without it. The code stays in this tab only and is never shown.
+          The live model is open to everyone, with a shared daily allowance. Judges: the access code from the Devpost testing field
+          uses a separate reserved share, so it still works when the public allowance is gone. The code stays in this tab only and is never shown.
         </p>
         <label htmlFor="ul-code" className="sr">Judge access code</label>
         <input id="ul-code" ref={input} type="password" autoComplete="off" maxLength={64} value={code} onChange={(e) => setCode(e.target.value)} placeholder="access code" />

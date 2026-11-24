@@ -12,6 +12,7 @@ ENGINE = "executor-table"  # INV-10: which engine produced the measured decision
 # Abuse limits (E4). (max requests, window in seconds) per client address.
 RATE_SESSION = (30, 60)
 RATE_CHAT = (30, 60)
+RATE_READ = (120, 60)           # cheap GETs that touch the store or disk (state, policies, replay), so they cannot drain DynamoDB capacity
 RATE_MFA = (30, 60)            # every attempt to POST /session/{id}/mfa, right or wrong
 MFA_MAX_WRONG = 5              # wrong codes per session, then the session is locked out
 MFA_LOCKOUT_S = 300
@@ -33,6 +34,8 @@ def check_startup():
     """F1: in production the code must come from the environment; there is no generated fallback."""
     if is_production() and not os.environ.get("DEMO_MFA_CODE", ""):
         raise RuntimeError("INTERLOCK_ENV=production requires DEMO_MFA_CODE to be set; refusing to start")
+    if is_production() and os.environ.get("STUB") == "1":  # the canned dev model must never answer real visitors
+        raise RuntimeError("STUB=1 is not allowed with INTERLOCK_ENV=production; refusing to start")
 
 
 def demo_mfa_code():

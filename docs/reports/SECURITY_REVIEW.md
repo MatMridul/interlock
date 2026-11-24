@@ -1,0 +1,37 @@
+# Security and edge-case review
+
+Branch `access-and-hardening`, 2026-11-24. Scope: the FastAPI app in `server/`, the built UI as served by it, and `infra/template.yaml`. Nothing was deployed and no Bedrock call was made; tests use the canned `StubModel` and an in-memory store (plus moto for DynamoDB in the existing store tests).
+
+## Findings
+
+| # | Area | Finding | Result |
+|---|------|---------|--------|
+| 1 | Headers | No security headers on any response. | **Fixed**: `server/headers.py` adds CSP, nosniff, no-referrer, HSTS, Permissions-Policy, COOP, X-Frame-Options to every response (API, SSE, static UI, 404/422/500). Tests: `tests/test_security_headers.py`. |
+| 2 | CSP vs the UI | Does the built UI work under `default-src 'self'`? | **Checked**: headless Chrome loaded the built UI from `http://127.0.0.1:8767/` with the CSP active; the page rendered fully (screenshot read by eye), fonts and assets are self-hosted. No inline script, no eval in `dist/assets`. `style-src` keeps `'unsafe-inline'` because React `style=` attributes (17 sites) need it; scripts do not. |
+| 3 | Request size | No cap on body size; a large body was read before validation. | **Fixed**: 16 KB limit by Content-Length and by counting chunked bodies, answer 413 (`BodyLimit`). Chat message stays at 2,000 characters (422, counted in characters, zero-width characters included). Lambda Function URLs already cap payloads at 6 MB. |
+| 4 | Input validation | Session id, MFA code, payee, tool name, attack id, policy name. | **Checked, no change needed**: unknown or very long ids give 404 (`StoredRegistry.get` rejects ids over 64 characters before any store read), MFA code max 64, tool is a fixed enum, attack id max 32 and looked up in a fixed corpus, policy name looked up in a fixed dict (path traversal gives 404), amount NaN/inf/negative/over cap is refused by the guard. Tests in `tests/test_hardening.py`. |
+| 5 | Error leakage | A generic 500 handler already hid details, but logged nothing. | **Fixed**: the 500 answer is unchanged (`internal error`) and now logs only exception type and path. Agent errors show the exception type name only. Tests: no message text in responses. |
+| 6 | CORS | The Vite dev origin `http://localhost:5173` was allowed in production too. | **Fixed**: only allowed outside `INTERLOCK_ENV=production`. Methods stay GET and POST; headers Content-Type and X-Judge-Code; no credentials. |
+| 7 | Rate limits | `/session`, chat, `/mfa`, `/propose`, `/race/live` were limited. `/judge/unlock` was not, and `/race/live` read the store (judge check) before its rate limit. Cheap GETs (`/session/{id}/state`, `/policy`, `/policies/*`, `/race/replay`) had none and `state` reads DynamoDB (20 read units). | **Fixed**: `/judge/unlock` shares the chat limit; `/race/live` limits first; new `read` limit (120 per minute per address) on the four GETs. Also fixed: `/propose` keyed its limit on the socket address (always 127.0.0.1 behind the Lambda adapter, so all visitors shared one bucket); it now uses the same client address as the other routes. |
+| 8 | DynamoDB throttling | A `ProvisionedThroughputExceededException` became a 500. | **Fixed**: 503 with `Retry-After: 5` and a plain message (also for other AWS throttling codes). Only for errors raised before a stream starts; inside a running SSE turn the error event is used. |
+| 9 | Model errors | Bedrock throttling, access denied and timeouts showed `agent error (TypeName)`. | **Fixed**: plain messages for throttling, access denied/expired credentials, timeouts, service unavailable (matched by exception name through the cause chain; no AWS message or ARN is shown). Caps are taken in the hook before each call, below any retry in botocore, so a botocore retry does not consume a second unit. **Not verified**: whether Strands' own retry on throttling fires the hook again (not exercised without Bedrock). |
+| 10 | Session lock | If the client disconnected before the SSE body was read, the worker thread (started on first iteration) never ran and the session lock was never released: the session answered 409 forever. | **Fixed**: the worker starts when the turn is created, so the lock is always released at the end of the turn. A client that disconnects mid-turn does not stop the turn (at most 4 model calls, then the lock is released). Test: `test_lock_is_released_even_if_the_stream_is_never_read`. |
+| 11 | Kill switch | `INTERLOCK_MODEL=off` was read only when a request started. | **Fixed**: the before-model-call hook checks it too, so a turn stops at its next model call. On Lambda a config change also restarts the environment. |
+| 12 | STUB in production | `STUB=1` selected the canned model with no check of the environment. | **Fixed**: `INTERLOCK_ENV=production` with `STUB=1` refuses to start. The template never sets `STUB`. |
+| 13 | Concurrency | Two chat requests on one session. | **Checked**: second gets 409 (in memory and through the store lease). Test added. |
+| 14 | Caps rollover | Day and month counters. | **Checked**: counters are keyed by UTC date and month with TTLs (existing tests in `tests/test_store.py` and `tests/test_judge_limits.py`); the new public pool uses the same date key. |
+| 15 | IAM | Least privilege. | **Checked, no change**: logs only on the function's log group; DynamoDB `GetItem/PutItem/UpdateItem` only on the one table (the code uses no other call); Bedrock invoke only on the one inference profile and its foundation model, with region and profile conditions; none of it attached when `Mode=off`. |
+| 16 | Budget alert | `AWS::Budgets::Budget` had no `CostTypes`, so credits were included and the alert never fired while credits covered usage. | **Fixed**: `IncludeCredit: false`. Other cost types keep their defaults. Needs a stack update to take effect. `cfn-lint` and `validate-template` pass. |
+| 17 | Dependencies | `pip-audit -r requirements.txt`: no known vulnerabilities. `npm audit --omit=dev`: 0 vulnerabilities. | **Checked**. Report only; no upgrades. |
+| 18 | Public access | Opening the model to everyone raises abuse risk. | **Mitigated by design**: public pool (default 60 calls a day) inside the 100 per day total, per-address 40, per-session 25, 4 per turn, monthly cap, a wrong code never falls back to public. |
+
+## Not fixed, and why
+
+- **Limits are per process.** The read and chat rate limits are in memory (`server/limits.py`, existing shortcut). Several Lambda instances multiply the allowance. The model caps and judge lockout are shared in DynamoDB and are not affected. Moving all rate limits to the table would spend the 20/20 capacity on every request.
+- **Cached policy files.** `/policy` and `/policies/*` re-read small files on each request. They are now rate limited; caching was not added because the files are tiny and the cost is CPU, not capacity.
+- **A dropped client does not cancel a running turn.** It ends by itself within the per-turn limit of 4 model calls.
+- **No CSP report endpoint**, no `Cache-Control` changes, no `includeSubDomains` on HSTS (the Function URL domain is not ours).
+
+## Not covered
+
+No live AWS check, no load test, no test of the deployed Function URL or of the Lambda Web Adapter's own header handling, no browser test beyond one headless Chrome load, no penetration test, no review of `third_party/` code, no review of the JFLAP tooling. SSE reconnect behaviour in the UI (open task F3, second half) was not changed.

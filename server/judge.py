@@ -1,4 +1,8 @@
-"""Judge access code: the lock on every feature that can call the real model.
+"""Judge access code: the lock on every feature that can call the real model, and the public door beside it.
+
+A request WITHOUT a code is "public": allowed while INTERLOCK_PUBLIC_DAILY_MODEL_CAP is above 0, and it
+counts against the public daily pool (server/modelcap.py). A request with the right code is "judge": it
+skips that pool. A WRONG code is always refused and counted; it never falls back to public.
 
 The code is the env var JUDGE_ACCESS_CODE. With it unset or empty the lock never opens (fail closed).
 The browser sends the code in the X-Judge-Code header on model requests; it is compared in constant
@@ -13,10 +17,12 @@ import hmac
 import os
 import time
 
+from server import modelcap
+
 HEADER = "x-judge-code"
 MAX_WRONG = 5
 WINDOW_S = 900
-LOCKED = "The live model is locked. Use 'Unlock live model (judges)' with the access code, or stay in 'you' mode."
+LOCKED = "The live model is locked. Use 'Judge code' with the access code, or stay in 'you' mode."
 WRONG = "That judge access code is not right."
 
 
@@ -45,10 +51,15 @@ class Judge:
             return int(WINDOW_S - self._now() % WINDOW_S) + 1
         return 0
 
-    def check(self, code, ip):
-        """Raise Denied unless `code` is the judge code. A missing code is refused without counting."""
+    def check(self, code, ip, allow_public=False):
+        """Return "judge" for the right code, or "public" for no code when allow_public and the public pool is on.
+        Raise Denied otherwise. A missing code is refused without counting; a wrong code is refused and counted."""
         expected = os.environ.get("JUDGE_ACCESS_CODE", "")
-        if not expected or not code:
+        if not code:
+            if allow_public and modelcap.public_cap() > 0:
+                return "public"
+            raise Denied(403, LOCKED)
+        if not expected:
             raise Denied(403, LOCKED)
         wait = self._locked_for(ip)
         if wait:  # checked before the compare: a right guess during a lockout fails too
@@ -56,6 +67,7 @@ class Judge:
         if not hmac.compare_digest(_digest(code), _digest(expected)):
             self._store.incr_if_below(self._key(ip), 10**9, 2 * WINDOW_S)
             raise Denied(403, WRONG)
+        return "judge"
 
-    def check_request(self, request, ip):
-        self.check(request.headers.get(HEADER, ""), ip)
+    def check_request(self, request, ip, allow_public=False):
+        return self.check(request.headers.get(HEADER, ""), ip, allow_public)
