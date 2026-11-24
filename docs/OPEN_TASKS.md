@@ -106,8 +106,8 @@ Status: `todo`, `doing`, `blocked`, `done`. Priority: P0 must have, P1 should ha
 | ID | Task | Owner | Pri | Status | Done when |
 |---|---|---|---|---|---|
 | F1 | Replace the demo MFA code with an env-only secret in the deployed app; document the demo credentials in the Devpost field (judges only) | Me | P0 | done: the codes are set only as stack parameters and kept in a private file outside the repo; the owner pastes them into the Devpost judges-only field | No code in the repo or video |
-| F2 | Security headers and a content security policy; dependency and secret scanning in CI | Me | P1 | todo | CI scan clean |
-| F3 | Error handling: no stack traces to users; SSE reconnect behavior | Me | P1 | todo | Tested |
+| F2 | Security headers and a content security policy; dependency and secret scanning in CI | Me | P1 | headers, CSP and a dependency audit done (branch access-and-hardening, docs/reports/SECURITY_REVIEW.md); scanning in CI not added | CI scan clean |
+| F3 | Error handling: no stack traces to users; SSE reconnect behavior | Me | P1 | server side done and tested (friendly model errors, 503 on throttling, lock release); UI SSE reconnect not changed | Tested |
 | F4 | Final full test pass with the real counts | Me | P0 | todo | Recorded in `docs/reports/` |
 
 ### G. Submission assets
