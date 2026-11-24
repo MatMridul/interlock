@@ -160,3 +160,35 @@ export function ledgerRows(policy: Policy): { key: string; text: string; from: s
   }
   return rows;
 }
+
+/** Text in the stage keeps a minimum on-screen size (see styles.css), so in stage units it grows by k = 1 / (1.2 s) when the drawing is scaled down. */
+export const textK = (s: number) => Math.max(1, 10 / (12 * Math.max(s, 0.05)));
+/** Lowest y (stage units) the top-left formula block may reach: the CURRENT label above the START orb starts near 240. */
+export const FORMULA_BOTTOM = 230;
+
+export interface StageDetail {
+  k: number;
+  /** y of the three header lines */
+  head: [number, number, number];
+  /** y of the replay tag */
+  replayY: number;
+  /** y of the first ledger row, and the row pitch */
+  ledgerY: number;
+  pitch: number;
+  /** false when the delta rows would reach the machine drawing: they are left out, never overlapped */
+  ledger: boolean;
+  /** the third header line, port subtitle and sink notes: dropped on a very small stage */
+  extras: boolean;
+}
+
+/** What the margin text of the stage may show at map scale s, so it never overlaps the drawing. */
+export function stageDetail(s: number, rows: number, replay: boolean, why: boolean): StageDetail {
+  const k = textK(s);
+  const H = 20 * k, pitch = 16 * k;
+  const head: [number, number, number] = [30, 30 + H, 30 + H + 18 * k];
+  const replayY = head[2] + 16 * k;
+  const ledgerY = replay ? replayY + 24 * k : head[2] + 28 * k;
+  const n = rows + (why ? 1 : 0);
+  const bottom = ledgerY + Math.max(0, n - 1) * pitch + (why ? 6 : 0);
+  return { k, head, replayY, ledgerY, pitch, ledger: bottom <= FORMULA_BOTTOM, extras: k <= 1.6 };
+}

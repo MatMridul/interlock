@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from "react";
 import { Fx } from "../lib/fx";
-import { AGENT_PORT, AIRLOCK, ORB_R, SINK, VIEW, buildEdges, ledgerRows, orbPositions } from "../lib/geometry";
+import { AGENT_PORT, AIRLOCK, ORB_R, SINK, VIEW, buildEdges, ledgerRows, orbPositions, stageDetail } from "../lib/geometry";
 import type { Policy } from "../types";
 import type { WhyStep } from "../lib/why";
 
@@ -99,6 +99,7 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
 
   const arrow = (human: boolean) => `url(#${human ? "ahh" : "ah"})`;
   const nSym = policy.symbols.length;
+  const d = stageDetail(map.s, ledger.length, !!replayLabel, !!why);
   const lastTakenN = lastTaken ? `@${wordLength}` : "";
 
   return (
@@ -112,17 +113,17 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
               <marker id="ahh" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1L9 5L1 9" fill="none" stroke="#ffb347" strokeWidth="1.3" /></marker>
             </defs>
 
-            <text x="24" y="30" className="silk title">M = (Q, Σ, δ, q₀, F)</text>
-            <text x="24" y="50" className="silk">|Q| = {live.length} · |Σ| = {nSym} · q₀ = {policy.initial}</text>
-            <text x="24" y="68" className="silk">q = <tspan className="b" fill="var(--ph)" fontWeight="600">{current}</tspan> · |w| = {wordLength} · last decision {lastDecision}</text>
-            <g aria-hidden="true">
+            <text x="24" y={d.head[0]} className="silk title">M = (Q, Σ, δ, q₀, F)</text>
+            <text x="24" y={d.head[1]} className="silk">|Q| = {live.length} · |Σ| = {nSym} · q₀ = {policy.initial}</text>
+            {d.extras && <text x="24" y={d.head[2]} className="silk">q = <tspan className="b" fill="var(--ph)" fontWeight="600">{current}</tspan> · |w| = {wordLength} · last decision {lastDecision}</text>}
+            {d.ledger && <g aria-hidden="true">
               {ledger.map((r, i) => {
                 const on = lastTaken?.from === r.from && lastTaken.symbol === r.symbol;
-                return <text key={`${r.key}${on ? lastTakenN : ""}`} x="24" y={(replayLabel ? 108 : 96) + i * 16} className={`row${on ? " on" : ""}`} data-row={r.key}>{on ? "› " : "  "}{r.text}</text>;
+                return <text key={`${r.key}${on ? lastTakenN : ""}`} x="24" y={d.ledgerY + i * d.pitch} className={`row${on ? " on" : ""}`} data-row={r.key}>{on ? "› " : "  "}{r.text}</text>;
               })}
-              {why && <text x="24" y={(replayLabel ? 108 : 96) + ledger.length * 16 + 6} className="row undef" data-row="undefined">{"› "}δ({why.from}, {why.symbol}) = undefined</text>}
-            </g>
-            {replayLabel && <text x="24" y="84" className="silk replay-tag" data-testid="replay-tag">{replayLabel}</text>}
+              {why && <text x="24" y={d.ledgerY + ledger.length * d.pitch + 6} className="row undef" data-row="undefined">{"› "}δ({why.from}, {why.symbol}) = undefined</text>}
+            </g>}
+            {replayLabel && <text x="24" y={d.replayY} className="silk replay-tag" data-testid="replay-tag">{replayLabel}</text>}
             {why && <text x="24" y={VIEW.h - 16} className="why-cap" data-testid="why-cap">{why.sentence}</text>}
 
             {edges.map((e) => {
@@ -132,7 +133,17 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
                   <path d={e.d} className={`wire${human ? " human" : ""}${hover && e.from === hover ? " hl" : ""}${traceEdge === e.id ? " trace" : ""}`} markerEnd={arrow(human)} />
                   {ghostEdges.has(e.id) && <path d={e.d} className="ghost-path" data-ghost={e.id} />}
                   <path d={e.d} className={`glow${glow?.id === e.id ? " on" : ""}`} key={glow?.id === e.id ? glow.n : "off"} />
-                  <text x={e.label.x} y={e.label.y} className={`elab${human ? " human" : ""}`}>{e.symbols.join(" / ")}{human ? "  (human)" : ""}</text>
+                  {(() => {
+                    // a label of 3+ symbols is split in two lines so neighbours (e.g. the Safe Ship loops) never run into each other
+                    const half = Math.ceil(e.symbols.length / 2);
+                    const lines = e.symbols.length >= 3 ? [e.symbols.slice(0, half).join(" / ") + " /", e.symbols.slice(half).join(" / ")] : [e.symbols.join(" / ")];
+                    const tail = human ? "  (human)" : "";
+                    return (
+                      <text x={e.label.x} y={e.label.y - (lines.length - 1) * 14 * d.k} className={`elab${human ? " human" : ""}`}>
+                        {lines.map((ln, i) => <tspan key={i} x={e.label.x} dy={i === 0 ? 0 : 14 * d.k}>{ln}{i === lines.length - 1 ? tail : ""}</tspan>)}
+                      </text>
+                    );
+                  })()}
                 </g>
               );
             })}
@@ -165,13 +176,13 @@ export function Stage({ policy, current, locked, fxRef, lastTaken, wordLength, l
             <circle cx={SINK.x} cy={SINK.y} r="40" className="sink-ring" />
             <circle cx={SINK.x} cy={SINK.y} r="22" className="sink-core" />
             <text x={SINK.x + 54} y={SINK.y - 12} className="sink-t">SINK · REJECTED</text>
-            <text x={SINK.x + 54} y={SINK.y + 6} className="sink-n">rejected moves go nowhere;</text>
-            <text x={SINK.x + 54} y={SINK.y + 22} className="sink-n">the state never changes</text>
+            {d.extras && <text x={SINK.x + 54} y={SINK.y + 6} className="sink-n">rejected moves go nowhere;</text>}
+            {d.extras && <text x={SINK.x + 54} y={SINK.y + 6 + d.pitch} className="sink-n">the state never changes</text>}
 
             <circle cx={AGENT_PORT.x} cy={AGENT_PORT.y} r="5" fill="none" stroke="#8ea699" />
             <circle cx={AGENT_PORT.x} cy={AGENT_PORT.y} r="12" fill="none" stroke="#2f4a3f" />
             <text x={AGENT_PORT.x - 22} y={AGENT_PORT.y - 2} className="port-t">AGENT PORT</text>
-            <text x={AGENT_PORT.x - 22} y={AGENT_PORT.y + 13} className="port-s">proposes, never decides</text>
+            {d.extras && <text x={AGENT_PORT.x - 22} y={AGENT_PORT.y + 13} className="port-s">proposes, never decides</text>}
             <circle cx={AIRLOCK.x} cy={AIRLOCK.y} r="4" fill="none" stroke="#7a5c26" />
             <text x={AIRLOCK.x - 10} y={AIRLOCK.y + 4} className="port-s">human port</text>
           </svg>
