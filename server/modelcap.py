@@ -132,6 +132,8 @@ class ModelCap:
     def attach(self, session):
         """Before each model call: stop the turn after per_turn calls, then spend from the caps."""
         def hook(event: BeforeModelCallEvent) -> None:
+            if model_mode() == "off":  # the kill switch was thrown while this turn was running
+                raise CapReached(OFF_MESSAGE, "off")
             session.turn_calls = getattr(session, "turn_calls", 0) + 1
             if session.turn_calls > self.per_turn:
                 raise CapReached(self.msg["turn"], "turn")
