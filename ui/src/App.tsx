@@ -495,7 +495,7 @@ export function App() {
           <button type="button" className="tg" aria-pressed={mode === "model"} disabled={modelOff || modelLocked || replayOnly} onClick={() => setMode("model")}
             title={modelOff ? "The model is off on this server (INTERLOCK_MODEL=off)" : modelLocked ? "Locked: use 'Unlock live model (judges)'" : "A model proposes actions"}>model</button>
           <button type="button" className="tg" aria-pressed={mode === "you"} onClick={() => setMode("you")} title="You propose actions by hand; the real gate decides; no model runs">you</button>
-          {(modelLocked || (publicOpen && !getJudgeCode())) && !modelOff && <button type="button" className="tg" data-testid="unlock-open" onClick={() => setUnlockOpen(true)} title={modelLocked ? "Enter the judge access code to use the live model" : "Judges: enter the access code to use the reserved share of the live model"}>{modelLocked ? "Unlock live model (judges)" : "Judge code"}</button>}
+          {(modelLocked || (publicOpen && !getJudgeCode())) && !modelOff && <button type="button" className="tg" data-testid="unlock-open" onClick={() => setUnlockOpen(true)} title={modelLocked ? "Enter the judge access code to use the live model" : "Judges: enter the access code to use the reserved share of the live model"}>{modelLocked ? <>Unlock<span className="tg-long"> live model</span> (judges)</> : "Judge code"}</button>}
         </div>
         <div className="seg" role="group" aria-label="Policy">
           <span className="seg-l">Policy:</span>
@@ -503,7 +503,7 @@ export function App() {
           <button type="button" className="tg" aria-pressed={safeShip} onClick={() => setSafeShip(true)} title="Safe Ship: the second policy, shown read-only with Kiro's recorded run">safe-ship</button>
         </div>
         {replayOnly && <button type="button" className="tg" onClick={exitReplay}>Exit replay</button>}
-        <button type="button" className="tg" aria-pressed={soundOn} onClick={toggleSound} title="Synthesised cues, off by default. Starts only after this click.">{soundOn ? "Sound on" : "Sound off"}</button>
+        <button type="button" className="tg mid-only" aria-pressed={soundOn} onClick={toggleSound} title="Synthesised cues, off by default. Starts only after this click.">{soundOn ? "Sound on" : "Sound off"}</button>
         {Haptics.supported() && (
           <button type="button" className="tg wide-only" aria-pressed={hapticsOn} onClick={toggleHaptics} title="Vibration works only on supporting Android browsers (Chrome, Firefox). iOS Safari and most desktops ignore it.">{hapticsOn ? "Haptics on" : "Haptics off"}</button>
         )}

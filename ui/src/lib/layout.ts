@@ -10,14 +10,17 @@ export type Viewport = { w: number; h: number };
 
 /** Fixed chrome above the tape: header 44, scoreboard about 84, notification rail 78. The stage keeps at least STAGE_MIN. */
 const CHROME_H = 222;
-const STAGE_MIN_H = 320; // the stage keeps this much height and STAGE_MIN_W width: panels are clamped, labels are not shrunk
+// the stage keeps this much height and STAGE_MIN_W width: panels are clamped, labels are not shrunk. 200 (not more) so a
+// laptop browser window about 650 px tall still has room to drag the tape; the stage drawing scales down to fit.
+const STAGE_MIN_H = 200;
 const STAGE_MIN_W = 640;
+const TAPE_MIN_H = 110; // header line plus the lanes: the tape stays readable and the drag still has a range on short windows
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 export function boundsFor(id: PanelId, vp: Viewport): Bounds {
   switch (id) {
-    case "tape": return { min: 150, max: Math.max(150, Math.min(560, vp.h - CHROME_H - STAGE_MIN_H)) };
+    case "tape": return { min: TAPE_MIN_H, max: Math.max(TAPE_MIN_H, Math.min(560, vp.h - CHROME_H - STAGE_MIN_H)) };
     case "console": return { min: 280, max: Math.max(280, Math.min(680, Math.round(vp.w * 0.5), vp.w - STAGE_MIN_W)) };
     case "drawer": return { min: 320, max: Math.max(320, Math.min(760, Math.round(vp.w * 0.8))) };
   }

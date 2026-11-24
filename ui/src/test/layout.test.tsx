@@ -37,8 +37,14 @@ describe("layout persistence", () => {
   it("never lets the stage shrink below a usable height", () => {
     const small = { w: 1280, h: 720 };
     const b = boundsFor("tape", small);
-    expect(small.h - 222 - b.max).toBeGreaterThanOrEqual(240);
+    expect(small.h - 222 - b.max).toBeGreaterThanOrEqual(200);
     expect(clampPanel("tape", 10, small)).toBe(b.min);
+  });
+  it("leaves the tape a real drag range on a short laptop browser window", () => {
+    const short = { w: 1366, h: 650 };
+    const b = boundsFor("tape", short);
+    expect(b.max - b.min).toBeGreaterThanOrEqual(100);
+    expect(short.h - 222 - b.max).toBeGreaterThanOrEqual(200);
   });
 });
 
