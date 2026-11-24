@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from server import config, judge as judgemod, manual, modelcap, policies, race
+from server import config, headers as sechead, judge as judgemod, manual, modelcap, policies, race
 from server.limits import Limiter
 from server.persist import StoredRegistry
 from server.session import Registry, stream_events
@@ -72,6 +72,7 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
     app.state.registry = registry
     app.add_middleware(CORSMiddleware, allow_origins=[config.cors_origin(), DEV_UI_ORIGIN],
                        allow_methods=["GET", "POST"], allow_headers=["Content-Type", "X-Judge-Code"])
+    app.add_middleware(sechead.SecurityHeaders)  # added last = outermost: every response carries the security headers
 
     @app.exception_handler(RequestValidationError)
     async def _invalid(request: Request, exc):  # generic: never echo submitted values
@@ -83,7 +84,8 @@ def create_app(model_factory=default_model_factory, max_sessions=config.MAX_SESS
 
     @app.exception_handler(Exception)
     async def _boom(request: Request, exc):
-        return JSONResponse({"detail": "internal error"}, status_code=500)
+        log.error("unhandled %s on %s", type(exc).__name__, request.url.path)  # type and path only: no message, no input
+        return sechead.apply(JSONResponse({"detail": "internal error"}, status_code=500))  # runs outside the middleware
 
     def _missing():
         return JSONResponse({"detail": "unknown session"}, status_code=404)
