@@ -14,7 +14,7 @@ Parameters:
     Type: String
     Default: bedrock
     AllowedValues: ["off", bedrock]
-    Description: bedrock = real-model features, locked behind JudgeAccessCode and limited by the caps below. off = no Bedrock call is possible and no Bedrock permission is attached.
+    Description: bedrock = real-model features, open to everyone within the public pool (PublicDailyModelCap), with the rest reserved for JudgeAccessCode holders, and limited by the caps below. off = no Bedrock call is possible and no Bedrock permission is attached.
   JudgeAccessCode:
     Type: String
     NoEcho: true
@@ -41,6 +41,11 @@ Parameters:
     Default: 25
     MinValue: 0
     Description: Most Bedrock model calls per chat session.
+  PublicDailyModelCap:
+    Type: Number
+    Default: 60
+    MinValue: 0
+    Description: Most Bedrock model calls per UTC day from visitors WITHOUT the judge code (counted inside DailyModelCap). The rest of DailyModelCap stays for judges. 0 = the model is open only with the judge code.
   BudgetEmail:
     Type: String
     AllowedPattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
@@ -211,6 +216,7 @@ Resources:
           INTERLOCK_MONTHLY_MODEL_CAP: !Ref MonthlyModelCap
           INTERLOCK_IP_DAILY_MODEL_CAP: !Ref PerIpDailyModelCap
           INTERLOCK_SESSION_MODEL_CAP: !Ref PerSessionModelCap
+          INTERLOCK_PUBLIC_DAILY_MODEL_CAP: !Ref PublicDailyModelCap
           JUDGE_ACCESS_CODE: !Ref JudgeAccessCode
           BEDROCK_MODEL_ID: !Ref ModelId
           CORS_ORIGIN: !Ref AllowedCorsOrigin
@@ -248,6 +254,10 @@ Resources:
         BudgetType: COST
         TimeUnit: MONTHLY
         BudgetLimit: { Amount: !Ref BudgetUsd, Unit: USD }
+        # Without CostTypes, IncludeCredit defaults to true and the alert never fires while promotional credits
+        # cover the usage. Credits are what pays for this demo, so alert on gross usage instead.
+        CostTypes:
+          IncludeCredit: false
       NotificationsWithSubscribers:
         - Notification: { NotificationType: ACTUAL, ComparisonOperator: GREATER_THAN, Threshold: 50, ThresholdType: PERCENTAGE }
           Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref BudgetEmail }]
