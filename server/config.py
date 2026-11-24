@@ -34,6 +34,8 @@ def check_startup():
     """F1: in production the code must come from the environment; there is no generated fallback."""
     if is_production() and not os.environ.get("DEMO_MFA_CODE", ""):
         raise RuntimeError("INTERLOCK_ENV=production requires DEMO_MFA_CODE to be set; refusing to start")
+    if is_production() and os.environ.get("STUB") == "1":  # the canned dev model must never answer real visitors
+        raise RuntimeError("STUB=1 is not allowed with INTERLOCK_ENV=production; refusing to start")
 
 
 def demo_mfa_code():

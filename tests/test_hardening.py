@@ -159,3 +159,11 @@ def test_kill_switch_thrown_mid_turn_stops_the_next_model_call(monkeypatch):
     monkeypatch.setenv("INTERLOCK_MODEL", "off")
     with pytest.raises(modelcap.CapReached):
         hook(None)
+
+
+def test_stub_cannot_run_in_production(monkeypatch):
+    monkeypatch.setenv("INTERLOCK_ENV", "production")
+    monkeypatch.setenv("DEMO_MFA_CODE", "123456")
+    monkeypatch.setenv("STUB", "1")
+    with pytest.raises(RuntimeError, match="STUB"):
+        create_app()
