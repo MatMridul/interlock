@@ -79,3 +79,7 @@ b7f49f8 Add unlock control and fallback
 ## Final checks run
 
 `pytest -q --ignore=tests/test_mutation_m3.py --ignore=tests/test_replay_m5.py` 448 passed, 2 skipped (bash and jq missing); `npm test` 134 passed (14 files); `npm run build` ok; `python scripts/secret_scan.py` 0 findings; `python infra/local_proof.py` all PASS; `aws cloudformation validate-template` ok; `cfn-lint infra/template.yaml` no findings.
+
+## Public access update (branch access-and-hardening)
+
+This page was written when the model was code-only. Now a visitor without a code may use the model too, but their calls also count against a public pool: `PublicDailyModelCap` (`INTERLOCK_PUBLIC_DAILY_MODEL_CAP`), default 60 per UTC day, counted inside the 100 per day for everyone. A valid code skips the public pool, so about 40 calls a day stay for judges. A wrong code is refused and counted toward the lockout above, never treated as public. `0` brings back code-only access. Enforced in `ModelCap.take` (check order: session, address, public pool, day, month), tested in `tests/test_public_access.py`. The "Unlock live model (judges)" control is now a small "Judge code" button.
